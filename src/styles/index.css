@@ -30,3 +30,15 @@ html {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(0, 0, 0, 0.3);
 }
+
+/* Hide scrollbar for sidebar but keep functionality */
+.sidebar-scrollbar {
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
+}
+
+.sidebar-scrollbar::-webkit-scrollbar {
+  display: none;
+}

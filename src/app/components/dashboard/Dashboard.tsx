@@ -4,12 +4,12 @@ import { authService, coursesData, progressService } from '../../services/mockDa
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Progress } from '../ui/progress';
-import { 
-  Zap, 
-  Target, 
-  Flame, 
-  TrendingUp, 
-  BookOpen, 
+import {
+  Zap,
+  Target,
+  Flame,
+  TrendingUp,
+  BookOpen,
   ArrowRight,
   Sparkles,
   Trophy
@@ -127,30 +127,30 @@ export default function Dashboard() {
                 <CardDescription>Pick up where you left off</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="p-6 rounded-xl bg-gradient-to-br from-[#0747a1] to-[#8B5CF6] text-white">
+                <div className="p-6 rounded-xl bg-white border-2 border-[#0747a1]">
                   <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center text-2xl flex-shrink-0">
+                    <div className="w-12 h-12 rounded-xl bg-[#0747a1]/10 text-[#0747a1] flex items-center justify-center text-2xl flex-shrink-0">
                       {nextCourse.icon}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-xl font-semibold heading-font mb-1">
+                      <h3 className="text-xl font-semibold heading-font mb-1 text-[#1a1a2e]">
                         {nextCourse.title}
                       </h3>
-                      <p className="text-white/80 text-sm mb-4">
+                      <p className="text-[#6B7280] text-sm mb-4">
                         {nextCourse.description}
                       </p>
                       <div className="space-y-2 mb-4">
                         <div className="flex items-center justify-between text-sm">
-                          <span>Progress</span>
-                          <span>{progressService.getCourseProgress(nextCourse.id)}%</span>
+                          <span className="text-[#6B7280]">Progress</span>
+                          <span className="text-[#0747a1] font-medium">{progressService.getCourseProgress(nextCourse.id)}%</span>
                         </div>
-                        <Progress 
-                          value={progressService.getCourseProgress(nextCourse.id)} 
-                          className="h-2 bg-white/20"
+                        <Progress
+                          value={progressService.getCourseProgress(nextCourse.id)}
+                          className="h-2 bg-[#F5F5FA]"
                         />
                       </div>
                       <Link to={`/courses/${nextCourse.id}`}>
-                        <Button className="bg-white text-[#0747a1] hover:bg-white/90">
+                        <Button className="bg-[#0747a1] text-white hover:bg-[#0747a1]/90">
                           Continue Course
                           <ArrowRight className="ml-2 w-4 h-4" />
                         </Button>
@@ -178,7 +178,7 @@ export default function Dashboard() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {coursesData.slice(0, 4).map((course) => {
                     const progress = progressService.getCourseProgress(course.id);
-                    
+
                     return (
                       <Link
                         key={course.id}

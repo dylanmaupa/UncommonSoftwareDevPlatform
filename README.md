@@ -95,7 +95,7 @@ A modern, gamified, interactive coding learning platform inspired by Codédex, b
 ## 🎨 Design System
 
 ### Brand Colors (uncommon.org inspired)
-- **Primary**: `#5B4FFF` (Vibrant Blue/Purple)
+- **Primary**: `#0747A1` (Uncommon Blue)
 - **Accent**: `#FF6B35` (Orange)
 - **Success**: `#10B981` (Green)
 - **Secondary**: `#F5F5FA` (Light Gray)

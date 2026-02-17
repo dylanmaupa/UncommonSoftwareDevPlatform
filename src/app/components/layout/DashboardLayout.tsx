@@ -50,9 +50,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   };
 
   return (
-    <div className="flex min-h-screen bg-[#FAFAFA]">
+    <div className="flex h-screen overflow-hidden bg-[#FAFAFA]">
       {/* Sidebar */}
-      <aside className="w-64 bg-white border-r border-[rgba(0,0,0,0.08)] flex flex-col">
+      <aside className="w-64 bg-white border-r border-[rgba(0,0,0,0.08)] flex flex-col sidebar-scrollbar overflow-y-auto">
         {/* Logo */}
         <div className="p-6 border-b border-[rgba(0,0,0,0.08)]">
           <Link to="/dashboard" className="flex items-center gap-2">
@@ -114,23 +114,20 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               </Link>
             );
           })}
-        </nav>
 
-        {/* Logout */}
-        <div className="p-4 border-t border-[rgba(0,0,0,0.08)]">
           <Button
             variant="ghost"
             onClick={handleLogout}
-            className="w-full justify-start gap-3 text-[#6B7280] hover:bg-[#F5F5FA] hover:text-[#1a1a2e]"
+            className="w-full justify-start gap-3 text-[#6B7280] hover:bg-[#F5F5FA] hover:text-[#1a1a2e] mt-2"
           >
             <LogOut className="w-5 h-5" />
             <span className="heading-font">Log Out</span>
           </Button>
-        </div>
+        </nav>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-y-auto">
         {children}
       </main>
     </div>
