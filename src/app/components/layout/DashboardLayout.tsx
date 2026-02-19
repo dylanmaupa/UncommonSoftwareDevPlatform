@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+﻿import { ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { authService } from '../../services/mockData';
 import {
@@ -6,16 +6,15 @@ import {
   BookOpen,
   FolderKanban,
   Trophy,
-  User,
   Settings,
   LogOut,
   Code2,
-  Zap
+  Inbox,
+  ListChecks,
+  Users,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '../ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
-import { Progress } from '../ui/progress';
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -31,16 +30,24 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     return null;
   }
 
-  const xpToNextLevel = ((user.level) * 500) - user.xp;
-  const progressToNextLevel = ((user.xp % 500) / 500) * 100;
-
-  const navItems = [
+  const overviewItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-    { icon: BookOpen, label: 'Courses', path: '/courses' },
-    { icon: FolderKanban, label: 'Projects', path: '/projects' },
+    { icon: Inbox, label: 'Inbox', path: '/courses' },
+    { icon: BookOpen, label: 'Lesson', path: '/courses' },
+    { icon: ListChecks, label: 'Task', path: '/projects' },
+    { icon: Users, label: 'Group', path: '/profile' },
+  ];
+
+  const friendItems = [
+    { name: 'Bagas Mahpie', tag: 'Friend' },
+    { name: 'Sir Dandy', tag: 'Old Friend' },
+    { name: 'Jhon Tosan', tag: 'Friend' },
+  ];
+
+  const settingsItems = [
+    { icon: Settings, label: 'Setting', path: '/settings' },
     { icon: Trophy, label: 'Achievements', path: '/achievements' },
-    { icon: User, label: 'Profile', path: '/profile' },
-    { icon: Settings, label: 'Settings', path: '/settings' },
+    { icon: FolderKanban, label: 'Projects', path: '/projects' },
   ];
 
   const handleLogout = () => {
@@ -50,86 +57,86 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#FAFAFA]">
-      {/* Sidebar */}
-      <aside className="w-64 bg-white border-r border-[rgba(0,0,0,0.08)] flex flex-col sidebar-scrollbar overflow-y-auto">
-        {/* Logo */}
-        <div className="p-6 border-b border-[rgba(0,0,0,0.08)]">
-          <Link to="/dashboard" className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-xl bg-[#0747a1] flex items-center justify-center">
-              <Code2 className="w-6 h-6 text-white" />
+    <div className="min-h-screen bg-[#FAFAFA] p-0">
+      <div className="mx-auto flex h-screen max-w-[1280px] overflow-hidden border border-[rgba(0,0,0,0.08)] bg-white shadow-sm">
+        <aside className="hidden w-64 shrink-0 overflow-y-auto border-r border-[rgba(0,0,0,0.08)] bg-[#FAFAFA] px-4 py-6 lg:flex lg:flex-col">
+          <Link to="/dashboard" className="mb-8 flex items-center gap-3 px-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#0747a1]/10">
+              <Code2 className="h-4 w-4 text-[#0747a1]" />
             </div>
-            <span className="heading-font text-xl" style={{ color: '#1a1a2e' }}>
-              uncommon
+            <span className="heading-font text-lg" style={{ color: '#1a1a2e' }}>
+              Coursue
             </span>
           </Link>
-        </div>
 
-        {/* User Info */}
-        <div className="p-6 border-b border-[rgba(0,0,0,0.08)]">
-          <div className="flex items-center gap-3 mb-4">
-            <Avatar className="w-12 h-12">
-              <AvatarImage src={user.avatar} alt={user.nickname} />
-              <AvatarFallback>{user.nickname[0]}</AvatarFallback>
-            </Avatar>
-            <div className="flex-1 min-w-0">
-              <p className="font-medium text-[#1a1a2e] truncate">{user.nickname}</p>
-              <p className="text-sm text-[#6B7280]">Level {user.level}</p>
+          <div className="space-y-6">
+            <div>
+              <p className="px-2 pb-2 text-[10px] uppercase tracking-wider text-[#6B7280]">Overview</p>
+              <nav className="space-y-1">
+                {overviewItems.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = location.pathname === item.path;
+
+                  return (
+                    <Link
+                      key={`${item.label}-${item.path}`}
+                      to={item.path}
+                      className={`flex items-center gap-2 rounded-xl px-3 py-2 text-sm transition-colors ${
+                        isActive ? 'bg-white text-[#1a1a2e] shadow-sm' : 'text-[#6B7280] hover:bg-white hover:text-[#1a1a2e]'
+                      }`}
+                    >
+                      <Icon className="h-4 w-4" />
+                      <span>{item.label}</span>
+                    </Link>
+                  );
+                })}
+              </nav>
+            </div>
+
+            <div>
+              <p className="px-2 pb-2 text-[10px] uppercase tracking-wider text-[#6B7280]">Friends</p>
+              <div className="space-y-1">
+                {friendItems.map((friend) => (
+                  <div key={friend.name} className="rounded-xl px-3 py-2">
+                    <p className="text-sm text-[#1a1a2e]">{friend.name}</p>
+                    <p className="text-xs text-[#6B7280]">{friend.tag}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
-          {/* XP Progress */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-[#6B7280]">XP Progress</span>
-              <span className="font-medium text-[#0747a1] flex items-center gap-1">
-                <Zap className="w-3 h-3" />
-                {user.xp}
-              </span>
-            </div>
-            <Progress value={progressToNextLevel} className="h-2" />
-            <p className="text-xs text-[#6B7280]">
-              {xpToNextLevel} XP to level {user.level + 1}
-            </p>
+          <div className="mt-auto space-y-1 pt-6">
+            <p className="px-2 pb-2 text-[10px] uppercase tracking-wider text-[#6B7280]">Settings</p>
+            {settingsItems.map((item) => {
+              const Icon = item.icon;
+
+              return (
+                <Link
+                  key={`${item.label}-${item.path}`}
+                  to={item.path}
+                  className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-[#6B7280] transition-colors hover:bg-white hover:text-[#1a1a2e]"
+                >
+                  <Icon className="h-4 w-4" />
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+            <Button
+              variant="ghost"
+              onClick={handleLogout}
+              className="mt-2 w-full justify-start gap-2 rounded-xl px-3 py-2 text-sm text-[#6B7280] hover:bg-white hover:text-[#1a1a2e]"
+            >
+              <LogOut className="h-4 w-4" />
+              Logout
+            </Button>
           </div>
-        </div>
+        </aside>
 
-        {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-1">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = location.pathname === item.path;
-
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${isActive
-                  ? 'bg-[#0747a1] text-white'
-                  : 'text-[#6B7280] hover:bg-[#F5F5FA]'
-                  }`}
-              >
-                <Icon className="w-5 h-5" />
-                <span className="font-medium heading-font">{item.label}</span>
-              </Link>
-            );
-          })}
-
-          <Button
-            variant="ghost"
-            onClick={handleLogout}
-            className="w-full justify-start gap-3 text-[#6B7280] hover:bg-[#F5F5FA] hover:text-[#1a1a2e] mt-2"
-          >
-            <LogOut className="w-5 h-5" />
-            <span className="heading-font">Log Out</span>
-          </Button>
-        </nav>
-      </aside>
-
-      {/* Main Content */}
-      <main className="flex-1 overflow-y-auto">
-        {children}
-      </main>
+        <main className="flex-1 overflow-y-auto">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }

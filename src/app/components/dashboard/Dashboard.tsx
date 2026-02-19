@@ -1,19 +1,246 @@
-import { Link } from 'react-router';
+﻿import { Link } from 'react-router';
 import DashboardLayout from '../layout/DashboardLayout';
 import { authService, coursesData, progressService } from '../../services/mockData';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
+import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
-import { Progress } from '../ui/progress';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import {
-  Zap,
-  Target,
-  Flame,
-  TrendingUp,
-  BookOpen,
   ArrowRight,
+  Bell,
+  BookOpen,
+  ChevronRight,
+  Ellipsis,
+  Flame,
+  Search,
   Sparkles,
-  Trophy
+  Target,
+  TrendingUp,
+  Users,
+  Zap,
 } from 'lucide-react';
+
+interface DashboardMainProps {
+  nickname: string;
+  xp: number;
+  level: number;
+  streak: number;
+  completedLessons: number;
+  nextCourse: (typeof coursesData)[number];
+}
+
+function DashboardMain({
+  nickname,
+  xp,
+  level,
+  streak,
+  completedLessons,
+  nextCourse,
+}: DashboardMainProps) {
+  const dashboardAvatarUrl = 'https://i.pinimg.com/736x/7e/cd/1b/7ecd1b3adab5f030728c414dac5f5491.jpg';
+  const featuredCourses = coursesData.slice(0, 3);
+
+  return (
+    <div className="p-4 lg:p-6">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_290px]">
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-[rgba(0,0,0,0.08)] bg-[#FAFAFA] p-3">
+            <div className="relative min-w-[220px] flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6B7280]" />
+              <input
+                type="text"
+                defaultValue=""
+                placeholder="Search your course..."
+                className="h-10 w-full rounded-full border border-[rgba(0,0,0,0.08)] bg-white pl-9 pr-3 text-sm text-[#1a1a2e] outline-none"
+              />
+            </div>
+            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full border border-[rgba(0,0,0,0.08)] bg-white text-[#6B7280]">
+              <Bell className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full border border-[rgba(0,0,0,0.08)] bg-white text-[#6B7280]">
+              <Sparkles className="h-4 w-4" />
+            </Button>
+            <div className="ml-auto flex items-center gap-2 rounded-full border border-[rgba(0,0,0,0.08)] bg-white px-2 py-1">
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={dashboardAvatarUrl} alt={nickname} />
+                <AvatarFallback>{nickname[0]}</AvatarFallback>
+              </Avatar>
+              <span className="pr-2 text-sm text-[#1a1a2e]">{nickname}</span>
+            </div>
+          </div>
+
+          <Card className="overflow-hidden rounded-2xl border-[rgba(0,0,0,0.08)] bg-[#8B5CF6]">
+            <CardContent className="p-6">
+              <p className="text-xs uppercase tracking-wider text-white/80">Online Course</p>
+              <h2 className="mt-2 max-w-md text-3xl leading-tight text-white heading-font">
+                Sharpen Your Skills with Professional Online Courses
+              </h2>
+              <p className="mt-2 text-sm text-white/80">Continue with: {nextCourse.title}</p>
+              <Button className="mt-5 rounded-full bg-white text-[#1a1a2e] hover:bg-white/90">
+                Join Now
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </CardContent>
+          </Card>
+
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+            <Card className="rounded-2xl border-[rgba(0,0,0,0.08)] bg-[#FAFAFA]">
+              <CardContent className="flex items-center justify-between p-4">
+                <div>
+                  <p className="text-xs text-[#6B7280]">24 watched</p>
+                  <p className="text-sm text-[#1a1a2e]">UI/UX Design</p>
+                </div>
+                <Target className="h-4 w-4 text-[#6B7280]" />
+              </CardContent>
+            </Card>
+            <Card className="rounded-2xl border-[rgba(0,0,0,0.08)] bg-[#FAFAFA]">
+              <CardContent className="flex items-center justify-between p-4">
+                <div>
+                  <p className="text-xs text-[#6B7280]">24 watched</p>
+                  <p className="text-sm text-[#1a1a2e]">Branding</p>
+                </div>
+                <Flame className="h-4 w-4 text-[#6B7280]" />
+              </CardContent>
+            </Card>
+            <Card className="rounded-2xl border-[rgba(0,0,0,0.08)] bg-[#FAFAFA]">
+              <CardContent className="flex items-center justify-between p-4">
+                <div>
+                  <p className="text-xs text-[#6B7280]">40 watched</p>
+                  <p className="text-sm text-[#1a1a2e]">Front End</p>
+                </div>
+                <BookOpen className="h-4 w-4 text-[#6B7280]" />
+              </CardContent>
+            </Card>
+          </div>
+
+          <div>
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-lg text-[#1a1a2e] heading-font">Continue Watching</h3>
+              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-[#6B7280]">
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+              {featuredCourses.map((course) => (
+                <Card key={course.id} className="rounded-2xl border-[rgba(0,0,0,0.08)]">
+                  <CardContent className="space-y-3 p-3">
+                    <div className="h-24 rounded-xl bg-[#F5F5FA]" />
+                    <div>
+                      <p className="line-clamp-2 text-sm text-[#1a1a2e]">{course.title}</p>
+                      <p className="mt-1 text-xs text-[#6B7280]">{course.difficulty}</p>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-[#6B7280]">{progressService.getCourseProgress(course.id)}% complete</p>
+                      <span className="text-sm">{course.icon}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+
+          <Card className="rounded-2xl border-[rgba(0,0,0,0.08)]">
+            <CardContent className="p-0">
+              <div className="flex items-center justify-between border-b border-[rgba(0,0,0,0.08)] px-4 py-3">
+                <h3 className="text-lg text-[#1a1a2e] heading-font">Your Lesson</h3>
+                <Link to="/courses" className="text-xs text-[#6B7280] hover:text-[#1a1a2e]">See all</Link>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[520px] text-left">
+                  <thead>
+                    <tr className="text-xs text-[#6B7280]">
+                      <th className="px-4 py-3 font-medium">Mentor</th>
+                      <th className="px-4 py-3 font-medium">Type</th>
+                      <th className="px-4 py-3 font-medium">Desc</th>
+                      <th className="px-4 py-3 font-medium">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border-t border-[rgba(0,0,0,0.08)] text-sm text-[#1a1a2e]">
+                      <td className="px-4 py-3">Padhang Satrio</td>
+                      <td className="px-4 py-3">UI/UX Design</td>
+                      <td className="px-4 py-3">Understand of UI/UX Design</td>
+                      <td className="px-4 py-3">
+                        <Button size="sm" className="h-8 rounded-full bg-[#0747a1] px-3 text-white hover:bg-[#0747a1]/90">
+                          Start
+                        </Button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="space-y-4">
+          <Card className="rounded-2xl border-[rgba(0,0,0,0.08)]">
+            <CardContent className="space-y-4 p-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-base text-[#1a1a2e] heading-font">Statistic</h3>
+                <Ellipsis className="h-4 w-4 text-[#6B7280]" />
+              </div>
+              <div className="flex flex-col items-center">
+                <Avatar className="h-20 w-20 border border-[rgba(0,0,0,0.08)]">
+                  <AvatarImage src={dashboardAvatarUrl} alt={nickname} />
+                  <AvatarFallback>{nickname[0]}</AvatarFallback>
+                </Avatar>
+                <p className="mt-3 text-base text-[#1a1a2e]">Good Morning {nickname}</p>
+                <p className="text-xs text-[#6B7280]">Continue your journey to your target</p>
+              </div>
+              <div className="rounded-2xl bg-[#F5F5FA] p-3">
+                <div className="mb-2 flex items-end gap-2">
+                  <div className="h-8 w-8 rounded-md bg-[#8B5CF6]/30" />
+                  <div className="h-12 w-8 rounded-md bg-[#8B5CF6]/70" />
+                  <div className="h-9 w-8 rounded-md bg-[#8B5CF6]/40" />
+                  <div className="h-14 w-8 rounded-md bg-[#8B5CF6]" />
+                  <div className="h-8 w-8 rounded-md bg-[#8B5CF6]/30" />
+                </div>
+                <div className="flex justify-between text-[10px] text-[#6B7280]">
+                  <span>10-10 Aug</span>
+                  <span>11-20 Aug</span>
+                  <span>21-30 Aug</span>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="rounded-xl bg-[#FAFAFA] p-2 text-[#6B7280]">XP: {xp}</div>
+                <div className="rounded-xl bg-[#FAFAFA] p-2 text-[#6B7280]">Level: {level}</div>
+                <div className="rounded-xl bg-[#FAFAFA] p-2 text-[#6B7280]">Streak: {streak}</div>
+                <div className="rounded-xl bg-[#FAFAFA] p-2 text-[#6B7280]">Lessons: {completedLessons}</div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-2xl border-[rgba(0,0,0,0.08)]">
+            <CardContent className="space-y-3 p-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-base text-[#1a1a2e] heading-font">Your mentor</h3>
+                <Users className="h-4 w-4 text-[#6B7280]" />
+              </div>
+              {[
+                'Padhang Satrio',
+                'Zakir Horizontal',
+                'Leonardo Samuel',
+              ].map((mentor) => (
+                <div key={mentor} className="flex items-center justify-between rounded-xl bg-[#FAFAFA] p-2">
+                  <div>
+                    <p className="text-sm text-[#1a1a2e]">{mentor}</p>
+                    <p className="text-xs text-[#6B7280]">Mentor</p>
+                  </div>
+                  <Button variant="ghost" size="sm" className="h-8 rounded-full border border-[rgba(0,0,0,0.08)] text-xs text-[#6B7280]">
+                    Follow
+                  </Button>
+                </div>
+              ))}
+              <Button variant="ghost" className="w-full rounded-full bg-[#F5F5FA] text-[#6B7280] hover:bg-[#F5F5FA]">
+                See All
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function Dashboard() {
   const user = authService.getCurrentUser();
@@ -21,10 +248,6 @@ export default function Dashboard() {
   if (!user) return null;
 
   const totalLessons = user.completedLessons.length;
-  const overallProgress = Math.min(
-    Math.round((totalLessons / 50) * 100),
-    100
-  );
 
   const coursesWithProgress = coursesData.map(course => ({
     ...course,
@@ -36,238 +259,14 @@ export default function Dashboard() {
 
   return (
     <DashboardLayout>
-      <div className="p-8 max-w-7xl mx-auto">
-        {/* Welcome Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-2 mb-2">
-            <h1 className="text-4xl heading-font" style={{ color: '#1a1a2e' }}>
-              Welcome back, {user.nickname}!
-            </h1>
-            <Sparkles className="w-6 h-6 text-[#FF6B35]" />
-          </div>
-          <p className="text-[#6B7280] text-lg">
-            Keep up the great work on your coding journey
-          </p>
-        </div>
-
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card className="border-[rgba(0,0,0,0.08)] shadow-sm hover:shadow-md transition-shadow">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-[#6B7280] mb-1">Total XP</p>
-                  <p className="text-3xl font-semibold heading-font" style={{ color: '#0747a1' }}>
-                    {user.xp}
-                  </p>
-                </div>
-                <div className="w-12 h-12 rounded-xl bg-[#0747a1]/10 flex items-center justify-center">
-                  <Zap className="w-6 h-6 text-[#0747a1]" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-[rgba(0,0,0,0.08)] shadow-sm hover:shadow-md transition-shadow">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-[#6B7280] mb-1">Current Level</p>
-                  <p className="text-3xl font-semibold heading-font" style={{ color: '#8B5CF6' }}>
-                    {user.level}
-                  </p>
-                </div>
-                <div className="w-12 h-12 rounded-xl bg-[#8B5CF6]/10 flex items-center justify-center">
-                  <Target className="w-6 h-6 text-[#8B5CF6]" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-[rgba(0,0,0,0.08)] shadow-sm hover:shadow-md transition-shadow">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-[#6B7280] mb-1">Day Streak</p>
-                  <p className="text-3xl font-semibold heading-font" style={{ color: '#FF6B35' }}>
-                    {user.streak}
-                  </p>
-                </div>
-                <div className="w-12 h-12 rounded-xl bg-[#FF6B35]/10 flex items-center justify-center">
-                  <Flame className="w-6 h-6 text-[#FF6B35]" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-[rgba(0,0,0,0.08)] shadow-sm hover:shadow-md transition-shadow">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-[#6B7280] mb-1">Lessons Done</p>
-                  <p className="text-3xl font-semibold heading-font" style={{ color: '#10B981' }}>
-                    {totalLessons}
-                  </p>
-                </div>
-                <div className="w-12 h-12 rounded-xl bg-[#10B981]/10 flex items-center justify-center">
-                  <TrendingUp className="w-6 h-6 text-[#10B981]" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Continue Learning */}
-          <div className="lg:col-span-2 space-y-6">
-            <Card className="border-[rgba(0,0,0,0.08)] shadow-sm">
-              <CardHeader>
-                <CardTitle className="heading-font">Continue Learning</CardTitle>
-                <CardDescription>Pick up where you left off</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="p-6 rounded-xl bg-white border-2 border-[#0747a1]">
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-[#0747a1]/10 text-[#0747a1] flex items-center justify-center text-2xl flex-shrink-0">
-                      {nextCourse.icon}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-xl font-semibold heading-font mb-1 text-[#1a1a2e]">
-                        {nextCourse.title}
-                      </h3>
-                      <p className="text-[#6B7280] text-sm mb-4">
-                        {nextCourse.description}
-                      </p>
-                      <div className="space-y-2 mb-4">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-[#6B7280]">Progress</span>
-                          <span className="text-[#0747a1] font-medium">{progressService.getCourseProgress(nextCourse.id)}%</span>
-                        </div>
-                        <Progress
-                          value={progressService.getCourseProgress(nextCourse.id)}
-                          className="h-2 bg-[#F5F5FA]"
-                        />
-                      </div>
-                      <Link to={`/courses/${nextCourse.id}`}>
-                        <Button className="bg-[#0747a1] text-white hover:bg-[#0747a1]/90">
-                          Continue Course
-                          <ArrowRight className="ml-2 w-4 h-4" />
-                        </Button>
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* All Courses */}
-            <Card className="border-[rgba(0,0,0,0.08)] shadow-sm">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="heading-font">Available Courses</CardTitle>
-                  <Link to="/courses">
-                    <Button variant="ghost" size="sm" className="text-[#0747a1]">
-                      View All
-                      <ArrowRight className="ml-1 w-4 h-4" />
-                    </Button>
-                  </Link>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {coursesData.slice(0, 4).map((course) => {
-                    const progress = progressService.getCourseProgress(course.id);
-
-                    return (
-                      <Link
-                        key={course.id}
-                        to={`/courses/${course.id}`}
-                        className="p-4 rounded-xl border border-[rgba(0,0,0,0.08)] hover:border-[#0747a1] hover:shadow-md transition-all group"
-                      >
-                        <div className="flex items-start gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-[#F5F5FA] flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
-                            {course.icon}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h4 className="font-semibold text-[#1a1a2e] mb-1 truncate">
-                              {course.title}
-                            </h4>
-                            <p className="text-xs text-[#6B7280] mb-2">
-                              {course.totalLessons} lessons • {course.difficulty}
-                            </p>
-                            {progress > 0 && (
-                              <Progress value={progress} className="h-1" />
-                            )}
-                          </div>
-                        </div>
-                      </Link>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Recent Achievements */}
-            <Card className="border-[rgba(0,0,0,0.08)] shadow-sm">
-              <CardHeader>
-                <CardTitle className="heading-font flex items-center gap-2">
-                  <Trophy className="w-5 h-5 text-[#F59E0B]" />
-                  Achievements
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {user.achievements.slice(0, 3).map((achievementId) => (
-                    <div
-                      key={achievementId}
-                      className="flex items-center gap-3 p-3 rounded-lg bg-[#F5F5FA]"
-                    >
-                      <div className="w-10 h-10 rounded-full bg-[#F59E0B]/20 flex items-center justify-center text-lg">
-                        🏆
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-[#1a1a2e]">
-                          Achievement Unlocked
-                        </p>
-                        <p className="text-xs text-[#6B7280]">Keep going!</p>
-                      </div>
-                    </div>
-                  ))}
-                  {user.achievements.length === 0 && (
-                    <p className="text-sm text-[#6B7280] text-center py-4">
-                      Complete lessons to earn achievements!
-                    </p>
-                  )}
-                  <Link to="/achievements">
-                    <Button variant="ghost" size="sm" className="w-full text-[#0747a1]">
-                      View All Achievements
-                    </Button>
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Learning Tip */}
-            <Card className="border-[rgba(0,0,0,0.08)] shadow-sm bg-gradient-to-br from-[#FF6B35]/5 to-[#F59E0B]/5">
-              <CardHeader>
-                <CardTitle className="heading-font flex items-center gap-2 text-[#FF6B35]">
-                  <BookOpen className="w-5 h-5" />
-                  Daily Tip
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-[#6B7280]">
-                  💡 Practice coding for at least 30 minutes daily to maintain your streak and build consistent learning habits!
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </div>
+      <DashboardMain
+        nickname={user.nickname}
+        xp={user.xp}
+        level={user.level}
+        streak={user.streak}
+        completedLessons={totalLessons}
+        nextCourse={nextCourse}
+      />
     </DashboardLayout>
   );
 }
