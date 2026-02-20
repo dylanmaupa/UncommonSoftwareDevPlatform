@@ -70,14 +70,14 @@ export default function Profile() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 xl:grid-cols-[300px_minmax(0,1fr)] gap-4">
           {/* Profile Info */}
-          <div className="lg:col-span-1 space-y-6">
+          <div className="space-y-4">
             <Card className="rounded-2xl border-[rgba(0,0,0,0.08)]">
-              <CardContent className="p-6">
+              <CardContent className="p-4">
                 {/* Avatar */}
-                <div className="flex flex-col items-center mb-6">
-                  <Avatar className="w-24 h-24 mb-4">
+                <div className="flex flex-col items-center mb-4">
+                  <Avatar className="w-20 h-20 mb-3">
                     <AvatarImage src={user.avatar} alt={user.nickname} />
                     <AvatarFallback className="text-2xl">{user.nickname[0]}</AvatarFallback>
                   </Avatar>
@@ -116,10 +116,10 @@ export default function Profile() {
                     </div>
                   ) : (
                     <>
-                      <h2 className="text-2xl heading-font text-[#1a1a2e] mb-1">
+                      <h2 className="text-xl heading-font text-[#1a1a2e] mb-1">
                         {user.nickname}
                       </h2>
-                      <p className="text-[#6B7280] mb-3">{user.email}</p>
+                      <p className="text-sm text-[#6B7280] mb-3">{user.email}</p>
                       <Button
                         onClick={() => setIsEditing(true)}
                         size="sm"
@@ -134,7 +134,7 @@ export default function Profile() {
                 </div>
 
                 {/* Level Progress */}
-                <div className="space-y-4">
+                <div className="space-y-3">
                   <div className="p-4 rounded-xl bg-gradient-to-br from-[#0747a1]/10 to-[#8B5CF6]/10">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm text-[#6B7280]">Level</span>
@@ -161,17 +161,17 @@ export default function Profile() {
           </div>
 
           {/* Stats and Progress */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="space-y-4">
             {/* Stats Grid */}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <Card className="rounded-2xl border-[rgba(0,0,0,0.08)]">
-                <CardContent className="p-6">
+                <CardContent className="p-4">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-[#0747a1]/10 flex items-center justify-center">
                       <Zap className="w-5 h-5 text-[#0747a1]" />
                     </div>
                     <div>
-                      <p className="text-2xl font-semibold heading-font text-[#1a1a2e]">
+                      <p className="text-xl font-semibold heading-font text-[#1a1a2e]">
                         {user.xp}
                       </p>
                       <p className="text-xs text-[#6B7280]">Total XP</p>
@@ -181,13 +181,13 @@ export default function Profile() {
               </Card>
 
               <Card className="rounded-2xl border-[rgba(0,0,0,0.08)]">
-                <CardContent className="p-6">
+                <CardContent className="p-4">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-[#FF6B35]/10 flex items-center justify-center">
                       <Flame className="w-5 h-5 text-[#FF6B35]" />
                     </div>
                     <div>
-                      <p className="text-2xl font-semibold heading-font text-[#1a1a2e]">
+                      <p className="text-xl font-semibold heading-font text-[#1a1a2e]">
                         {user.streak}
                       </p>
                       <p className="text-xs text-[#6B7280]">Day Streak</p>
@@ -197,13 +197,13 @@ export default function Profile() {
               </Card>
 
               <Card className="rounded-2xl border-[rgba(0,0,0,0.08)]">
-                <CardContent className="p-6">
+                <CardContent className="p-4">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-[#10B981]/10 flex items-center justify-center">
                       <BookOpen className="w-5 h-5 text-[#10B981]" />
                     </div>
                     <div>
-                      <p className="text-2xl font-semibold heading-font text-[#1a1a2e]">
+                      <p className="text-xl font-semibold heading-font text-[#1a1a2e]">
                         {user.completedLessons.length}
                       </p>
                       <p className="text-xs text-[#6B7280]">Lessons</p>
@@ -213,13 +213,13 @@ export default function Profile() {
               </Card>
 
               <Card className="rounded-2xl border-[rgba(0,0,0,0.08)]">
-                <CardContent className="p-6">
+                <CardContent className="p-4">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-[#F59E0B]/10 flex items-center justify-center">
                       <FolderKanban className="w-5 h-5 text-[#F59E0B]" />
                     </div>
                     <div>
-                      <p className="text-2xl font-semibold heading-font text-[#1a1a2e]">
+                      <p className="text-xl font-semibold heading-font text-[#1a1a2e]">
                         {user.completedProjects.length}
                       </p>
                       <p className="text-xs text-[#6B7280]">Projects</p>
@@ -229,13 +229,13 @@ export default function Profile() {
               </Card>
 
               <Card className="rounded-2xl border-[rgba(0,0,0,0.08)]">
-                <CardContent className="p-6">
+                <CardContent className="p-4">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-[#8B5CF6]/10 flex items-center justify-center">
                       <Trophy className="w-5 h-5 text-[#8B5CF6]" />
                     </div>
                     <div>
-                      <p className="text-2xl font-semibold heading-font text-[#1a1a2e]">
+                      <p className="text-xl font-semibold heading-font text-[#1a1a2e]">
                         {user.achievements.length}
                       </p>
                       <p className="text-xs text-[#6B7280]">Achievements</p>
@@ -245,13 +245,13 @@ export default function Profile() {
               </Card>
 
               <Card className="rounded-2xl border-[rgba(0,0,0,0.08)]">
-                <CardContent className="p-6">
+                <CardContent className="p-4">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-[#06B6D4]/10 flex items-center justify-center">
                       <Target className="w-5 h-5 text-[#06B6D4]" />
                     </div>
                     <div>
-                      <p className="text-2xl font-semibold heading-font text-[#1a1a2e]">
+                      <p className="text-xl font-semibold heading-font text-[#1a1a2e]">
                         {completedCourses.length}
                       </p>
                       <p className="text-xs text-[#6B7280]">Completed</p>
@@ -263,18 +263,18 @@ export default function Profile() {
 
             {/* Courses in Progress */}
             <Card className="rounded-2xl border-[rgba(0,0,0,0.08)]">
-              <CardHeader>
+              <CardHeader className="pb-2">
                 <CardTitle className="heading-font">Courses in Progress</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-0">
                 {coursesInProgress.length > 0 ? (
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {coursesInProgress.map((course) => {
                       const progress = progressService.getCourseProgress(course.id);
                       
                       return (
-                        <div key={course.id} className="flex items-center gap-4">
-                          <div className="w-12 h-12 rounded-lg bg-[#F5F5FA] flex items-center justify-center text-2xl flex-shrink-0">
+                        <div key={course.id} className="flex items-center gap-3 rounded-xl bg-[#FAFAFA] p-2">
+                          <div className="w-10 h-10 rounded-lg bg-[#F5F5FA] flex items-center justify-center text-xl flex-shrink-0">
                             {course.icon}
                           </div>
                           <div className="flex-1 min-w-0">
@@ -303,10 +303,10 @@ export default function Profile() {
             {/* Recent Achievements */}
             {user.achievements.length > 0 && (
               <Card className="rounded-2xl border-[rgba(0,0,0,0.08)]">
-                <CardHeader>
+                <CardHeader className="pb-2">
                   <CardTitle className="heading-font">Recent Achievements</CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pt-0">
                   <div className="flex flex-wrap gap-3">
                     {user.achievements.slice(0, 6).map((achievementId) => (
                       <Badge
