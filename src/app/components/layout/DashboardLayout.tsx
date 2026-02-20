@@ -1,5 +1,16 @@
-import { LuBookOpen, LuFolderKanban, LuLogOut, LuSettings, LuTrophy, LuUser } from 'react-icons/lu';
-﻿import { toast } from 'sonner';
+﻿import { ReactNode } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router';
+import { authService } from '../../services/mockData';
+import {
+  LuBookOpen,
+  LuFolderKanban,
+  LuLayoutDashboard,
+  LuLogOut,
+  LuSettings,
+  LuTrophy,
+  LuUser,
+} from 'react-icons/lu';
+import { toast } from 'sonner';
 import { Button } from '../ui/button';
 
 interface DashboardLayoutProps {
@@ -7,7 +18,7 @@ interface DashboardLayoutProps {
 }
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
-  const location = LuuseLocation();
+  const location = useLocation();
   const navigate = useNavigate();
   const user = authService.getCurrentUser();
 
@@ -17,7 +28,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   }
 
   const overviewItems = [
-    { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
+    { icon: LuLayoutDashboard, label: 'Dashboard', path: '/dashboard' },
     { icon: LuBookOpen, label: 'Courses', path: '/courses' },
     { icon: LuFolderKanban, label: 'Projects', path: '/projects' },
     { icon: LuTrophy, label: 'Achievements', path: '/achievements' },
@@ -96,7 +107,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
 
           <div className="mt-auto space-y-1 pt-8">
-            <p className="px-2 pb-2 text-[10px] font-semibold uppercase tracking-wider text-[#6B7280]/70">LuSettings</p>
+            <p className="px-2 pb-2 text-[10px] font-semibold uppercase tracking-wider text-[#6B7280]/70">Settings</p>
             <Link
               to="/settings"
               className={`flex items-center gap-2 rounded-lg px-2 py-2 text-sm transition-colors ${
@@ -106,7 +117,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               }`}
             >
               <LuSettings className="h-4 w-4" />
-              <span>LuSettings</span>
+              <span>Settings</span>
             </Link>
             <Button
               variant="ghost"
@@ -119,9 +130,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
         </aside>
 
-        <main className="flex-1 overflow-y-auto">
-          {children}
-        </main>
+        <main className="flex-1 overflow-y-auto">{children}</main>
       </div>
     </div>
   );

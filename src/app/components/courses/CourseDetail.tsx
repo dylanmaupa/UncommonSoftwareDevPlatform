@@ -1,9 +1,23 @@
-import { LuBookOpen, LuChevronRight, LuCircle, LuClock, LuLink, LuTarget } from 'react-icons/lu';
-
+import { Link, useNavigate, useParams } from 'react-router';
+import DashboardLayout from '../layout/DashboardLayout';
+import { coursesData, progressService } from '../../services/mockData';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Badge } from '../ui/badge';
+import { Button } from '../ui/button';
+import { Progress } from '../ui/progress';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
+import {
+  LuArrowLeft,
+  LuBookOpen,
+  LuCheckCircle2,
+  LuChevronRight,
+  LuCircle,
+  LuClock,
+  LuTarget,
+} from 'react-icons/lu';
 
 export default function CourseDetail() {
-  const { courseId } = LuuseParams();
+  const { courseId } = useParams();
   const navigate = useNavigate();
   
   const course = coursesData.find(c => c.id === courseId);
@@ -13,9 +27,9 @@ export default function CourseDetail() {
       <DashboardLayout>
         <div className="p-8 text-center">
           <p className="text-[#6B7280]">Course not found</p>
-          <LuLink to="/courses">
+          <Link to="/courses">
             <Button className="mt-4">Back to Courses</Button>
-          </LuLink>
+          </Link>
         </div>
       </DashboardLayout>
     );
@@ -43,7 +57,7 @@ export default function CourseDetail() {
           onClick={() => navigate('/courses')}
           className="mb-6 -ml-4"
         >
-          <ArrowLeft className="w-4 h-4 mr-2" />
+          <LuArrowLeft className="w-4 h-4 mr-2" />
           Back to Courses
         </Button>
 
@@ -94,10 +108,10 @@ export default function CourseDetail() {
 
         {/* Modules and Lessons */}
         <Card className="border-[rgba(0,0,0,0.08)] shadow-sm">
-          <LuCardHeader>
+          <CardHeader>
             <CardTitle className="heading-font">Course Content</CardTitle>
-          </LuCardHeader>
-          <LuCardContent>
+          </CardHeader>
+          <CardContent>
             {course.modules.length === 0 ? (
               <div className="text-center py-8 text-[#6B7280]">
                 <p>This course content is coming soon!</p>
@@ -137,7 +151,7 @@ export default function CourseDetail() {
                             const isCompleted = progressService.isLessonCompleted(lesson.id);
                             
                             return (
-                              <LuLink
+                              <Link
                                 key={lesson.id}
                                 to={`/courses/${courseId}/modules/${module.id}/lessons/${lesson.id}`}
                                 className="flex items-center gap-3 p-3 rounded-lg hover:bg-white border border-transparent hover:border-[rgba(0,0,0,0.08)] transition-all group"
@@ -160,7 +174,7 @@ export default function CourseDetail() {
                                   </p>
                                 </div>
                                 <LuChevronRight className="w-4 h-4 text-[#6B7280] group-hover:text-[#0747a1] group-hover:translate-x-1 transition-all" />
-                              </LuLink>
+                              </Link>
                             );
                           })}
                         </div>
@@ -170,7 +184,7 @@ export default function CourseDetail() {
                 })}
               </Accordion>
             )}
-          </LuCardContent>
+          </CardContent>
         </Card>
       </div>
     </DashboardLayout>

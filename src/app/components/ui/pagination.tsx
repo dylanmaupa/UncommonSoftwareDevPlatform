@@ -1,4 +1,4 @@
-import { LuChevronLeft, LuChevronRight } from 'react-icons/lu';
+import { LuChevronLeft, LuChevronRight, LuEllipsis } from 'react-icons/lu';
 import * as React from "react";
 
 
@@ -107,7 +107,7 @@ function PaginationEllipsis({
       className={cn("flex size-9 items-center justify-center", className)}
       {...props}
     >
-      <LuMoreHorizontalIcon className="size-4" />
+      <LuEllipsis className="size-4" />
       <span className="sr-only">More pages</span>
     </span>
   );

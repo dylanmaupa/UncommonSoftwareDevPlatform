@@ -1,39 +1,53 @@
-import { LuChevronRight, LuEye, LuEyeOff, LuLightbulb, LuPlay, LuTrophy, LuZap } from 'react-icons/lu';
-
+﻿import { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router';
+import Editor from '@monaco-editor/react';
 import { motion } from 'motion/react';
+import { toast } from 'sonner';
+import DashboardLayout from '../layout/DashboardLayout';
+import { authService, coursesData, progressService } from '../../services/mockData';
+import { Button } from '../ui/button';
+import { Badge } from '../ui/badge';
+import { Card, CardContent } from '../ui/card';
+import {
+  LuArrowLeft,
+  LuCheckCircle2,
+  LuChevronRight,
+  LuEye,
+  LuEyeOff,
+  LuLightbulb,
+  LuPlay,
+  LuTrophy,
+  LuZap,
+} from 'react-icons/lu';
 
 export default function LessonView() {
   const { courseId, moduleId, lessonId } = useParams();
   const navigate = useNavigate();
   const user = authService.getCurrentUser();
 
-  const [code, setCode] = LuuseState('');
-  const [output, setOutput] = LuuseState('');
-  const [showHint, setShowHint] = LuuseState(false);
-  const [showSolution, setShowSolution] = LuuseState(false);
-  const [isRunning, setIsRunning] = LuuseState(false);
-  const [showXPAnimation, setShowXPAnimation] = LuuseState(false);
+  const [code, setCode] = useState('');
+  const [output, setOutput] = useState('');
+  const [showHint, setShowHint] = useState(false);
+  const [showSolution, setShowSolution] = useState(false);
+  const [isRunning, setIsRunning] = useState(false);
+  const [showXPAnimation, setShowXPAnimation] = useState(false);
 
-  // Find the lesson
   const course = coursesData.find(c => c.id === courseId);
   const module = course?.modules.find(m => m.id === moduleId);
   const lesson = module?.lessons.find(l => l.id === lessonId);
-  
-  const isCompleted = lesson ? LuprogressService.isLessonCompleted(lesson.id) : false;
 
-  // Find next lesson
+  const isCompleted = lesson ? progressService.isLessonCompleted(lesson.id) : false;
+
   let nextLesson: { courseId: string; moduleId: string; lessonId: string } | null = null;
   if (course && module && lesson) {
     const currentLessonIndex = module.lessons.findIndex(l => l.id === lesson.id);
     if (currentLessonIndex < module.lessons.length - 1) {
-      // Next lesson in same module
       nextLesson = {
         courseId: course.id,
         moduleId: module.id,
         lessonId: module.lessons[currentLessonIndex + 1].id,
       };
     } else {
-      // First lesson of next module
       const currentModuleIndex = course.modules.findIndex(m => m.id === module.id);
       if (currentModuleIndex < course.modules.length - 1) {
         const nextMod = course.modules[currentModuleIndex + 1];
@@ -71,13 +85,12 @@ export default function LessonView() {
     setIsRunning(true);
     setOutput('Running code...\n');
 
-    // Simulate code execution
     setTimeout(() => {
       setOutput(
-        `✓ Code executed successfully!\n\nOutput:\n-------------------\n` +
-        `// This is a simulated output\n` +
-        `// In a real environment, your ${lesson.language} code would run here\n\n` +
-        `Console output would appear here based on your code.`
+        `Code executed successfully!\n\nOutput:\n-------------------\n` +
+          `// This is a simulated output\n` +
+          `// In a real environment, your ${lesson.language} code would run here\n\n` +
+          `Console output would appear here based on your code.`
       );
       setIsRunning(false);
     }, 800);
@@ -90,18 +103,17 @@ export default function LessonView() {
     }
 
     setIsRunning(true);
-    
+
     setTimeout(() => {
-      // Simulate checking code
-      const isCorrect = Math.random() > 0.3; // 70% success rate for demo
-      
+      const isCorrect = Math.random() > 0.3;
+
       if (isCorrect) {
-        LuprogressService.completeLesson(lesson.id, lesson.xpReward);
+        progressService.completeLesson(lesson.id, lesson.xpReward);
         setShowXPAnimation(true);
-        
+
         toast.success(
           <div>
-            <p className="font-semibold">🎉 Lesson Complete!</p>
+            <p className="font-semibold">Lesson Complete!</p>
             <p className="text-sm">+{lesson.xpReward} XP earned</p>
           </div>
         );
@@ -117,14 +129,13 @@ export default function LessonView() {
           </div>
         );
       }
-      
+
       setIsRunning(false);
     }, 1000);
   };
 
   return (
     <DashboardLayout>
-      {/* XP Animation */}
       {showXPAnimation && (
         <motion.div
           initial={{ opacity: 0, y: 50, scale: 0.5 }}
@@ -145,24 +156,17 @@ export default function LessonView() {
       )}
 
       <div className="flex flex-col h-screen">
-        {/* Top Bar */}
         <div className="bg-white border-b border-[rgba(0,0,0,0.08)] px-6 py-4">
           <div className="flex items-center justify-between max-w-[1800px] mx-auto">
             <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate(`/courses/${courseId}`)}
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
+              <Button variant="ghost" size="sm" onClick={() => navigate(`/courses/${courseId}`)}>
+                <LuArrowLeft className="w-4 h-4 mr-2" />
                 Back to Course
               </Button>
-              <div className="h-6 w-px bg-[rgba(0,0,0,0.08)]"></div>
+              <div className="h-6 w-px bg-[rgba(0,0,0,0.08)]" />
               <div>
                 <h2 className="font-semibold text-[#1a1a2e]">{lesson.title}</h2>
-                <p className="text-xs text-[#6B7280]">
-                  {module.title} • {course.title}
-                </p>
+                <p className="text-xs text-[#6B7280]">{module.title} - {course.title}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -180,25 +184,17 @@ export default function LessonView() {
           </div>
         </div>
 
-        {/* Main Content: Split View */}
         <div className="flex-1 flex overflow-hidden">
-          {/* Left: Lesson Content */}
           <div className="w-1/2 overflow-y-auto bg-white p-8 border-r border-[rgba(0,0,0,0.08)]">
             <div className="max-w-2xl mx-auto">
-              {/* Lesson Content */}
               <div className="prose prose-slate max-w-none mb-8">
-                <div className="whitespace-pre-wrap text-[#1a1a2e] leading-relaxed">
-                  {lesson.content}
-                </div>
+                <div className="whitespace-pre-wrap text-[#1a1a2e] leading-relaxed">{lesson.content}</div>
               </div>
 
-              {/* Code Example */}
               <Card className="mb-8 border-[rgba(0,0,0,0.08)] overflow-hidden">
                 <div className="bg-[#1a1a2e] px-4 py-2 flex items-center justify-between">
                   <span className="text-sm text-white/70">Example</span>
-                  <Badge className="bg-white/10 text-white text-xs">
-                    {lesson.language}
-                  </Badge>
+                  <Badge className="bg-white/10 text-white text-xs">{lesson.language}</Badge>
                 </div>
                 <div className="bg-[#1e1e1e]">
                   <Editor
@@ -218,7 +214,6 @@ export default function LessonView() {
                 </div>
               </Card>
 
-              {/* Exercise Prompt */}
               <Card className="border-[rgba(91,79,255,0.2)] bg-[#0747a1]/5">
                 <CardContent className="p-6">
                   <div className="flex items-start gap-3">
@@ -226,18 +221,13 @@ export default function LessonView() {
                       <LuTrophy className="w-4 h-4 text-white" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-[#1a1a2e] mb-2">
-                        Your Challenge
-                      </h3>
-                      <p className="text-sm text-[#6B7280]">
-                        {lesson.exercise.prompt}
-                      </p>
+                      <h3 className="font-semibold text-[#1a1a2e] mb-2">Your Challenge</h3>
+                      <p className="text-sm text-[#6B7280]">{lesson.exercise.prompt}</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Hint Section */}
               <div className="mt-6">
                 <Button
                   variant="outline"
@@ -252,14 +242,13 @@ export default function LessonView() {
                   <Card className="mt-3 border-[#F59E0B]/20 bg-[#F59E0B]/5">
                     <CardContent className="p-4">
                       <p className="text-sm text-[#6B7280]">
-                        💡 Try breaking down the problem into smaller steps. Make sure to use the correct variable types and syntax.
+                        Try breaking down the problem into smaller steps. Make sure to use the correct variable types and syntax.
                       </p>
                     </CardContent>
                   </Card>
                 )}
               </div>
 
-              {/* Solution Toggle */}
               <div className="mt-4">
                 <Button
                   variant="outline"
@@ -296,9 +285,7 @@ export default function LessonView() {
             </div>
           </div>
 
-          {/* Right: Code Editor */}
           <div className="w-1/2 flex flex-col bg-[#1e1e1e]">
-            {/* Editor */}
             <div className="flex-1 overflow-hidden">
               <Editor
                 height="100%"
@@ -317,7 +304,6 @@ export default function LessonView() {
               />
             </div>
 
-            {/* Action Buttons */}
             <div className="bg-[#252525] px-6 py-4 border-t border-[#3e3e3e] flex items-center gap-3">
               <Button
                 onClick={handleRun}
@@ -328,11 +314,7 @@ export default function LessonView() {
                 <LuPlay className="w-4 h-4 mr-2" />
                 Run Code
               </Button>
-              <Button
-                onClick={handleSubmit}
-                disabled={isRunning}
-                style={{ backgroundColor: '#0747a1' }}
-              >
+              <Button onClick={handleSubmit} disabled={isRunning} style={{ backgroundColor: '#0747a1' }}>
                 <LuCheckCircle2 className="w-4 h-4 mr-2" />
                 {isCompleted ? 'Completed' : 'Submit'}
               </Button>
@@ -348,14 +330,11 @@ export default function LessonView() {
               )}
             </div>
 
-            {/* Output Console */}
             <div className="h-48 bg-[#1e1e1e] border-t border-[#3e3e3e] overflow-auto">
               <div className="px-6 py-3 bg-[#252525] border-b border-[#3e3e3e]">
                 <span className="text-sm text-white/70">Console Output</span>
               </div>
-              <pre className="p-6 text-sm text-white/90 font-mono">
-                {output || '// Run your code to see output here'}
-              </pre>
+              <pre className="p-6 text-sm text-white/90 font-mono">{output || '// Run your code to see output here'}</pre>
             </div>
           </div>
         </div>
