@@ -1,22 +1,5 @@
-import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router';
-import DashboardLayout from '../layout/DashboardLayout';
-import { projectsData, progressService } from '../../services/mockData';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Button } from '../ui/button';
-import { Input } from '../ui/input';
-import { Label } from '../ui/label';
-import { Badge } from '../ui/badge';
-import { toast } from 'sonner';
-import { 
-  ArrowLeft, 
-  Rocket, 
-  CheckCircle2, 
-  Zap, 
-  Upload,
-  ExternalLink,
-  Github
-} from 'lucide-react';
+import { LuExternalLink, LuGithub, LuRocket, LuUpload, LuZap } from 'react-icons/lu';
+
 
 export default function ProjectDetail() {
   const { projectId } = useParams();
@@ -82,14 +65,14 @@ export default function ProjectDetail() {
         <div className="bg-gradient-to-br from-[#FF6B35] to-[#F59E0B] rounded-2xl p-8 text-white mb-8">
           <div className="flex items-start gap-6">
             <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center flex-shrink-0">
-              <Rocket className="w-8 h-8" />
+              <LuRocket className="w-8 h-8" />
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-2">
                 <h1 className="text-3xl heading-font">{project.title}</h1>
                 {isCompleted && (
                   <Badge className="bg-[#10B981] text-white">
-                    <CheckCircle2 className="w-3 h-3 mr-1" />
+                    <LuCheckCircle2 className="w-3 h-3 mr-1" />
                     Completed
                   </Badge>
                 )}
@@ -102,7 +85,7 @@ export default function ProjectDetail() {
                   {project.difficulty}
                 </Badge>
                 <div className="flex items-center gap-1 bg-white/20 px-3 py-1 rounded-lg">
-                  <Zap className="w-4 h-4" />
+                  <LuZap className="w-4 h-4" />
                   <span className="font-semibold">+{project.xpReward} XP</span>
                 </div>
               </div>
@@ -115,10 +98,10 @@ export default function ProjectDetail() {
           {/* Instructions */}
           <div className="lg:col-span-2 space-y-6">
             <Card className="border-[rgba(0,0,0,0.08)]">
-              <CardHeader>
+              <LuCardHeader>
                 <CardTitle className="heading-font">Project Brief</CardTitle>
-              </CardHeader>
-              <CardContent>
+              </LuCardHeader>
+              <LuCardContent>
                 <div className="space-y-4">
                   {project.instructions.map((instruction, index) => (
                     <div key={index} className="flex gap-3">
@@ -131,20 +114,20 @@ export default function ProjectDetail() {
                     </div>
                   ))}
                 </div>
-              </CardContent>
+              </LuCardContent>
             </Card>
 
             {/* Submission Form */}
             <Card className="border-[rgba(0,0,0,0.08)]">
-              <CardHeader>
+              <LuCardHeader>
                 <CardTitle className="heading-font">Submit Your Project</CardTitle>
-              </CardHeader>
-              <CardContent>
+              </LuCardHeader>
+              <LuCardContent>
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="github-url">GitHub Repository URL</Label>
                     <div className="relative">
-                      <Github className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#6B7280]" />
+                      <LuGithub className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#6B7280]" />
                       <Input
                         id="github-url"
                         type="url"
@@ -169,12 +152,12 @@ export default function ProjectDetail() {
                   >
                     {isCompleted ? (
                       <>
-                        <CheckCircle2 className="w-4 h-4 mr-2" />
+                        <LuCheckCircle2 className="w-4 h-4 mr-2" />
                         Project Completed
                       </>
                     ) : (
                       <>
-                        <Upload className="w-4 h-4 mr-2" />
+                        <LuUpload className="w-4 h-4 mr-2" />
                         {isSubmitting ? 'Submitting...' : 'Submit Project'}
                       </>
                     )}
@@ -189,10 +172,10 @@ export default function ProjectDetail() {
                     className="flex items-center justify-center gap-2 mt-3 text-sm text-[#0747a1] hover:underline"
                   >
                     View your submission
-                    <ExternalLink className="w-3 h-3" />
+                    <LuExternalLink className="w-3 h-3" />
                   </a>
                 )}
-              </CardContent>
+              </LuCardContent>
             </Card>
           </div>
 
@@ -200,10 +183,10 @@ export default function ProjectDetail() {
           <div className="space-y-6">
             {/* Skills */}
             <Card className="border-[rgba(0,0,0,0.08)]">
-              <CardHeader>
+              <LuCardHeader>
                 <CardTitle className="heading-font text-lg">Skills You'll Practice</CardTitle>
-              </CardHeader>
-              <CardContent>
+              </LuCardHeader>
+              <LuCardContent>
                 <div className="flex flex-wrap gap-2">
                   {project.skills.map((skill, index) => (
                     <Badge
@@ -214,20 +197,20 @@ export default function ProjectDetail() {
                     </Badge>
                   ))}
                 </div>
-              </CardContent>
+              </LuCardContent>
             </Card>
 
             {/* Tips */}
             <Card className="border-[rgba(0,0,0,0.08)] bg-gradient-to-br from-[#0747a1]/5 to-[#8B5CF6]/5">
-              <CardHeader>
+              <LuCardHeader>
                 <CardTitle className="heading-font text-lg">Tips</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3 text-sm text-[#6B7280]">
+              </LuCardHeader>
+              <LuCardContent className="space-y-3 text-sm text-[#6B7280]">
                 <p>✅ Break the project into smaller tasks</p>
                 <p>✅ Test your code frequently</p>
                 <p>✅ Write clean, readable code</p>
                 <p>✅ Add comments to explain your logic</p>
-              </CardContent>
+              </LuCardContent>
             </Card>
           </div>
         </div>

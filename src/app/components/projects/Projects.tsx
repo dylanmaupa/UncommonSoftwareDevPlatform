@@ -1,9 +1,4 @@
-import { Link } from 'react-router';
-import DashboardLayout from '../layout/DashboardLayout';
-import { projectsData, progressService } from '../../services/mockData';
-import { Card, CardContent } from '../ui/card';
-import { Badge } from '../ui/badge';
-import { CheckCircle2, Rocket, Zap, ArrowRight } from 'lucide-react';
+import { LuArrowRight, LuRocket, LuZap } from 'react-icons/lu';
 
 export default function Projects() {
   const getProjectImage = (title: string) => {
@@ -73,7 +68,7 @@ export default function Projects() {
                         </p>
                       </div>
                       <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#FF6B35] to-[#F59E0B] flex items-center justify-center flex-shrink-0">
-                        <Rocket className="w-4 h-4 text-white" />
+                        <LuRocket className="w-4 h-4 text-white" />
                       </div>
                     </div>
 
@@ -100,11 +95,11 @@ export default function Projects() {
                           {project.difficulty}
                         </Badge>
                         <div className="flex items-center gap-1 text-xs text-[#0747a1]">
-                          <Zap className="w-4 h-4" />
+                          <LuZap className="w-4 h-4" />
                           <span className="font-semibold">+{project.xpReward}</span>
                         </div>
                       </div>
-                      <ArrowRight className="w-4 h-4 text-[#6B7280] group-hover:text-[#0747a1] group-hover:translate-x-1 transition-all" />
+                      <LuArrowRight className="w-4 h-4 text-[#6B7280] group-hover:text-[#0747a1] group-hover:translate-x-1 transition-all" />
                     </div>
                   </CardContent>
                 </Card>

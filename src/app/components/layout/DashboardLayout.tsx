@@ -1,16 +1,5 @@
-﻿import { ReactNode } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router';
-import { authService } from '../../services/mockData';
-import {
-  LayoutDashboard,
-  BookOpen,
-  FolderKanban,
-  Trophy,
-  User,
-  Settings,
-  LogOut,
-} from 'lucide-react';
-import { toast } from 'sonner';
+import { LuBookOpen, LuFolderKanban, LuLogOut, LuSettings, LuTrophy, LuUser } from 'react-icons/lu';
+﻿import { toast } from 'sonner';
 import { Button } from '../ui/button';
 
 interface DashboardLayoutProps {
@@ -18,7 +7,7 @@ interface DashboardLayoutProps {
 }
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
-  const location = useLocation();
+  const location = LuuseLocation();
   const navigate = useNavigate();
   const user = authService.getCurrentUser();
 
@@ -29,10 +18,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const overviewItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-    { icon: BookOpen, label: 'Courses', path: '/courses' },
-    { icon: FolderKanban, label: 'Projects', path: '/projects' },
-    { icon: Trophy, label: 'Achievements', path: '/achievements' },
-    { icon: User, label: 'Profile', path: '/profile' },
+    { icon: LuBookOpen, label: 'Courses', path: '/courses' },
+    { icon: LuFolderKanban, label: 'Projects', path: '/projects' },
+    { icon: LuTrophy, label: 'Achievements', path: '/achievements' },
+    { icon: LuUser, label: 'Profile', path: '/profile' },
   ];
 
   const friends = [
@@ -107,7 +96,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
 
           <div className="mt-auto space-y-1 pt-8">
-            <p className="px-2 pb-2 text-[10px] font-semibold uppercase tracking-wider text-[#6B7280]/70">Settings</p>
+            <p className="px-2 pb-2 text-[10px] font-semibold uppercase tracking-wider text-[#6B7280]/70">LuSettings</p>
             <Link
               to="/settings"
               className={`flex items-center gap-2 rounded-lg px-2 py-2 text-sm transition-colors ${
@@ -116,15 +105,15 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   : 'text-[#6B7280] hover:bg-[#F5F5FA] hover:text-[#1a1a2e]'
               }`}
             >
-              <Settings className="h-4 w-4" />
-              <span>Settings</span>
+              <LuSettings className="h-4 w-4" />
+              <span>LuSettings</span>
             </Link>
             <Button
               variant="ghost"
               onClick={handleLogout}
               className="mt-1 w-full justify-start gap-2 rounded-lg px-2 py-2 text-sm text-[#FF6B35] hover:bg-[#F5F5FA] hover:text-[#FF6B35]"
             >
-              <LogOut className="h-4 w-4" />
+              <LuLogOut className="h-4 w-4" />
               Logout
             </Button>
           </div>

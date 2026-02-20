@@ -1,11 +1,5 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router';
-import { authService } from '../../services/mockData';
-import { Button } from '../ui/button';
-import { Input } from '../ui/input';
-import { Label } from '../ui/label';
-import { toast } from 'sonner';
-import { Code2, Rocket } from 'lucide-react';
+import { LuRocket } from 'react-icons/lu';
+
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -36,7 +30,7 @@ export default function Signup() {
         {/* Logo and Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-[#0747a1] to-[#8B5CF6] mb-4">
-            <Rocket className="w-8 h-8 text-white" />
+            <LuRocket className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-4xl mb-2 heading-font" style={{ color: '#1a1a2e' }}>
             Start Your Journey

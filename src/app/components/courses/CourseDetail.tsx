@@ -1,23 +1,9 @@
-import { useParams, Link, useNavigate } from 'react-router';
-import DashboardLayout from '../layout/DashboardLayout';
-import { coursesData, progressService } from '../../services/mockData';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Button } from '../ui/button';
-import { Progress } from '../ui/progress';
-import { Badge } from '../ui/badge';
-import { 
-  ArrowLeft, 
-  BookOpen, 
-  CheckCircle2, 
-  Circle, 
-  Clock,
-  Target,
-  ChevronRight
-} from 'lucide-react';
+import { LuBookOpen, LuChevronRight, LuCircle, LuClock, LuLink, LuTarget } from 'react-icons/lu';
+
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
 
 export default function CourseDetail() {
-  const { courseId } = useParams();
+  const { courseId } = LuuseParams();
   const navigate = useNavigate();
   
   const course = coursesData.find(c => c.id === courseId);
@@ -27,9 +13,9 @@ export default function CourseDetail() {
       <DashboardLayout>
         <div className="p-8 text-center">
           <p className="text-[#6B7280]">Course not found</p>
-          <Link to="/courses">
+          <LuLink to="/courses">
             <Button className="mt-4">Back to Courses</Button>
-          </Link>
+          </LuLink>
         </div>
       </DashboardLayout>
     );
@@ -81,15 +67,15 @@ export default function CourseDetail() {
               {/* Meta Info */}
               <div className="flex items-center gap-6 text-sm mb-6">
                 <div className="flex items-center gap-2">
-                  <BookOpen className="w-5 h-5" />
+                  <LuBookOpen className="w-5 h-5" />
                   <span>{totalLessons} lessons</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Clock className="w-5 h-5" />
+                  <LuClock className="w-5 h-5" />
                   <span>{course.estimatedHours} hours</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Target className="w-5 h-5" />
+                  <LuTarget className="w-5 h-5" />
                   <span>{completedLessons}/{totalLessons} completed</span>
                 </div>
               </div>
@@ -108,10 +94,10 @@ export default function CourseDetail() {
 
         {/* Modules and Lessons */}
         <Card className="border-[rgba(0,0,0,0.08)] shadow-sm">
-          <CardHeader>
+          <LuCardHeader>
             <CardTitle className="heading-font">Course Content</CardTitle>
-          </CardHeader>
-          <CardContent>
+          </LuCardHeader>
+          <LuCardContent>
             {course.modules.length === 0 ? (
               <div className="text-center py-8 text-[#6B7280]">
                 <p>This course content is coming soon!</p>
@@ -151,16 +137,16 @@ export default function CourseDetail() {
                             const isCompleted = progressService.isLessonCompleted(lesson.id);
                             
                             return (
-                              <Link
+                              <LuLink
                                 key={lesson.id}
                                 to={`/courses/${courseId}/modules/${module.id}/lessons/${lesson.id}`}
                                 className="flex items-center gap-3 p-3 rounded-lg hover:bg-white border border-transparent hover:border-[rgba(0,0,0,0.08)] transition-all group"
                               >
                                 <div className="flex-shrink-0">
                                   {isCompleted ? (
-                                    <CheckCircle2 className="w-5 h-5 text-[#10B981]" />
+                                    <LuCheckCircle2 className="w-5 h-5 text-[#10B981]" />
                                   ) : (
-                                    <Circle className="w-5 h-5 text-[#6B7280]" />
+                                    <LuCircle className="w-5 h-5 text-[#6B7280]" />
                                   )}
                                 </div>
                                 <div className="flex-1 min-w-0">
@@ -173,8 +159,8 @@ export default function CourseDetail() {
                                     +{lesson.xpReward} XP
                                   </p>
                                 </div>
-                                <ChevronRight className="w-4 h-4 text-[#6B7280] group-hover:text-[#0747a1] group-hover:translate-x-1 transition-all" />
-                              </Link>
+                                <LuChevronRight className="w-4 h-4 text-[#6B7280] group-hover:text-[#0747a1] group-hover:translate-x-1 transition-all" />
+                              </LuLink>
                             );
                           })}
                         </div>
@@ -184,7 +170,7 @@ export default function CourseDetail() {
                 })}
               </Accordion>
             )}
-          </CardContent>
+          </LuCardContent>
         </Card>
       </div>
     </DashboardLayout>

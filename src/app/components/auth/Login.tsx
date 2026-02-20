@@ -1,11 +1,5 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router';
-import { authService } from '../../services/mockData';
-import { Button } from '../ui/button';
-import { Input } from '../ui/input';
-import { Label } from '../ui/label';
-import { toast } from 'sonner';
-import { Code2, Sparkles } from 'lucide-react';
+import { LuSparkles } from 'react-icons/lu';
+
 
 export default function Login() {
   const navigate = useNavigate();
@@ -96,7 +90,7 @@ export default function Login() {
           {/* Demo Account Info */}
           <div className="mt-6 p-4 rounded-xl bg-[#F5F5FA] border border-[rgba(91,79,255,0.2)]">
             <div className="flex items-start gap-2">
-              <Sparkles className="w-5 h-5 text-[#0747a1] flex-shrink-0 mt-0.5" />
+              <LuSparkles className="w-5 h-5 text-[#0747a1] flex-shrink-0 mt-0.5" />
               <div className="text-sm">
                 <p className="font-medium text-[#1a1a2e] mb-1">Try the demo account:</p>
                 <p className="text-[#6B7280]">

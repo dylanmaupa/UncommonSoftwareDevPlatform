@@ -1,30 +1,6 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router';
-import DashboardLayout from '../layout/DashboardLayout';
-import { authService } from '../../services/mockData';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
-import { Button } from '../ui/button';
-import { Input } from '../ui/input';
-import { Label } from '../ui/label';
-import { toast } from 'sonner';
-import { 
-  Trash2, 
-  AlertCircle,
-  Key,
-  User as UserIcon,
-  Save
-} from 'lucide-react';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '../ui/alert-dialog';
+import { LuKey, LuSave, LuUser } from 'react-icons/lu';
+
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 
 export default function Settings() {
   const navigate = useNavigate();
@@ -77,16 +53,16 @@ export default function Settings() {
         <div className="space-y-6">
           {/* Account Information */}
           <Card className="rounded-2xl border-[rgba(0,0,0,0.08)]">
-            <CardHeader>
+            <LuCardHeader>
               <div className="flex items-center gap-2">
-                <UserIcon className="w-5 h-5 text-[#0747a1]" />
-                <CardTitle className="heading-font">Account Information</CardTitle>
+                <LuUser className="w-5 h-5 text-[#0747a1]" />
+                <LuCardTitle className="heading-font">Account Information</LuCardTitle>
               </div>
               <CardDescription>
                 Your basic account details
               </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+            </LuCardHeader>
+            <LuCardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Email</Label>
@@ -131,21 +107,21 @@ export default function Settings() {
                   />
                 </div>
               </div>
-            </CardContent>
+            </LuCardContent>
           </Card>
 
           {/* Change Password */}
           <Card className="rounded-2xl border-[rgba(0,0,0,0.08)]">
-            <CardHeader>
+            <LuCardHeader>
               <div className="flex items-center gap-2">
-                <Key className="w-5 h-5 text-[#0747a1]" />
-                <CardTitle className="heading-font">Change Password</CardTitle>
+                <LuKey className="w-5 h-5 text-[#0747a1]" />
+                <LuCardTitle className="heading-font">Change Password</LuCardTitle>
               </div>
               <CardDescription>
                 Update your password to keep your account secure
               </CardDescription>
-            </CardHeader>
-            <CardContent>
+            </LuCardHeader>
+            <LuCardContent>
               <form onSubmit={handleChangePassword} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="old-password">Current Password</Label>
@@ -190,25 +166,25 @@ export default function Settings() {
                   className="rounded-xl"
                   style={{ backgroundColor: '#0747a1' }}
                 >
-                  <Save className="w-4 h-4 mr-2" />
+                  <LuSave className="w-4 h-4 mr-2" />
                   Update Password
                 </Button>
               </form>
-            </CardContent>
+            </LuCardContent>
           </Card>
 
           {/* Danger Zone */}
           <Card className="rounded-2xl border-[#EF4444] bg-[#EF4444]/5">
-            <CardHeader>
+            <LuCardHeader>
               <div className="flex items-center gap-2">
-                <AlertCircle className="w-5 h-5 text-[#EF4444]" />
-                <CardTitle className="heading-font text-[#EF4444]">Danger Zone</CardTitle>
+                <LuAlertCircle className="w-5 h-5 text-[#EF4444]" />
+                <LuCardTitle className="heading-font text-[#EF4444]">Danger Zone</LuCardTitle>
               </div>
               <CardDescription>
                 Irreversible actions for your account
               </CardDescription>
-            </CardHeader>
-            <CardContent>
+            </LuCardHeader>
+            <LuCardContent>
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <h4 className="font-semibold text-[#1a1a2e] mb-1">
@@ -254,12 +230,12 @@ export default function Settings() {
                   </AlertDialogContent>
                 </AlertDialog>
               </div>
-            </CardContent>
+            </LuCardContent>
           </Card>
 
           {/* About */}
           <Card className="rounded-2xl border-[rgba(0,0,0,0.08)] bg-gradient-to-br from-[#0747a1]/5 to-[#8B5CF6]/5">
-            <CardContent className="p-6">
+            <LuCardContent className="p-6">
               <h4 className="font-semibold heading-font text-[#1a1a2e] mb-2">
                 About This Platform
               </h4>
@@ -270,7 +246,7 @@ export default function Settings() {
               <p className="text-xs text-[#6B7280]">
                 Version 1.0.0 • Made with ❤️ for learners everywhere
               </p>
-            </CardContent>
+            </LuCardContent>
           </Card>
         </div>
       </div>

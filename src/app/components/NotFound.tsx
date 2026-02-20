@@ -1,6 +1,5 @@
-import { Link } from 'react-router';
-import { Button } from './ui/button';
-import { Home, ArrowLeft } from 'lucide-react';
+import { LuArrowLeft } from 'react-icons/lu';
+
 
 export default function NotFound() {
   return (
@@ -33,7 +32,7 @@ export default function NotFound() {
             onClick={() => window.history.back()}
             className="rounded-xl"
           >
-            <ArrowLeft className="w-4 h-4 mr-2" />
+            <LuArrowLeft className="w-4 h-4 mr-2" />
             Go Back
           </Button>
         </div>

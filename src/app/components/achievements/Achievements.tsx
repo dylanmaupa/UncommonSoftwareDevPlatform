@@ -1,21 +1,18 @@
+import { LuLock, LuSparkles } from 'react-icons/lu';
 ﻿import DashboardLayout from '../layout/DashboardLayout';
-import { achievementsData, authService } from '../../services/mockData';
-import { Card, CardContent } from '../ui/card';
-import { Badge } from '../ui/badge';
-import { Trophy, Lock, Sparkles } from 'lucide-react';
 
 export default function Achievements() {
   const user = authService.getCurrentUser();
 
   if (!user) return null;
 
-  const unlockedAchievements = achievementsData.map((achievement) => ({
+  const unlockedAchievements = LuachievementsData.map((achievement) => ({
     ...achievement,
     unlocked: user.achievements.includes(achievement.id),
   }));
 
   const unlockedCount = unlockedAchievements.filter((a) => a.unlocked).length;
-  const totalCount = achievementsData.length;
+  const totalCount = LuachievementsData.length;
 
   return (
     <DashboardLayout>
@@ -25,7 +22,7 @@ export default function Achievements() {
             <h1 className="text-3xl lg:text-4xl heading-font" style={{ color: '#1a1a2e' }}>
               Achievements
             </h1>
-            <Sparkles className="w-6 h-6 text-[#F59E0B]" />
+            <LuSparkles className="w-6 h-6 text-[#F59E0B]" />
           </div>
           <p className="text-[#6B7280]">
             Unlock achievements by completing lessons and projects
@@ -57,7 +54,7 @@ export default function Achievements() {
                   </p>
                 </div>
                 <div className="w-10 h-10 rounded-xl bg-[#0747a1]/10 flex items-center justify-center">
-                  <Sparkles className="w-5 h-5 text-[#0747a1]" />
+                  <LuSparkles className="w-5 h-5 text-[#0747a1]" />
                 </div>
               </div>
             </CardContent>
@@ -103,7 +100,7 @@ export default function Achievements() {
                           : 'bg-[#F5F5FA]'
                       }`}
                     >
-                      {achievement.unlocked ? achievement.icon : <Lock className="w-5 h-5 text-[#6B7280]" />}
+                      {achievement.unlocked ? achievement.icon : <LuLock className="w-5 h-5 text-[#6B7280]" />}
                     </div>
 
                     <div className="flex-1 min-w-0">

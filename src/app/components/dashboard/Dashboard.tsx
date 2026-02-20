@@ -1,24 +1,5 @@
-﻿import { Link } from 'react-router';
-import DashboardLayout from '../layout/DashboardLayout';
-import { authService, coursesData, progressService } from '../../services/mockData';
-import dashboardAvatar from '../../../assets/avatar2.png';
-import { Card, CardContent } from '../ui/card';
-import { Button } from '../ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
-import {
-  ArrowRight,
-  Bell,
-  BookOpen,
-  ChevronRight,
-  Ellipsis,
-  Flame,
-  Search,
-  Sparkles,
-  Target,
-  TrendingUp,
-  Users,
-  Zap,
-} from 'lucide-react';
+import { LuBell, LuBookOpen, LuChevronRight, LuEllipsis, LuFlame, LuSearch, LuSparkles, LuTarget, LuUsers } from 'react-icons/lu';
+﻿
 
 interface DashboardMainProps {
   nickname: string;
@@ -26,7 +7,7 @@ interface DashboardMainProps {
   level: number;
   streak: number;
   completedLessons: number;
-  nextCourse: (typeof coursesData)[number];
+  nextCourse: (typeof LucoursesData)[number];
 }
 
 function DashboardMain({
@@ -55,7 +36,7 @@ function DashboardMain({
 
     return 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80';
   };
-  const featuredCourses = coursesData.slice(0, 3);
+  const featuredCourses = LucoursesData.slice(0, 3);
 
   return (
     <div className="p-4 lg:p-6">
@@ -63,24 +44,24 @@ function DashboardMain({
         <div className="space-y-4">
           <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-[rgba(0,0,0,0.08)] bg-[#FAFAFA] p-3">
             <div className="relative min-w-[220px] flex-1">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6B7280]" />
+              <LuSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6B7280]" />
               <input
                 type="text"
                 defaultValue=""
-                placeholder="Search your course..."
+                placeholder="LuSearch your course..."
                 className="h-10 w-full rounded-full border border-[rgba(0,0,0,0.08)] bg-white pl-9 pr-3 text-sm text-[#1a1a2e] outline-none"
               />
             </div>
             <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full border border-[rgba(0,0,0,0.08)] bg-white text-[#6B7280]">
-              <Bell className="h-4 w-4" />
+              <LuBell className="h-4 w-4" />
             </Button>
             <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full border border-[rgba(0,0,0,0.08)] bg-white text-[#6B7280]">
-              <Sparkles className="h-4 w-4" />
+              <LuSparkles className="h-4 w-4" />
             </Button>
             <div className="ml-auto flex items-center gap-2 rounded-full border border-[rgba(0,0,0,0.08)] bg-white px-2 py-1">
               <Avatar className="h-8 w-8">
                 <AvatarImage src={dashboardAvatar} alt={nickname} />
-                <AvatarFallback>{nickname[0]}</AvatarFallback>
+                <LuAvatarFallback>{nickname[0]}</LuAvatarFallback>
               </Avatar>
               <span className="pr-2 text-sm text-[#1a1a2e]">{nickname}</span>
             </div>
@@ -107,7 +88,7 @@ function DashboardMain({
                   <p className="text-xs text-[#6B7280]">24 watched</p>
                   <p className="text-sm text-[#1a1a2e]">UI/UX Design</p>
                 </div>
-                <Target className="h-4 w-4 text-[#6B7280]" />
+                <LuTarget className="h-4 w-4 text-[#6B7280]" />
               </CardContent>
             </Card>
             <Card className="rounded-2xl border-[rgba(0,0,0,0.08)] bg-[#FAFAFA]">
@@ -116,7 +97,7 @@ function DashboardMain({
                   <p className="text-xs text-[#6B7280]">24 watched</p>
                   <p className="text-sm text-[#1a1a2e]">Branding</p>
                 </div>
-                <Flame className="h-4 w-4 text-[#6B7280]" />
+                <LuFlame className="h-4 w-4 text-[#6B7280]" />
               </CardContent>
             </Card>
             <Card className="rounded-2xl border-[rgba(0,0,0,0.08)] bg-[#FAFAFA]">
@@ -125,7 +106,7 @@ function DashboardMain({
                   <p className="text-xs text-[#6B7280]">40 watched</p>
                   <p className="text-sm text-[#1a1a2e]">Front End</p>
                 </div>
-                <BookOpen className="h-4 w-4 text-[#6B7280]" />
+                <LuBookOpen className="h-4 w-4 text-[#6B7280]" />
               </CardContent>
             </Card>
           </div>
@@ -134,7 +115,7 @@ function DashboardMain({
             <div className="mb-3 flex items-center justify-between">
               <h3 className="text-lg text-[#1a1a2e] heading-font">Continue Watching</h3>
               <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-[#6B7280]">
-                <ChevronRight className="h-4 w-4" />
+                <LuChevronRight className="h-4 w-4" />
               </Button>
             </div>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
@@ -200,12 +181,12 @@ function DashboardMain({
             <CardContent className="space-y-4 p-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-base text-[#1a1a2e] heading-font">Statistic</h3>
-                <Ellipsis className="h-4 w-4 text-[#6B7280]" />
+                <LuEllipsis className="h-4 w-4 text-[#6B7280]" />
               </div>
               <div className="flex flex-col items-center">
                 <Avatar className="h-20 w-20 border border-[rgba(0,0,0,0.08)]">
                   <AvatarImage src={dashboardAvatar} alt={nickname} />
-                  <AvatarFallback>{nickname[0]}</AvatarFallback>
+                  <LuAvatarFallback>{nickname[0]}</LuAvatarFallback>
                 </Avatar>
                 <p className="mt-3 text-base text-[#1a1a2e]">Good Morning {nickname}</p>
                 <p className="text-xs text-[#6B7280]">Continue your journey to your target</p>
@@ -237,7 +218,7 @@ function DashboardMain({
             <CardContent className="space-y-3 p-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-base text-[#1a1a2e] heading-font">Your mentor</h3>
-                <Users className="h-4 w-4 text-[#6B7280]" />
+                <LuUsers className="h-4 w-4 text-[#6B7280]" />
               </div>
               {[
                 'Padhang Satrio',
@@ -272,13 +253,13 @@ export default function Dashboard() {
 
   const totalLessons = user.completedLessons.length;
 
-  const coursesWithProgress = coursesData.map(course => ({
+  const coursesWithProgress = LucoursesData.map(course => ({
     ...course,
     progress: progressService.getCourseProgress(course.id),
   }));
 
   const inProgressCourses = coursesWithProgress.filter(c => c.progress > 0 && c.progress < 100);
-  const nextCourse = inProgressCourses[0] || coursesData[0];
+  const nextCourse = inProgressCourses[0] || LucoursesData[0];
 
   return (
     <DashboardLayout>

@@ -1,24 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router';
-import Editor from '@monaco-editor/react';
-import DashboardLayout from '../layout/DashboardLayout';
-import { coursesData, progressService, authService } from '../../services/mockData';
-import type { Lesson } from '../../services/mockData';
-import { Button } from '../ui/button';
-import { Card, CardContent } from '../ui/card';
-import { Badge } from '../ui/badge';
-import { toast } from 'sonner';
-import { 
-  ArrowLeft, 
-  Play, 
-  CheckCircle2, 
-  Lightbulb, 
-  Eye, 
-  EyeOff,
-  Zap,
-  Trophy,
-  ChevronRight
-} from 'lucide-react';
+import { LuChevronRight, LuEye, LuEyeOff, LuLightbulb, LuPlay, LuTrophy, LuZap } from 'react-icons/lu';
+
 import { motion } from 'motion/react';
 
 export default function LessonView() {
@@ -26,19 +7,19 @@ export default function LessonView() {
   const navigate = useNavigate();
   const user = authService.getCurrentUser();
 
-  const [code, setCode] = useState('');
-  const [output, setOutput] = useState('');
-  const [showHint, setShowHint] = useState(false);
-  const [showSolution, setShowSolution] = useState(false);
-  const [isRunning, setIsRunning] = useState(false);
-  const [showXPAnimation, setShowXPAnimation] = useState(false);
+  const [code, setCode] = LuuseState('');
+  const [output, setOutput] = LuuseState('');
+  const [showHint, setShowHint] = LuuseState(false);
+  const [showSolution, setShowSolution] = LuuseState(false);
+  const [isRunning, setIsRunning] = LuuseState(false);
+  const [showXPAnimation, setShowXPAnimation] = LuuseState(false);
 
   // Find the lesson
   const course = coursesData.find(c => c.id === courseId);
   const module = course?.modules.find(m => m.id === moduleId);
   const lesson = module?.lessons.find(l => l.id === lessonId);
   
-  const isCompleted = lesson ? progressService.isLessonCompleted(lesson.id) : false;
+  const isCompleted = lesson ? LuprogressService.isLessonCompleted(lesson.id) : false;
 
   // Find next lesson
   let nextLesson: { courseId: string; moduleId: string; lessonId: string } | null = null;
@@ -115,7 +96,7 @@ export default function LessonView() {
       const isCorrect = Math.random() > 0.3; // 70% success rate for demo
       
       if (isCorrect) {
-        progressService.completeLesson(lesson.id, lesson.xpReward);
+        LuprogressService.completeLesson(lesson.id, lesson.xpReward);
         setShowXPAnimation(true);
         
         toast.success(
@@ -153,7 +134,7 @@ export default function LessonView() {
         >
           <div className="bg-gradient-to-br from-[#0747a1] to-[#8B5CF6] text-white px-8 py-6 rounded-2xl shadow-2xl">
             <div className="flex items-center gap-3">
-              <Trophy className="w-12 h-12" />
+              <LuTrophy className="w-12 h-12" />
               <div>
                 <p className="text-2xl font-bold heading-font">+{lesson.xpReward} XP</p>
                 <p className="text-white/90">Level {user?.level}</p>
@@ -187,12 +168,12 @@ export default function LessonView() {
             <div className="flex items-center gap-3">
               {isCompleted && (
                 <Badge className="bg-[#10B981] text-white">
-                  <CheckCircle2 className="w-3 h-3 mr-1" />
+                  <LuCheckCircle2 className="w-3 h-3 mr-1" />
                   Completed
                 </Badge>
               )}
               <Badge variant="outline" className="border-[#0747a1] text-[#0747a1]">
-                <Zap className="w-3 h-3 mr-1" />
+                <LuZap className="w-3 h-3 mr-1" />
                 {lesson.xpReward} XP
               </Badge>
             </div>
@@ -242,7 +223,7 @@ export default function LessonView() {
                 <CardContent className="p-6">
                   <div className="flex items-start gap-3">
                     <div className="w-8 h-8 rounded-lg bg-[#0747a1] flex items-center justify-center flex-shrink-0">
-                      <Trophy className="w-4 h-4 text-white" />
+                      <LuTrophy className="w-4 h-4 text-white" />
                     </div>
                     <div>
                       <h3 className="font-semibold text-[#1a1a2e] mb-2">
@@ -264,7 +245,7 @@ export default function LessonView() {
                   onClick={() => setShowHint(!showHint)}
                   className="border-[#F59E0B] text-[#F59E0B] hover:bg-[#F59E0B]/10"
                 >
-                  <Lightbulb className="w-4 h-4 mr-2" />
+                  <LuLightbulb className="w-4 h-4 mr-2" />
                   {showHint ? 'Hide' : 'Show'} Hint
                 </Button>
                 {showHint && (
@@ -286,7 +267,7 @@ export default function LessonView() {
                   onClick={() => setShowSolution(!showSolution)}
                   className="border-[#6B7280] text-[#6B7280]"
                 >
-                  {showSolution ? <EyeOff className="w-4 h-4 mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
+                  {showSolution ? <LuEyeOff className="w-4 h-4 mr-2" /> : <LuEye className="w-4 h-4 mr-2" />}
                   {showSolution ? 'Hide' : 'View'} Solution
                 </Button>
                 {showSolution && (
@@ -344,7 +325,7 @@ export default function LessonView() {
                 variant="outline"
                 className="bg-[#1e1e1e] text-white border-[#3e3e3e] hover:bg-[#2d2d2d]"
               >
-                <Play className="w-4 h-4 mr-2" />
+                <LuPlay className="w-4 h-4 mr-2" />
                 Run Code
               </Button>
               <Button
@@ -352,7 +333,7 @@ export default function LessonView() {
                 disabled={isRunning}
                 style={{ backgroundColor: '#0747a1' }}
               >
-                <CheckCircle2 className="w-4 h-4 mr-2" />
+                <LuCheckCircle2 className="w-4 h-4 mr-2" />
                 {isCompleted ? 'Completed' : 'Submit'}
               </Button>
               {nextLesson && isCompleted && (
@@ -362,7 +343,7 @@ export default function LessonView() {
                   className="ml-auto"
                 >
                   Next Lesson
-                  <ChevronRight className="w-4 h-4 ml-2" />
+                  <LuChevronRight className="w-4 h-4 ml-2" />
                 </Button>
               )}
             </div>

@@ -1,26 +1,5 @@
-import { useState } from 'react';
-import DashboardLayout from '../layout/DashboardLayout';
-import { authService, coursesData, progressService } from '../../services/mockData';
-import profileAvatar from '../../../assets/avatar2.png';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Button } from '../ui/button';
-import { Input } from '../ui/input';
-import { Label } from '../ui/label';
-import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
-import { Badge } from '../ui/badge';
-import { Progress } from '../ui/progress';
-import { toast } from 'sonner';
-import { 
-  Edit, 
-  Save, 
-  X, 
-  Trophy, 
-  Zap, 
-  Target, 
-  BookOpen, 
-  FolderKanban,
-  Flame
-} from 'lucide-react';
+import { LuBookOpen, LuFlame, LuFolderKanban, LuSave, LuTarget, LuTrophy, LuX, LuZap } from 'react-icons/lu';
+
 
 export default function Profile() {
   const user = authService.getCurrentUser();
@@ -48,12 +27,12 @@ export default function Profile() {
   const xpToNextLevel = ((user.level) * 500) - user.xp;
   const progressToNextLevel = ((user.xp % 500) / 500) * 100;
 
-  const coursesInProgress = coursesData.filter(course => {
+  const coursesInProgress = LucoursesData.filter(course => {
     const progress = progressService.getCourseProgress(course.id);
     return progress > 0 && progress < 100;
   });
 
-  const completedCourses = coursesData.filter(course => {
+  const completedCourses = LucoursesData.filter(course => {
     const progress = progressService.getCourseProgress(course.id);
     return progress === 100;
   });
@@ -75,12 +54,12 @@ export default function Profile() {
           {/* Profile Info */}
           <div className="space-y-4">
             <Card className="rounded-2xl border-[rgba(0,0,0,0.08)]">
-              <CardContent className="p-4">
+              <LuCardContent className="p-4">
                 {/* Avatar */}
                 <div className="flex flex-col items-center mb-4">
                   <Avatar className="w-20 h-20 mb-3">
                     <AvatarImage src={profileAvatar} alt={user.nickname} />
-                    <AvatarFallback className="text-2xl">{user.nickname[0]}</AvatarFallback>
+                    <LuAvatarFallback className="text-2xl">{user.nickname[0]}</LuAvatarFallback>
                   </Avatar>
                   
                   {isEditing ? (
@@ -101,8 +80,8 @@ export default function Profile() {
                           className="flex-1 rounded-lg"
                           style={{ backgroundColor: '#0747a1' }}
                         >
-                          <Save className="w-4 h-4 mr-1" />
-                          Save
+                          <LuSave className="w-4 h-4 mr-1" />
+                          LuSave
                         </Button>
                         <Button
                           onClick={handleCancel}
@@ -110,7 +89,7 @@ export default function Profile() {
                           variant="outline"
                           className="flex-1 rounded-lg"
                         >
-                          <X className="w-4 h-4 mr-1" />
+                          <LuX className="w-4 h-4 mr-1" />
                           Cancel
                         </Button>
                       </div>
@@ -157,7 +136,7 @@ export default function Profile() {
                     })}
                   </div>
                 </div>
-              </CardContent>
+              </LuCardContent>
             </Card>
           </div>
 
@@ -166,10 +145,10 @@ export default function Profile() {
             {/* Stats Grid */}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <Card className="rounded-2xl border-[rgba(0,0,0,0.08)]">
-                <CardContent className="p-4">
+                <LuCardContent className="p-4">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-[#0747a1]/10 flex items-center justify-center">
-                      <Zap className="w-5 h-5 text-[#0747a1]" />
+                      <LuZap className="w-5 h-5 text-[#0747a1]" />
                     </div>
                     <div>
                       <p className="text-xl font-semibold heading-font text-[#1a1a2e]">
@@ -178,14 +157,14 @@ export default function Profile() {
                       <p className="text-xs text-[#6B7280]">Total XP</p>
                     </div>
                   </div>
-                </CardContent>
+                </LuCardContent>
               </Card>
 
               <Card className="rounded-2xl border-[rgba(0,0,0,0.08)]">
-                <CardContent className="p-4">
+                <LuCardContent className="p-4">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-[#FF6B35]/10 flex items-center justify-center">
-                      <Flame className="w-5 h-5 text-[#FF6B35]" />
+                      <LuFlame className="w-5 h-5 text-[#FF6B35]" />
                     </div>
                     <div>
                       <p className="text-xl font-semibold heading-font text-[#1a1a2e]">
@@ -194,14 +173,14 @@ export default function Profile() {
                       <p className="text-xs text-[#6B7280]">Day Streak</p>
                     </div>
                   </div>
-                </CardContent>
+                </LuCardContent>
               </Card>
 
               <Card className="rounded-2xl border-[rgba(0,0,0,0.08)]">
-                <CardContent className="p-4">
+                <LuCardContent className="p-4">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-[#10B981]/10 flex items-center justify-center">
-                      <BookOpen className="w-5 h-5 text-[#10B981]" />
+                      <LuBookOpen className="w-5 h-5 text-[#10B981]" />
                     </div>
                     <div>
                       <p className="text-xl font-semibold heading-font text-[#1a1a2e]">
@@ -210,14 +189,14 @@ export default function Profile() {
                       <p className="text-xs text-[#6B7280]">Lessons</p>
                     </div>
                   </div>
-                </CardContent>
+                </LuCardContent>
               </Card>
 
               <Card className="rounded-2xl border-[rgba(0,0,0,0.08)]">
-                <CardContent className="p-4">
+                <LuCardContent className="p-4">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-[#F59E0B]/10 flex items-center justify-center">
-                      <FolderKanban className="w-5 h-5 text-[#F59E0B]" />
+                      <LuFolderKanban className="w-5 h-5 text-[#F59E0B]" />
                     </div>
                     <div>
                       <p className="text-xl font-semibold heading-font text-[#1a1a2e]">
@@ -226,14 +205,14 @@ export default function Profile() {
                       <p className="text-xs text-[#6B7280]">Projects</p>
                     </div>
                   </div>
-                </CardContent>
+                </LuCardContent>
               </Card>
 
               <Card className="rounded-2xl border-[rgba(0,0,0,0.08)]">
-                <CardContent className="p-4">
+                <LuCardContent className="p-4">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-[#8B5CF6]/10 flex items-center justify-center">
-                      <Trophy className="w-5 h-5 text-[#8B5CF6]" />
+                      <LuTrophy className="w-5 h-5 text-[#8B5CF6]" />
                     </div>
                     <div>
                       <p className="text-xl font-semibold heading-font text-[#1a1a2e]">
@@ -242,14 +221,14 @@ export default function Profile() {
                       <p className="text-xs text-[#6B7280]">Achievements</p>
                     </div>
                   </div>
-                </CardContent>
+                </LuCardContent>
               </Card>
 
               <Card className="rounded-2xl border-[rgba(0,0,0,0.08)]">
-                <CardContent className="p-4">
+                <LuCardContent className="p-4">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-[#06B6D4]/10 flex items-center justify-center">
-                      <Target className="w-5 h-5 text-[#06B6D4]" />
+                      <LuTarget className="w-5 h-5 text-[#06B6D4]" />
                     </div>
                     <div>
                       <p className="text-xl font-semibold heading-font text-[#1a1a2e]">
@@ -258,16 +237,16 @@ export default function Profile() {
                       <p className="text-xs text-[#6B7280]">Completed</p>
                     </div>
                   </div>
-                </CardContent>
+                </LuCardContent>
               </Card>
             </div>
 
             {/* Courses in Progress */}
             <Card className="rounded-2xl border-[rgba(0,0,0,0.08)]">
-              <CardHeader className="pb-2">
+              <LuCardHeader className="pb-2">
                 <CardTitle className="heading-font">Courses in Progress</CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
+              </LuCardHeader>
+              <LuCardContent className="pt-0">
                 {coursesInProgress.length > 0 ? (
                   <div className="space-y-3">
                     {coursesInProgress.map((course) => {
@@ -298,28 +277,28 @@ export default function Profile() {
                     No courses in progress. Start learning today!
                   </p>
                 )}
-              </CardContent>
+              </LuCardContent>
             </Card>
 
             {/* Recent Achievements */}
             {user.achievements.length > 0 && (
               <Card className="rounded-2xl border-[rgba(0,0,0,0.08)]">
-                <CardHeader className="pb-2">
+                <LuCardHeader className="pb-2">
                   <CardTitle className="heading-font">Recent Achievements</CardTitle>
-                </CardHeader>
-                <CardContent className="pt-0">
+                </LuCardHeader>
+                <LuCardContent className="pt-0">
                   <div className="flex flex-wrap gap-3">
                     {user.achievements.slice(0, 6).map((achievementId) => (
                       <Badge
                         key={achievementId}
                         className="bg-gradient-to-br from-[#F59E0B] to-[#F97316] text-white px-4 py-2"
                       >
-                        <Trophy className="w-4 h-4 mr-2" />
+                        <LuTrophy className="w-4 h-4 mr-2" />
                         Achievement
                       </Badge>
                     ))}
                   </div>
-                </CardContent>
+                </LuCardContent>
               </Card>
             )}
           </div>

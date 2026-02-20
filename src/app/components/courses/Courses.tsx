@@ -1,10 +1,4 @@
-import { Link } from 'react-router';
-import DashboardLayout from '../layout/DashboardLayout';
-import { coursesData, progressService } from '../../services/mockData';
-import { Card, CardContent } from '../ui/card';
-import { Progress } from '../ui/progress';
-import { Badge } from '../ui/badge';
-import { Clock, BookOpen, ArrowRight } from 'lucide-react';
+import { LuArrowRight, LuBookOpen } from 'react-icons/lu';
 
 export default function Courses() {
   const getCourseImage = (title: string) => {
@@ -67,7 +61,7 @@ export default function Courses() {
                     </div>
                     <div className="flex items-center gap-4 text-xs text-[#6B7280]">
                       <div className="flex items-center gap-1">
-                        <BookOpen className="w-4 h-4" />
+                        <LuBookOpen className="w-4 h-4" />
                         <span>{course.totalLessons} lessons</span>
                       </div>
                       <div className="flex items-center gap-1">
@@ -88,7 +82,7 @@ export default function Courses() {
                     ) : (
                       <div className="flex items-center justify-between text-sm text-[#0747a1] font-medium group-hover:gap-2 transition-all">
                         <span>Start Course</span>
-                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                        <LuArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                       </div>
                     )}
                   </CardContent>
@@ -102,7 +96,7 @@ export default function Courses() {
         {coursesData.length === 0 && (
           <div className="text-center py-12">
             <div className="w-16 h-16 rounded-full bg-[#F5F5FA] flex items-center justify-center mx-auto mb-4">
-              <BookOpen className="w-8 h-8 text-[#6B7280]" />
+              <LuBookOpen className="w-8 h-8 text-[#6B7280]" />
             </div>
             <h3 className="text-xl font-semibold heading-font text-[#1a1a2e] mb-2">
               No courses yet
