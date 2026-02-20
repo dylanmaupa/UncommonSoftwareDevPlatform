@@ -3,10 +3,10 @@ import { Link, useLocation, useNavigate } from 'react-router';
 import { authService } from '../../services/mockData';
 import {
   LayoutDashboard,
-  Inbox,
   BookOpen,
-  ListChecks,
-  Users,
+  FolderKanban,
+  Trophy,
+  User,
   Settings,
   LogOut,
 } from 'lucide-react';
@@ -29,10 +29,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const overviewItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-    { icon: Inbox, label: 'Inbox', path: '/courses' },
-    { icon: BookOpen, label: 'Lesson', path: '/courses' },
-    { icon: ListChecks, label: 'Task', path: '/projects' },
-    { icon: Users, label: 'Group', path: '/profile' },
+    { icon: BookOpen, label: 'Courses', path: '/courses' },
+    { icon: FolderKanban, label: 'Projects', path: '/projects' },
+    { icon: Trophy, label: 'Achievements', path: '/achievements' },
+    { icon: User, label: 'Profile', path: '/profile' },
   ];
 
   const friends = [
@@ -117,7 +117,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               }`}
             >
               <Settings className="h-4 w-4" />
-              <span>Setting</span>
+              <span>Settings</span>
             </Link>
             <Button
               variant="ghost"
