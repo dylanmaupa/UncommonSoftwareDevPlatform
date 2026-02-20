@@ -1,6 +1,7 @@
 ﻿import { Link } from 'react-router';
 import DashboardLayout from '../layout/DashboardLayout';
 import { authService, coursesData, progressService } from '../../services/mockData';
+import dashboardAvatar from '../../../assets/avatar2.png';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
@@ -36,7 +37,25 @@ function DashboardMain({
   completedLessons,
   nextCourse,
 }: DashboardMainProps) {
-  const dashboardAvatarUrl = 'https://i.pinimg.com/736x/7e/cd/1b/7ecd1b3adab5f030728c414dac5f5491.jpg';
+  const getCourseImage = (title: string) => {
+    const normalized = title.toLowerCase();
+
+    if (normalized.includes('python')) {
+      return 'https://images.unsplash.com/photo-1526379095098-d400fd0bf935?auto=format&fit=crop&w=1000&q=80';
+    }
+    if (normalized.includes('react')) {
+      return 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?auto=format&fit=crop&w=1000&q=80';
+    }
+    if (normalized.includes('javascript') || normalized.includes('node')) {
+      return 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1000&q=80';
+    }
+    if (normalized.includes('ui') || normalized.includes('ux') || normalized.includes('design')) {
+      return 'https://images.unsplash.com/photo-1586717791821-3f44a563fa4c?auto=format&fit=crop&w=800&q=80';
+    }
+
+    return 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80';
+  };
+
   const featuredCourses = coursesData.slice(0, 3);
 
   return (
@@ -61,7 +80,7 @@ function DashboardMain({
             </Button>
             <div className="ml-auto flex items-center gap-2 rounded-full border border-[rgba(0,0,0,0.08)] bg-white px-2 py-1">
               <Avatar className="h-8 w-8">
-                <AvatarImage src={dashboardAvatarUrl} alt={nickname} />
+                <AvatarImage src={dashboardAvatar} alt={nickname} />
                 <AvatarFallback>{nickname[0]}</AvatarFallback>
               </Avatar>
               <span className="pr-2 text-sm text-[#1a1a2e]">{nickname}</span>
@@ -123,7 +142,12 @@ function DashboardMain({
               {featuredCourses.map((course) => (
                 <Card key={course.id} className="rounded-2xl border-[rgba(0,0,0,0.08)]">
                   <CardContent className="space-y-3 p-3">
-                    <div className="h-24 rounded-xl bg-[#F5F5FA]" />
+                    <img
+                      src={getCourseImage(course.title)}
+                      alt={course.title}
+                      className="h-24 w-full rounded-xl object-cover"
+                      loading="lazy"
+                    />
                     <div>
                       <p className="line-clamp-2 text-sm text-[#1a1a2e]">{course.title}</p>
                       <p className="mt-1 text-xs text-[#6B7280]">{course.difficulty}</p>
@@ -181,7 +205,7 @@ function DashboardMain({
               </div>
               <div className="flex flex-col items-center">
                 <Avatar className="h-20 w-20 border border-[rgba(0,0,0,0.08)]">
-                  <AvatarImage src={dashboardAvatarUrl} alt={nickname} />
+                  <AvatarImage src={dashboardAvatar} alt={nickname} />
                   <AvatarFallback>{nickname[0]}</AvatarFallback>
                 </Avatar>
                 <p className="mt-3 text-base text-[#1a1a2e]">Good Morning {nickname}</p>

@@ -65,7 +65,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <Code2 className="h-4 w-4 text-[#0747a1]" />
             </div>
             <span className="heading-font text-lg" style={{ color: '#1a1a2e' }}>
-              Coursue
+              Uncommon Bootcamp Portal
             </span>
           </Link>
 
