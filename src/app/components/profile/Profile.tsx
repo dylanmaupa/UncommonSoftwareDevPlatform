@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import DashboardLayout from '../layout/DashboardLayout';
 import { authService, coursesData, progressService } from '../../services/mockData';
+import profileAvatar from '../../../assets/avatar2.png';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -78,7 +79,7 @@ export default function Profile() {
                 {/* Avatar */}
                 <div className="flex flex-col items-center mb-4">
                   <Avatar className="w-20 h-20 mb-3">
-                    <AvatarImage src={user.avatar} alt={user.nickname} />
+                    <AvatarImage src={profileAvatar} alt={user.nickname} />
                     <AvatarFallback className="text-2xl">{user.nickname[0]}</AvatarFallback>
                   </Avatar>
                   

@@ -55,7 +55,6 @@ function DashboardMain({
 
     return 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80';
   };
-
   const featuredCourses = coursesData.slice(0, 3);
 
   return (
