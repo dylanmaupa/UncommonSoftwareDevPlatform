@@ -121,7 +121,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             className="w-full justify-start gap-3 text-[#6B7280] hover:bg-[#F5F5FA] hover:text-[#1a1a2e] mt-2"
           >
             <LogOut className="w-5 h-5" />
-            <span className="heading-font">Log Out</span>
+            <span className="heading-font">Logout</span>
           </Button>
         </nav>
       </aside>
