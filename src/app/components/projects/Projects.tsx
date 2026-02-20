@@ -1,4 +1,9 @@
-import { LuArrowRight, LuRocket, LuZap } from 'react-icons/lu';
+﻿import { Link } from 'react-router';
+import DashboardLayout from '../layout/DashboardLayout';
+import { projectsData, progressService } from '../../services/mockData';
+import { Card, CardContent } from '../ui/card';
+import { Badge } from '../ui/badge';
+import { LuArrowRight, LuCheckCircle2, LuRocket, LuZap } from 'react-icons/lu';
 
 export default function Projects() {
   const getProjectImage = (title: string) => {
@@ -18,7 +23,6 @@ export default function Projects() {
   return (
     <DashboardLayout>
       <div className="p-4 lg:p-6 max-w-7xl mx-auto">
-        {/* Header */}
         <div className="mb-6">
           <h1 className="text-3xl lg:text-4xl heading-font mb-2" style={{ color: '#1a1a2e' }}>
             Projects
@@ -28,11 +32,10 @@ export default function Projects() {
           </p>
         </div>
 
-        {/* Projects Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {projectsData.map((project) => {
             const isCompleted = progressService.isProjectCompleted(project.id);
-            
+
             const difficultyColor = {
               Beginner: 'bg-[#10B981]/10 text-[#10B981] border-[#10B981]/20',
               Intermediate: 'bg-[#F59E0B]/10 text-[#F59E0B] border-[#F59E0B]/20',
@@ -52,7 +55,7 @@ export default function Projects() {
                       />
                       {isCompleted && (
                         <Badge className="absolute right-2 top-2 bg-[#10B981] text-white">
-                          <CheckCircle2 className="w-3 h-3 mr-1" />
+                          <LuCheckCircle2 className="w-3 h-3 mr-1" />
                           Done
                         </Badge>
                       )}
@@ -60,12 +63,8 @@ export default function Projects() {
 
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <p className="line-clamp-2 text-base text-[#1a1a2e]">
-                          {project.title}
-                        </p>
-                        <p className="mt-1 text-xs text-[#6B7280] line-clamp-2">
-                          {project.description}
-                        </p>
+                        <p className="line-clamp-2 text-base text-[#1a1a2e]">{project.title}</p>
+                        <p className="mt-1 text-xs text-[#6B7280] line-clamp-2">{project.description}</p>
                       </div>
                       <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#FF6B35] to-[#F59E0B] flex items-center justify-center flex-shrink-0">
                         <LuRocket className="w-4 h-4 text-white" />
@@ -91,9 +90,7 @@ export default function Projects() {
 
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <Badge className={`${difficultyColor} border`}>
-                          {project.difficulty}
-                        </Badge>
+                        <Badge className={`${difficultyColor} border`}>{project.difficulty}</Badge>
                         <div className="flex items-center gap-1 text-xs text-[#0747a1]">
                           <LuZap className="w-4 h-4" />
                           <span className="font-semibold">+{project.xpReward}</span>

@@ -1,18 +1,21 @@
-import { LuLock, LuSparkles } from 'react-icons/lu';
 ﻿import DashboardLayout from '../layout/DashboardLayout';
+import { achievementsData, authService } from '../../services/mockData';
+import { Card, CardContent } from '../ui/card';
+import { Badge } from '../ui/badge';
+import { LuLock, LuSparkles, LuTrophy } from 'react-icons/lu';
 
 export default function Achievements() {
   const user = authService.getCurrentUser();
 
   if (!user) return null;
 
-  const unlockedAchievements = LuachievementsData.map((achievement) => ({
+  const unlockedAchievements = achievementsData.map((achievement) => ({
     ...achievement,
     unlocked: user.achievements.includes(achievement.id),
   }));
 
   const unlockedCount = unlockedAchievements.filter((a) => a.unlocked).length;
-  const totalCount = LuachievementsData.length;
+  const totalCount = achievementsData.length;
 
   return (
     <DashboardLayout>
@@ -39,7 +42,7 @@ export default function Achievements() {
                     {unlockedCount}/{totalCount}
                   </p>
                 </div>
-                <Trophy className="w-10 h-10 opacity-80" />
+                <LuTrophy className="w-10 h-10 opacity-80" />
               </div>
             </CardContent>
           </Card>
@@ -138,7 +141,7 @@ export default function Achievements() {
         {unlockedCount < totalCount && (
           <Card className="mt-6 rounded-2xl border-[rgba(91,79,255,0.2)] bg-gradient-to-br from-[#0747a1]/5 to-[#8B5CF6]/5">
             <CardContent className="p-6 text-center">
-              <Trophy className="w-10 h-10 text-[#0747a1] mx-auto mb-3" />
+              <LuTrophy className="w-10 h-10 text-[#0747a1] mx-auto mb-3" />
               <h3 className="text-xl heading-font text-[#1a1a2e] mb-2">Keep Going!</h3>
               <p className="text-[#6B7280]">
                 You have {totalCount - unlockedCount} more achievements to unlock. Complete lessons and projects to earn them all!

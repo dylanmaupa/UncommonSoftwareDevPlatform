@@ -1,4 +1,10 @@
-import { LuArrowRight, LuBookOpen } from 'react-icons/lu';
+﻿import { Link } from 'react-router';
+import DashboardLayout from '../layout/DashboardLayout';
+import { coursesData, progressService } from '../../services/mockData';
+import { Card, CardContent } from '../ui/card';
+import { Progress } from '../ui/progress';
+import { Badge } from '../ui/badge';
+import { LuArrowRight, LuBookOpen, LuClock } from 'react-icons/lu';
 
 export default function Courses() {
   const getCourseImage = (title: string) => {
@@ -20,7 +26,6 @@ export default function Courses() {
   return (
     <DashboardLayout>
       <div className="p-4 lg:p-6 max-w-7xl mx-auto">
-        {/* Header */}
         <div className="mb-6">
           <h1 className="text-3xl lg:text-4xl heading-font mb-2" style={{ color: '#1a1a2e' }}>
             All Courses
@@ -30,7 +35,6 @@ export default function Courses() {
           </p>
         </div>
 
-        {/* Courses Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {coursesData.map((course) => {
             const progress = progressService.getCourseProgress(course.id);
@@ -65,7 +69,7 @@ export default function Courses() {
                         <span>{course.totalLessons} lessons</span>
                       </div>
                       <div className="flex items-center gap-1">
-                        <Clock className="w-4 h-4" />
+                        <LuClock className="w-4 h-4" />
                         <span>{course.estimatedHours}h</span>
                       </div>
                     </div>
@@ -92,7 +96,6 @@ export default function Courses() {
           })}
         </div>
 
-        {/* Empty State (if needed) */}
         {coursesData.length === 0 && (
           <div className="text-center py-12">
             <div className="w-16 h-16 rounded-full bg-[#F5F5FA] flex items-center justify-center mx-auto mb-4">
