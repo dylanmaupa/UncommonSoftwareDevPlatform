@@ -19,22 +19,22 @@ export default function Achievements() {
 
   return (
     <DashboardLayout>
-      <div className="p-8 max-w-6xl mx-auto">
+      <div className="p-4 lg:p-6 max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-6">
           <div className="flex items-center gap-3 mb-2">
-            <h1 className="text-4xl heading-font" style={{ color: '#1a1a2e' }}>
+            <h1 className="text-3xl lg:text-4xl heading-font" style={{ color: '#1a1a2e' }}>
               Achievements
             </h1>
             <Sparkles className="w-8 h-8 text-[#F59E0B]" />
           </div>
-          <p className="text-[#6B7280] text-lg">
+          <p className="text-[#6B7280]">
             Unlock achievements by completing lessons and projects
           </p>
         </div>
 
         {/* Progress Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <Card className="border-[rgba(0,0,0,0.08)] bg-gradient-to-br from-[#0747a1] to-[#8B5CF6] text-white">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -49,7 +49,7 @@ export default function Achievements() {
             </CardContent>
           </Card>
 
-          <Card className="border-[rgba(0,0,0,0.08)]">
+          <Card className="rounded-2xl border-[rgba(0,0,0,0.08)]">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -65,7 +65,7 @@ export default function Achievements() {
             </CardContent>
           </Card>
 
-          <Card className="border-[rgba(0,0,0,0.08)]">
+          <Card className="rounded-2xl border-[rgba(0,0,0,0.08)]">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -87,7 +87,7 @@ export default function Achievements() {
           <h2 className="text-2xl heading-font mb-6" style={{ color: '#1a1a2e' }}>
             All Achievements
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {unlockedAchievements.map((achievement) => (
               <Card
                 key={achievement.id}
@@ -159,7 +159,7 @@ export default function Achievements() {
 
         {/* Motivational Message */}
         {unlockedCount < totalCount && (
-          <Card className="mt-8 border-[rgba(91,79,255,0.2)] bg-gradient-to-br from-[#0747a1]/5 to-[#8B5CF6]/5">
+          <Card className="mt-8 rounded-2xl border-[rgba(91,79,255,0.2)] bg-gradient-to-br from-[#0747a1]/5 to-[#8B5CF6]/5">
             <CardContent className="p-6 text-center">
               <Trophy className="w-12 h-12 text-[#0747a1] mx-auto mb-3" />
               <h3 className="text-xl font-semibold heading-font text-[#1a1a2e] mb-2">

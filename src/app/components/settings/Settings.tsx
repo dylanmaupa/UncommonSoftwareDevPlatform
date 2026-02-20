@@ -63,20 +63,20 @@ export default function Settings() {
 
   return (
     <DashboardLayout>
-      <div className="p-8 max-w-4xl mx-auto">
+      <div className="p-4 lg:p-6 max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl heading-font mb-2" style={{ color: '#1a1a2e' }}>
+        <div className="mb-6">
+          <h1 className="text-3xl lg:text-4xl heading-font mb-2" style={{ color: '#1a1a2e' }}>
             Settings
           </h1>
-          <p className="text-[#6B7280] text-lg">
+          <p className="text-[#6B7280]">
             Manage your account settings and preferences
           </p>
         </div>
 
         <div className="space-y-6">
           {/* Account Information */}
-          <Card className="border-[rgba(0,0,0,0.08)]">
+          <Card className="rounded-2xl border-[rgba(0,0,0,0.08)]">
             <CardHeader>
               <div className="flex items-center gap-2">
                 <UserIcon className="w-5 h-5 text-[#0747a1]" />
@@ -135,7 +135,7 @@ export default function Settings() {
           </Card>
 
           {/* Change Password */}
-          <Card className="border-[rgba(0,0,0,0.08)]">
+          <Card className="rounded-2xl border-[rgba(0,0,0,0.08)]">
             <CardHeader>
               <div className="flex items-center gap-2">
                 <Key className="w-5 h-5 text-[#0747a1]" />
@@ -198,7 +198,7 @@ export default function Settings() {
           </Card>
 
           {/* Danger Zone */}
-          <Card className="border-[#EF4444] bg-[#EF4444]/5">
+          <Card className="rounded-2xl border-[#EF4444] bg-[#EF4444]/5">
             <CardHeader>
               <div className="flex items-center gap-2">
                 <AlertCircle className="w-5 h-5 text-[#EF4444]" />
@@ -258,7 +258,7 @@ export default function Settings() {
           </Card>
 
           {/* About */}
-          <Card className="border-[rgba(0,0,0,0.08)] bg-gradient-to-br from-[#0747a1]/5 to-[#8B5CF6]/5">
+          <Card className="rounded-2xl border-[rgba(0,0,0,0.08)] bg-gradient-to-br from-[#0747a1]/5 to-[#8B5CF6]/5">
             <CardContent className="p-6">
               <h4 className="font-semibold heading-font text-[#1a1a2e] mb-2">
                 About This Platform

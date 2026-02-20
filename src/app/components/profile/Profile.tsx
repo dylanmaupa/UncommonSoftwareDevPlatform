@@ -59,21 +59,21 @@ export default function Profile() {
 
   return (
     <DashboardLayout>
-      <div className="p-8 max-w-5xl mx-auto">
+      <div className="p-4 lg:p-6 max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl heading-font mb-2" style={{ color: '#1a1a2e' }}>
+        <div className="mb-6">
+          <h1 className="text-3xl lg:text-4xl heading-font mb-2" style={{ color: '#1a1a2e' }}>
             Profile
           </h1>
-          <p className="text-[#6B7280] text-lg">
+          <p className="text-[#6B7280]">
             Track your progress and achievements
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Profile Info */}
           <div className="lg:col-span-1 space-y-6">
-            <Card className="border-[rgba(0,0,0,0.08)]">
+            <Card className="rounded-2xl border-[rgba(0,0,0,0.08)]">
               <CardContent className="p-6">
                 {/* Avatar */}
                 <div className="flex flex-col items-center mb-6">
@@ -164,7 +164,7 @@ export default function Profile() {
           <div className="lg:col-span-2 space-y-6">
             {/* Stats Grid */}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              <Card className="border-[rgba(0,0,0,0.08)]">
+              <Card className="rounded-2xl border-[rgba(0,0,0,0.08)]">
                 <CardContent className="p-6">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-[#0747a1]/10 flex items-center justify-center">
@@ -180,7 +180,7 @@ export default function Profile() {
                 </CardContent>
               </Card>
 
-              <Card className="border-[rgba(0,0,0,0.08)]">
+              <Card className="rounded-2xl border-[rgba(0,0,0,0.08)]">
                 <CardContent className="p-6">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-[#FF6B35]/10 flex items-center justify-center">
@@ -196,7 +196,7 @@ export default function Profile() {
                 </CardContent>
               </Card>
 
-              <Card className="border-[rgba(0,0,0,0.08)]">
+              <Card className="rounded-2xl border-[rgba(0,0,0,0.08)]">
                 <CardContent className="p-6">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-[#10B981]/10 flex items-center justify-center">
@@ -212,7 +212,7 @@ export default function Profile() {
                 </CardContent>
               </Card>
 
-              <Card className="border-[rgba(0,0,0,0.08)]">
+              <Card className="rounded-2xl border-[rgba(0,0,0,0.08)]">
                 <CardContent className="p-6">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-[#F59E0B]/10 flex items-center justify-center">
@@ -228,7 +228,7 @@ export default function Profile() {
                 </CardContent>
               </Card>
 
-              <Card className="border-[rgba(0,0,0,0.08)]">
+              <Card className="rounded-2xl border-[rgba(0,0,0,0.08)]">
                 <CardContent className="p-6">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-[#8B5CF6]/10 flex items-center justify-center">
@@ -244,7 +244,7 @@ export default function Profile() {
                 </CardContent>
               </Card>
 
-              <Card className="border-[rgba(0,0,0,0.08)]">
+              <Card className="rounded-2xl border-[rgba(0,0,0,0.08)]">
                 <CardContent className="p-6">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-[#06B6D4]/10 flex items-center justify-center">
@@ -262,7 +262,7 @@ export default function Profile() {
             </div>
 
             {/* Courses in Progress */}
-            <Card className="border-[rgba(0,0,0,0.08)]">
+            <Card className="rounded-2xl border-[rgba(0,0,0,0.08)]">
               <CardHeader>
                 <CardTitle className="heading-font">Courses in Progress</CardTitle>
               </CardHeader>
@@ -302,7 +302,7 @@ export default function Profile() {
 
             {/* Recent Achievements */}
             {user.achievements.length > 0 && (
-              <Card className="border-[rgba(0,0,0,0.08)]">
+              <Card className="rounded-2xl border-[rgba(0,0,0,0.08)]">
                 <CardHeader>
                   <CardTitle className="heading-font">Recent Achievements</CardTitle>
                 </CardHeader>
