@@ -8,7 +8,6 @@ import {
   Trophy,
   Settings,
   LogOut,
-  Code2,
   Inbox,
   ListChecks,
   Users,
@@ -61,8 +60,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       <div className="mx-auto flex h-screen max-w-[1280px] overflow-hidden border border-[rgba(0,0,0,0.08)] bg-white shadow-sm">
         <aside className="hidden w-64 shrink-0 overflow-y-auto border-r border-[rgba(0,0,0,0.08)] bg-[#FAFAFA] px-4 py-6 lg:flex lg:flex-col">
           <Link to="/dashboard" className="mb-8 flex items-center gap-3 px-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#0747a1]/10">
-              <Code2 className="h-4 w-4 text-[#0747a1]" />
+            <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-[#0747a1]/10">
+              <img
+                src="https://uncommon.org/images/hd-logo.svg"
+                alt="Uncommon logo"
+                className="h-6 w-6 object-contain"
+              />
             </div>
             <span className="heading-font text-lg" style={{ color: '#1a1a2e' }}>
               Uncommon Bootcamp Portal
