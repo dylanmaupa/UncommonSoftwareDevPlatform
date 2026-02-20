@@ -1,6 +1,6 @@
 import { Link } from 'react-router';
 import { Button } from './ui/button';
-import { LuArrowLeft, LuHome } from 'react-icons/lu';
+import { LuArrowLeft, LuHouse } from 'react-icons/lu';
 
 
 export default function NotFound() {
@@ -25,7 +25,7 @@ export default function NotFound() {
               className="rounded-xl"
               style={{ backgroundColor: '#0747a1' }}
             >
-              <LuHome className="w-4 h-4 mr-2" />
+              <LuHouse className="w-4 h-4 mr-2" />
               Go to Dashboard
             </Button>
           </Link>

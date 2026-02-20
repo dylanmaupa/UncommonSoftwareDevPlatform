@@ -12,7 +12,7 @@ import { Progress } from '../ui/progress';
 import { toast } from 'sonner';
 import {
   LuBookOpen,
-  LuEdit,
+  LuPencil,
   LuFlame,
   LuFolderKanban,
   LuSave,
@@ -110,7 +110,7 @@ export default function Profile() {
                       <h2 className="text-xl heading-font text-[#1a1a2e] mb-1">{user.nickname}</h2>
                       <p className="text-sm text-[#6B7280] mb-3">{user.email}</p>
                       <Button onClick={() => setIsEditing(true)} size="sm" variant="outline" className="rounded-lg">
-                        <LuEdit className="w-4 h-4 mr-2" />
+                        <LuPencil className="w-4 h-4 mr-2" />
                         Edit Profile
                       </Button>
                     </>

@@ -10,7 +10,7 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import {
   LuArrowLeft,
-  LuCheckCircle2,
+  LuCircleCheck,
   LuExternalLink,
   LuGithub,
   LuRocket,
@@ -83,7 +83,7 @@ export default function ProjectDetail() {
                 <h1 className="text-3xl heading-font">{project.title}</h1>
                 {isCompleted && (
                   <Badge className="bg-[#10B981] text-white">
-                    <LuCheckCircle2 className="w-3 h-3 mr-1" />
+                    <LuCircleCheck className="w-3 h-3 mr-1" />
                     Completed
                   </Badge>
                 )}
@@ -152,7 +152,7 @@ export default function ProjectDetail() {
                   >
                     {isCompleted ? (
                       <>
-                        <LuCheckCircle2 className="w-4 h-4 mr-2" />
+                        <LuCircleCheck className="w-4 h-4 mr-2" />
                         Project Completed
                       </>
                     ) : (

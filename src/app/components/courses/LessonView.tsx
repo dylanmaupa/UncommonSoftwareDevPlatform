@@ -10,7 +10,7 @@ import { Badge } from '../ui/badge';
 import { Card, CardContent } from '../ui/card';
 import {
   LuArrowLeft,
-  LuCheckCircle2,
+  LuCircleCheck,
   LuChevronRight,
   LuEye,
   LuEyeOff,
@@ -172,7 +172,7 @@ export default function LessonView() {
             <div className="flex items-center gap-3">
               {isCompleted && (
                 <Badge className="bg-[#10B981] text-white">
-                  <LuCheckCircle2 className="w-3 h-3 mr-1" />
+                  <LuCircleCheck className="w-3 h-3 mr-1" />
                   Completed
                 </Badge>
               )}
@@ -315,7 +315,7 @@ export default function LessonView() {
                 Run Code
               </Button>
               <Button onClick={handleSubmit} disabled={isRunning} style={{ backgroundColor: '#0747a1' }}>
-                <LuCheckCircle2 className="w-4 h-4 mr-2" />
+                <LuCircleCheck className="w-4 h-4 mr-2" />
                 {isCompleted ? 'Completed' : 'Submit'}
               </Button>
               {nextLesson && isCompleted && (

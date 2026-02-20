@@ -3,7 +3,7 @@ import DashboardLayout from '../layout/DashboardLayout';
 import { projectsData, progressService } from '../../services/mockData';
 import { Card, CardContent } from '../ui/card';
 import { Badge } from '../ui/badge';
-import { LuArrowRight, LuCheckCircle2, LuRocket, LuZap } from 'react-icons/lu';
+import { LuArrowRight, LuCircleCheck, LuRocket, LuZap } from 'react-icons/lu';
 
 export default function Projects() {
   const getProjectImage = (title: string) => {
@@ -55,7 +55,7 @@ export default function Projects() {
                       />
                       {isCompleted && (
                         <Badge className="absolute right-2 top-2 bg-[#10B981] text-white">
-                          <LuCheckCircle2 className="w-3 h-3 mr-1" />
+                          <LuCircleCheck className="w-3 h-3 mr-1" />
                           Done
                         </Badge>
                       )}

@@ -1,5 +1,8 @@
 "use client";
 
+import { LuPanelLeft } from 'react-icons/lu';
+import { Slot } from "@radix-ui/react-slot";
+import { cva, type VariantProps } from "class-variance-authority";
 import * as React from "react";
 
 
@@ -260,7 +263,7 @@ function SidebarTrigger({
       }}
       {...props}
     >
-      <PanelLeftIcon />
+      <LuPanelLeft />
       <span className="sr-only">Toggle Sidebar</span>
     </Button>
   );

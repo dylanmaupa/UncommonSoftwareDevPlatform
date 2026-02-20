@@ -7,7 +7,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { toast } from 'sonner';
-import { LuAlertCircle, LuKey, LuSave, LuTrash2, LuUser } from 'react-icons/lu';
+import { LuCircleAlert, LuKey, LuSave, LuTrash2, LuUser } from 'react-icons/lu';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -166,7 +166,7 @@ export default function Settings() {
           <Card className="rounded-2xl border-[#EF4444] bg-[#EF4444]/5">
             <CardHeader>
               <div className="flex items-center gap-2">
-                <LuAlertCircle className="w-5 h-5 text-[#EF4444]" />
+                <LuCircleAlert className="w-5 h-5 text-[#EF4444]" />
                 <CardTitle className="heading-font text-[#EF4444]">Danger Zone</CardTitle>
               </div>
               <CardDescription>Irreversible actions for your account</CardDescription>

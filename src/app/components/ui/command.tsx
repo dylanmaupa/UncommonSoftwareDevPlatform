@@ -1,5 +1,7 @@
 "use client";
 
+import { LuSearch } from 'react-icons/lu';
+import { Command as CommandPrimitive } from "cmdk";
 import * as React from "react";
 
 
@@ -55,7 +57,7 @@ function CommandInput({
       data-slot="command-input-wrapper"
       className="flex h-9 items-center gap-2 border-b px-3"
     >
-      <SearchIcon className="size-4 shrink-0 opacity-50" />
+      <LuSearch className="size-4 shrink-0 opacity-50" />
       <CommandPrimitive.Input
         data-slot="command-input"
         className={cn(

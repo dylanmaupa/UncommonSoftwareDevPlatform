@@ -9,7 +9,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '..
 import {
   LuArrowLeft,
   LuBookOpen,
-  LuCheckCircle2,
+  LuCircleCheck,
   LuChevronRight,
   LuCircle,
   LuClock,
@@ -158,7 +158,7 @@ export default function CourseDetail() {
                               >
                                 <div className="flex-shrink-0">
                                   {isCompleted ? (
-                                    <LuCheckCircle2 className="w-5 h-5 text-[#10B981]" />
+                                    <LuCircleCheck className="w-5 h-5 text-[#10B981]" />
                                   ) : (
                                     <LuCircle className="w-5 h-5 text-[#6B7280]" />
                                   )}

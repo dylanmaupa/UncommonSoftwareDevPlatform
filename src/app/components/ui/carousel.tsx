@@ -1,6 +1,6 @@
-import { LuArrowLeft, LuArrowRight } from 'react-icons/lu';
 "use client";
 
+import { LuArrowLeft, LuArrowRight } from 'react-icons/lu';
 import * as React from "react";
 import useEmblaCarousel, {
   type UseEmblaCarouselType,
@@ -78,10 +78,10 @@ function Carousel({
 
   const handleKeyDown = React.useCallback(
     (event: React.KeyboardEvent<HTMLDivElement>) => {
-      if (event.key === "LuArrowLeft") {
+      if (event.key === "ArrowLeft") {
         event.preventDefault();
         scrollPrev();
-      } else if (event.key === "LuArrowRight") {
+      } else if (event.key === "ArrowRight") {
         event.preventDefault();
         scrollNext();
       }

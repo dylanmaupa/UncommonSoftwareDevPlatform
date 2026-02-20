@@ -1,6 +1,8 @@
 "use client";
 
+import { LuMinus } from 'react-icons/lu';
 import * as React from "react";
+import { OTPInput, OTPInputContext } from "input-otp";
 
 
 import { cn } from './utils';
@@ -9,11 +11,11 @@ function InputOTP({
   className,
   containerClassName,
   ...props
-}: React.ComponentProps<typeof LuOTPInput> & {
+}: React.ComponentProps<typeof OTPInput> & {
   containerClassName?: string;
 }) {
   return (
-    <LuOTPInput
+    <OTPInput
       data-slot="input-otp"
       containerClassName={cn(
         "flex items-center gap-2 has-disabled:opacity-50",
@@ -68,7 +70,7 @@ function InputOTPSlot({
 function InputOTPSeparator({ ...props }: React.ComponentProps<"div">) {
   return (
     <div data-slot="input-otp-separator" role="separator" {...props}>
-      <MinusIcon />
+      <LuMinus />
     </div>
   );
 }

@@ -6,7 +6,7 @@ import { Label } from '../ui/label';
 import { toast } from 'sonner';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
-import { LuCode2, LuSparkles } from 'react-icons/lu';
+import { LuCode, LuSparkles } from 'react-icons/lu';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -35,7 +35,7 @@ export default function Login() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[#0747a1] mb-4">
-            <LuCode2 className="w-8 h-8 text-white" />
+            <LuCode className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-4xl mb-2 heading-font" style={{ color: '#1a1a2e' }}>
             Welcome Back
