@@ -26,7 +26,7 @@ export default function CourseDetail() {
     return (
       <DashboardLayout>
         <div className="p-8 text-center">
-          <p className="text-[#6B7280]">Course not found</p>
+          <p className="text-muted-foreground">Course not found</p>
           <Link to="/courses">
             <Button className="mt-4">Back to Courses</Button>
           </Link>
@@ -43,9 +43,9 @@ export default function CourseDetail() {
     .length;
 
   const difficultyColor = {
-    Beginner: 'bg-[#10B981] text-white',
-    Intermediate: 'bg-[#F59E0B] text-white',
-    Advanced: 'bg-[#EF4444] text-white',
+    Beginner: 'bg-success text-success-foreground',
+    Intermediate: 'bg-accent text-accent-foreground',
+    Advanced: 'bg-destructive text-destructive-foreground',
   }[course.difficulty];
 
   return (
@@ -62,7 +62,7 @@ export default function CourseDetail() {
         </Button>
 
         {/* Course Header */}
-        <div className="bg-gradient-to-br from-[#0747a1] to-[#8B5CF6] rounded-2xl p-8 text-white mb-8">
+        <div className="bg-gradient-to-br from-primary to-accent rounded-2xl p-8 text-white mb-8">
           <div className="flex items-start gap-6">
             <div className="w-20 h-20 rounded-2xl bg-white/20 flex items-center justify-center text-5xl flex-shrink-0">
               {course.icon}
@@ -107,13 +107,13 @@ export default function CourseDetail() {
         </div>
 
         {/* Modules and Lessons */}
-        <Card className="border-[rgba(0,0,0,0.08)] shadow-sm">
+        <Card className="border-border shadow-sm">
           <CardHeader>
             <CardTitle className="heading-font">Course Content</CardTitle>
           </CardHeader>
           <CardContent>
             {course.modules.length === 0 ? (
-              <div className="text-center py-8 text-[#6B7280]">
+              <div className="text-center py-8 text-muted-foreground">
                 <p>This course content is coming soon!</p>
               </div>
             ) : (
@@ -128,18 +128,18 @@ export default function CourseDetail() {
                     <AccordionItem
                       key={module.id}
                       value={module.id}
-                      className="border border-[rgba(0,0,0,0.08)] rounded-xl px-6 data-[state=open]:bg-[#F5F5FA]/50"
+                      className="border border-border rounded-xl px-6 data-[state=open]:bg-secondary/50"
                     >
                       <AccordionTrigger className="hover:no-underline py-4">
                         <div className="flex items-center gap-4 flex-1 text-left">
-                          <div className="w-10 h-10 rounded-lg bg-[#0747a1]/10 text-[#0747a1] flex items-center justify-center font-semibold flex-shrink-0">
+                          <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-semibold flex-shrink-0">
                             {moduleIndex + 1}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-[#1a1a2e] mb-1">
+                            <h3 className="font-semibold text-foreground mb-1">
                               {module.title}
                             </h3>
-                            <p className="text-sm text-[#6B7280]">
+                            <p className="text-sm text-muted-foreground">
                               {completedInModule}/{module.lessons.length} lessons • {moduleProgress}% complete
                             </p>
                           </div>
@@ -154,26 +154,26 @@ export default function CourseDetail() {
                               <Link
                                 key={lesson.id}
                                 to={`/courses/${courseId}/modules/${module.id}/lessons/${lesson.id}`}
-                                className="flex items-center gap-3 p-3 rounded-lg hover:bg-white border border-transparent hover:border-[rgba(0,0,0,0.08)] transition-all group"
+                                className="flex items-center gap-3 p-3 rounded-lg hover:bg-secondary/60 border border-transparent hover:border-border transition-all group"
                               >
                                 <div className="flex-shrink-0">
                                   {isCompleted ? (
-                                    <LuCircleCheck className="w-5 h-5 text-[#10B981]" />
+                                    <LuCircleCheck className="w-5 h-5 text-success" />
                                   ) : (
-                                    <LuCircle className="w-5 h-5 text-[#6B7280]" />
+                                    <LuCircle className="w-5 h-5 text-muted-foreground" />
                                   )}
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <p className={`font-medium ${
-                                    isCompleted ? 'text-[#6B7280]' : 'text-[#1a1a2e]'
+                                    isCompleted ? 'text-muted-foreground' : 'text-foreground'
                                   }`}>
                                     {lessonIndex + 1}. {lesson.title}
                                   </p>
-                                  <p className="text-xs text-[#6B7280]">
+                                  <p className="text-xs text-muted-foreground">
                                     +{lesson.xpReward} XP
                                   </p>
                                 </div>
-                                <LuChevronRight className="w-4 h-4 text-[#6B7280] group-hover:text-[#0747a1] group-hover:translate-x-1 transition-all" />
+                                <LuChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
                               </Link>
                             );
                           })}
