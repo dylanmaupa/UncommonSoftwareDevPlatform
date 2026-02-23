@@ -27,10 +27,10 @@ export default function Courses() {
     <DashboardLayout>
       <div className="p-4 lg:p-6 max-w-7xl mx-auto">
         <div className="mb-6">
-          <h1 className="text-3xl lg:text-4xl heading-font mb-2" style={{ color: '#1a1a2e' }}>
+          <h1 className="text-3xl lg:text-4xl heading-font mb-2 text-foreground">
             All Courses
           </h1>
-          <p className="text-[#6B7280]">
+          <p className="text-muted-foreground">
             All courses are free and unlocked. Start learning anytime!
           </p>
         </div>
@@ -41,14 +41,14 @@ export default function Courses() {
             const isStarted = progress > 0;
 
             const difficultyColor = {
-              Beginner: 'bg-[#10B981]/10 text-[#10B981] border-[#10B981]/20',
-              Intermediate: 'bg-[#F59E0B]/10 text-[#F59E0B] border-[#F59E0B]/20',
-              Advanced: 'bg-[#EF4444]/10 text-[#EF4444] border-[#EF4444]/20',
+              Beginner: 'bg-success/10 text-success border-success/20',
+              Intermediate: 'bg-accent/10 text-accent border-accent/20',
+              Advanced: 'bg-destructive/10 text-destructive border-destructive/20',
             }[course.difficulty];
 
             return (
               <Link key={course.id} to={`/courses/${course.id}`}>
-                <Card className="h-full rounded-2xl border-[rgba(0,0,0,0.08)] hover:shadow-md transition-all group">
+                <Card className="h-full rounded-2xl border-border hover:border-primary hover:shadow-md transition-all group">
                   <CardContent className="space-y-3 p-3">
                     <img
                       src={getCourseImage(course.title)}
@@ -58,12 +58,12 @@ export default function Courses() {
                     />
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <p className="line-clamp-2 text-base text-[#1a1a2e]">{course.title}</p>
-                        <p className="mt-1 text-xs text-[#6B7280] line-clamp-2">{course.description}</p>
+                        <p className="line-clamp-2 text-base text-foreground">{course.title}</p>
+                        <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{course.description}</p>
                       </div>
                       <Badge className={`${difficultyColor} border flex-shrink-0`}>{course.difficulty}</Badge>
                     </div>
-                    <div className="flex items-center gap-4 text-xs text-[#6B7280]">
+                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <LuBookOpen className="w-4 h-4" />
                         <span>{course.totalLessons} lessons</span>
@@ -76,15 +76,15 @@ export default function Courses() {
                     {isStarted ? (
                       <div className="space-y-2">
                         <div className="flex items-center justify-between text-xs">
-                          <span className="text-[#6B7280]">Progress</span>
-                          <span className="font-semibold text-[#0747a1]">
+                          <span className="text-muted-foreground">Progress</span>
+                          <span className="font-semibold text-primary">
                             {progress}%
                           </span>
                         </div>
                         <Progress value={progress} className="h-1.5" />
                       </div>
                     ) : (
-                      <div className="flex items-center justify-between text-sm text-[#0747a1] font-medium group-hover:gap-2 transition-all">
+                      <div className="flex items-center justify-between text-sm text-primary font-medium group-hover:gap-2 transition-all">
                         <span>Start Course</span>
                         <LuArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                       </div>
@@ -98,13 +98,13 @@ export default function Courses() {
 
         {coursesData.length === 0 && (
           <div className="text-center py-12">
-            <div className="w-16 h-16 rounded-full bg-[#F5F5FA] flex items-center justify-center mx-auto mb-4">
-              <LuBookOpen className="w-8 h-8 text-[#6B7280]" />
+            <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mx-auto mb-4">
+              <LuBookOpen className="w-8 h-8 text-muted-foreground" />
             </div>
-            <h3 className="text-xl font-semibold heading-font text-[#1a1a2e] mb-2">
+            <h3 className="text-xl font-semibold heading-font text-foreground mb-2">
               No courses yet
             </h3>
-            <p className="text-[#6B7280]">
+            <p className="text-muted-foreground">
               Check back soon for new courses!
             </p>
           </div>

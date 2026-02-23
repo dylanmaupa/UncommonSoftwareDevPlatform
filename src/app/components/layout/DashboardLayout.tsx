@@ -48,25 +48,25 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA] p-0">
-      <div className="mx-auto flex h-screen max-w-[1280px] overflow-hidden border border-[rgba(0,0,0,0.08)] bg-white shadow-sm">
-        <aside className="flex w-56 shrink-0 flex-col overflow-y-auto border-r border-[rgba(0,0,0,0.08)] bg-white px-3 py-6">
+    <div className="min-h-screen bg-sidebar p-0">
+      <div className="mx-auto flex h-screen max-w-[1280px] overflow-hidden border border-border bg-card shadow-sm">
+        <aside className="flex w-56 shrink-0 flex-col overflow-y-auto border-r border-border bg-card px-3 py-6">
           <Link to="/dashboard" className="mb-8 flex items-center gap-2 px-2">
-            <div className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-full bg-[#0747a1]/10">
+            <div className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-full bg-primary/10">
               <img
                 src="https://uncommon.org/images/hd-logo.svg"
                 alt="Uncommon logo"
                 className="h-5 w-5 object-contain"
               />
             </div>
-            <span className="heading-font text-base normal-case" style={{ color: '#1a1a2e' }}>
+            <span className="heading-font text-base normal-case text-foreground">
               Coursue
             </span>
           </Link>
 
           <div className="space-y-7">
             <div>
-              <p className="px-2 pb-2 text-[10px] font-semibold uppercase tracking-wider text-[#6B7280]/70">Overview</p>
+              <p className="px-2 pb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">Overview</p>
               <nav className="space-y-1">
                 {overviewItems.map((item) => {
                   const Icon = item.icon;
@@ -77,7 +77,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                       key={`${item.label}-${item.path}`}
                       to={item.path}
                       className={`flex items-center gap-2 rounded-lg px-2 py-2 text-sm transition-colors ${
-                        isActive ? 'text-[#1a1a2e]' : 'text-[#6B7280] hover:bg-[#F5F5FA] hover:text-[#1a1a2e]'
+                        isActive ? 'text-foreground' : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
                       }`}
                     >
                       <Icon className="h-4 w-4" />
@@ -89,16 +89,16 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             </div>
 
             <div>
-              <p className="px-2 pb-2 text-[10px] font-semibold uppercase tracking-wider text-[#6B7280]/70">Friends</p>
+              <p className="px-2 pb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">Friends</p>
               <div className="space-y-3 px-2">
                 {friends.map((friend) => (
                   <div key={friend.name} className="flex items-center gap-2">
-                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[#F5F5FA] text-[10px] text-[#6B7280]">
+                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-secondary text-[10px] text-muted-foreground">
                       {friend.name[0]}
                     </div>
                     <div>
-                      <p className="text-xs text-[#1a1a2e]">{friend.name}</p>
-                      <p className="text-[10px] text-[#6B7280]">{friend.status}</p>
+                      <p className="text-xs text-foreground">{friend.name}</p>
+                      <p className="text-[10px] text-muted-foreground">{friend.status}</p>
                     </div>
                   </div>
                 ))}
@@ -107,13 +107,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
 
           <div className="mt-auto space-y-1 pt-8">
-            <p className="px-2 pb-2 text-[10px] font-semibold uppercase tracking-wider text-[#6B7280]/70">Settings</p>
+            <p className="px-2 pb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">Settings</p>
             <Link
               to="/settings"
               className={`flex items-center gap-2 rounded-lg px-2 py-2 text-sm transition-colors ${
                 location.pathname === '/settings'
-                  ? 'text-[#1a1a2e]'
-                  : 'text-[#6B7280] hover:bg-[#F5F5FA] hover:text-[#1a1a2e]'
+                  ? 'text-foreground'
+                  : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
               }`}
             >
               <LuSettings className="h-4 w-4" />
@@ -122,7 +122,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             <Button
               variant="ghost"
               onClick={handleLogout}
-              className="mt-1 w-full justify-start gap-2 rounded-lg px-2 py-2 text-sm text-[#FF6B35] hover:bg-[#F5F5FA] hover:text-[#FF6B35]"
+              className="mt-1 w-full justify-start gap-2 rounded-lg px-2 py-2 text-sm text-accent hover:bg-secondary hover:text-accent"
             >
               <LuLogOut className="h-4 w-4" />
               Logout

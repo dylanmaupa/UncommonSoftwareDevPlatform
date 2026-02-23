@@ -24,7 +24,7 @@ export default function Achievements() {
       <div className="p-4 lg:p-6">
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_290px]">
           <div className="space-y-4">
-            <Card className="overflow-hidden rounded-2xl border-[rgba(0,0,0,0.08)] bg-[#8B5CF6]">
+            <Card className="overflow-hidden rounded-2xl border-border bg-gradient-to-br from-primary to-accent">
               <CardContent className="p-6">
                 <p className="text-xs uppercase tracking-wider text-white/80">Achievements Overview</p>
                 <h1 className="mt-2 text-3xl leading-tight text-white heading-font">Track your milestones and keep leveling up</h1>
@@ -39,78 +39,78 @@ export default function Achievements() {
             </Card>
 
             <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-              <Card className="rounded-2xl border-[rgba(0,0,0,0.08)] bg-[#FAFAFA]">
+              <Card className="rounded-2xl border-border bg-sidebar">
                 <CardContent className="flex items-center justify-between p-4">
                   <div>
-                    <p className="text-xs text-[#6B7280]">Unlocked</p>
-                    <p className="text-sm text-[#1a1a2e]">
+                    <p className="text-xs text-muted-foreground">Unlocked</p>
+                    <p className="text-sm text-foreground">
                       {unlockedCount}/{totalCount} badges
                     </p>
                   </div>
-                  <LuTrophy className="h-4 w-4 text-[#6B7280]" />
+                  <LuTrophy className="h-4 w-4 text-muted-foreground" />
                 </CardContent>
               </Card>
-              <Card className="rounded-2xl border-[rgba(0,0,0,0.08)] bg-[#FAFAFA]">
+              <Card className="rounded-2xl border-border bg-sidebar">
                 <CardContent className="flex items-center justify-between p-4">
                   <div>
-                    <p className="text-xs text-[#6B7280]">Total XP</p>
-                    <p className="text-sm text-[#1a1a2e]">{user.xp} points</p>
+                    <p className="text-xs text-muted-foreground">Total XP</p>
+                    <p className="text-sm text-foreground">{user.xp} points</p>
                   </div>
-                  <LuSparkles className="h-4 w-4 text-[#6B7280]" />
+                  <LuSparkles className="h-4 w-4 text-muted-foreground" />
                 </CardContent>
               </Card>
-              <Card className="rounded-2xl border-[rgba(0,0,0,0.08)] bg-[#FAFAFA]">
+              <Card className="rounded-2xl border-border bg-sidebar">
                 <CardContent className="flex items-center justify-between p-4">
                   <div>
-                    <p className="text-xs text-[#6B7280]">Current Level</p>
-                    <p className="text-sm text-[#1a1a2e]">Level {user.level}</p>
+                    <p className="text-xs text-muted-foreground">Current Level</p>
+                    <p className="text-sm text-foreground">Level {user.level}</p>
                   </div>
-                  <LuTarget className="h-4 w-4 text-[#6B7280]" />
+                  <LuTarget className="h-4 w-4 text-muted-foreground" />
                 </CardContent>
               </Card>
             </div>
 
-            <Card className="rounded-2xl border-[rgba(0,0,0,0.08)]">
+            <Card className="rounded-2xl border-border">
               <CardContent className="p-0">
-                <div className="flex items-center justify-between border-b border-[rgba(0,0,0,0.08)] px-4 py-3">
-                  <h2 className="text-lg text-[#1a1a2e] heading-font">All Achievements</h2>
-                  <p className="text-xs text-[#6B7280]">{unlockedCount} unlocked</p>
+                <div className="flex items-center justify-between border-b border-border px-4 py-3">
+                  <h2 className="text-lg text-foreground heading-font">All Achievements</h2>
+                  <p className="text-xs text-muted-foreground">{unlockedCount} unlocked</p>
                 </div>
                 <div className="grid grid-cols-1 gap-3 p-4 md:grid-cols-2">
                   {unlockedAchievements.map((achievement) => (
                     <Card
                       key={achievement.id}
-                      className={`rounded-2xl border-[rgba(0,0,0,0.08)] ${achievement.unlocked ? 'bg-[#FAFAFA]' : 'bg-white'}`}
+                      className={`rounded-2xl border-border ${achievement.unlocked ? 'bg-sidebar' : 'bg-card'}`}
                     >
                       <CardContent className="p-4">
                         <div className="flex items-start gap-3">
                           <div
                             className={`flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl text-xl ${
-                              achievement.unlocked ? 'bg-[#8B5CF6]/15 text-[#8B5CF6]' : 'bg-[#F5F5FA]'
+                              achievement.unlocked ? 'bg-primary/15 text-primary' : 'bg-secondary'
                             }`}
                           >
-                            {achievement.unlocked ? achievement.icon : <LuLock className="h-4 w-4 text-[#6B7280]" />}
+                            {achievement.unlocked ? achievement.icon : <LuLock className="h-4 w-4 text-muted-foreground" />}
                           </div>
                           <div className="min-w-0 flex-1">
                             <div className="mb-1 flex items-start justify-between gap-2">
-                              <h3 className={`text-base heading-font ${achievement.unlocked ? 'text-[#1a1a2e]' : 'text-[#6B7280]'}`}>
+                              <h3 className={`text-base heading-font ${achievement.unlocked ? 'text-foreground' : 'text-muted-foreground'}`}>
                                 {achievement.title}
                               </h3>
                               <Badge
                                 variant="outline"
                                 className={
                                   achievement.unlocked
-                                    ? 'border-[#8B5CF6]/30 bg-[#8B5CF6]/10 text-[#8B5CF6]'
-                                    : 'border-[rgba(0,0,0,0.12)] text-[#6B7280]'
+                                    ? 'border-primary/30 bg-primary/10 text-primary'
+                                    : 'border-border text-muted-foreground'
                                 }
                               >
                                 {achievement.unlocked ? 'Unlocked' : 'Locked'}
                               </Badge>
                             </div>
-                            <p className={`text-xs ${achievement.unlocked ? 'text-[#6B7280]' : 'text-[#9CA3AF]'}`}>
+                            <p className={`text-xs ${achievement.unlocked ? 'text-muted-foreground' : 'text-muted-foreground/80'}`}>
                               {achievement.description}
                             </p>
-                            <p className="mt-2 text-xs text-[#6B7280]">{achievement.condition}</p>
+                            <p className="mt-2 text-xs text-muted-foreground">{achievement.condition}</p>
                           </div>
                         </div>
                       </CardContent>
@@ -122,48 +122,48 @@ export default function Achievements() {
           </div>
 
           <div className="space-y-4">
-            <Card className="rounded-2xl border-[rgba(0,0,0,0.08)]">
+            <Card className="rounded-2xl border-border">
               <CardContent className="space-y-3 p-4">
-                <h3 className="text-base text-[#1a1a2e] heading-font">Progress Snapshot</h3>
-                <div className="rounded-2xl bg-[#F5F5FA] p-3">
+                <h3 className="text-base text-foreground heading-font">Progress Snapshot</h3>
+                <div className="rounded-2xl bg-secondary p-3">
                   <div className="mb-3 flex items-end gap-2">
-                    <div className="h-8 w-8 rounded-md bg-[#8B5CF6]/30" />
-                    <div className="h-10 w-8 rounded-md bg-[#8B5CF6]/55" />
-                    <div className="h-12 w-8 rounded-md bg-[#8B5CF6]/80" />
-                    <div className="h-14 w-8 rounded-md bg-[#8B5CF6]" />
-                    <div className="h-9 w-8 rounded-md bg-[#8B5CF6]/40" />
+                    <div className="h-8 w-8 rounded-md bg-primary/30" />
+                    <div className="h-10 w-8 rounded-md bg-primary/55" />
+                    <div className="h-12 w-8 rounded-md bg-primary/80" />
+                    <div className="h-14 w-8 rounded-md bg-primary" />
+                    <div className="h-9 w-8 rounded-md bg-primary/40" />
                   </div>
-                  <div className="flex items-center justify-between text-[10px] text-[#6B7280]">
+                  <div className="flex items-center justify-between text-[10px] text-muted-foreground">
                     <span>Locked {totalCount - unlockedCount}</span>
                     <span>Unlocked {unlockedCount}</span>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className="rounded-xl bg-[#FAFAFA] p-2 text-[#6B7280]">Rate: {completionRate}%</div>
-                  <div className="rounded-xl bg-[#FAFAFA] p-2 text-[#6B7280]">Level: {user.level}</div>
-                  <div className="rounded-xl bg-[#FAFAFA] p-2 text-[#6B7280]">XP: {user.xp}</div>
-                  <div className="rounded-xl bg-[#FAFAFA] p-2 text-[#6B7280]">Streak: {user.streak}</div>
+                  <div className="rounded-xl bg-sidebar p-2 text-muted-foreground">Rate: {completionRate}%</div>
+                  <div className="rounded-xl bg-sidebar p-2 text-muted-foreground">Level: {user.level}</div>
+                  <div className="rounded-xl bg-sidebar p-2 text-muted-foreground">XP: {user.xp}</div>
+                  <div className="rounded-xl bg-sidebar p-2 text-muted-foreground">Streak: {user.streak}</div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="rounded-2xl border-[rgba(0,0,0,0.08)]">
+            <Card className="rounded-2xl border-border">
               <CardContent className="space-y-3 p-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-base text-[#1a1a2e] heading-font">Next Targets</h3>
-                  <LuFlame className="h-4 w-4 text-[#6B7280]" />
+                  <h3 className="text-base text-foreground heading-font">Next Targets</h3>
+                  <LuFlame className="h-4 w-4 text-muted-foreground" />
                 </div>
                 {lockedAchievements.length > 0 ? (
                   lockedAchievements.slice(0, 3).map((achievement) => (
-                    <div key={achievement.id} className="rounded-xl bg-[#FAFAFA] p-3">
-                      <p className="text-sm text-[#1a1a2e]">{achievement.title}</p>
-                      <p className="mt-1 text-xs text-[#6B7280]">{achievement.condition}</p>
+                    <div key={achievement.id} className="rounded-xl bg-sidebar p-3">
+                      <p className="text-sm text-foreground">{achievement.title}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">{achievement.condition}</p>
                     </div>
                   ))
                 ) : (
-                  <div className="rounded-xl bg-[#FAFAFA] p-3">
-                    <p className="text-sm text-[#1a1a2e]">All achievements unlocked.</p>
-                    <p className="mt-1 text-xs text-[#6B7280]">You have completed every available badge.</p>
+                  <div className="rounded-xl bg-sidebar p-3">
+                    <p className="text-sm text-foreground">All achievements unlocked.</p>
+                    <p className="mt-1 text-xs text-muted-foreground">You have completed every available badge.</p>
                   </div>
                 )}
               </CardContent>
