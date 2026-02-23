@@ -58,7 +58,7 @@ function DashboardMain({
 
   return (
     <div className="p-4 lg:p-6">
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_290px]">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_300px]">
         <div className="space-y-4">
           <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-sidebar p-3">
             <div className="relative min-w-[220px] flex-1">
@@ -198,7 +198,7 @@ function DashboardMain({
           <Card className="rounded-2xl border-border">
             <CardContent className="space-y-4 p-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-base text-foreground heading-font">Statistic</h3>
+                <h3 className="text-base text-foreground heading-font">Profile Overview</h3>
                 <LuEllipsis className="h-4 w-4 text-muted-foreground" />
               </div>
               <div className="flex flex-col items-center">

@@ -24,7 +24,7 @@ export default function Achievements() {
       <div className="p-4 lg:p-6">
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_290px]">
           <div className="space-y-4">
-            <Card className="overflow-hidden rounded-2xl border-border bg-gradient-to-br from-primary to-accent">
+            <Card className="overflow-hidden rounded-2xl border-border bg-primary">
               <CardContent className="p-6">
                 <p className="text-xs uppercase tracking-wider text-white/80">Achievements Overview</p>
                 <h1 className="mt-2 text-3xl leading-tight text-white heading-font">Track your milestones and keep leveling up</h1>
