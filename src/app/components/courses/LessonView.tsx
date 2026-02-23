@@ -75,7 +75,7 @@ export default function LessonView() {
     return (
       <DashboardLayout>
         <div className="p-8 text-center">
-          <p className="text-[#6B7280]">Lesson not found</p>
+          <p className="text-muted-foreground">Lesson not found</p>
         </div>
       </DashboardLayout>
     );
@@ -143,7 +143,7 @@ export default function LessonView() {
           exit={{ opacity: 0 }}
           className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50"
         >
-          <div className="bg-gradient-to-br from-[#0747a1] to-[#8B5CF6] text-white px-8 py-6 rounded-2xl shadow-2xl">
+          <div className="bg-gradient-to-br from-primary to-accent text-white px-8 py-6 rounded-2xl shadow-2xl">
             <div className="flex items-center gap-3">
               <LuTrophy className="w-12 h-12" />
               <div>
@@ -156,27 +156,27 @@ export default function LessonView() {
       )}
 
       <div className="flex flex-col h-screen">
-        <div className="bg-white border-b border-[rgba(0,0,0,0.08)] px-6 py-4">
+        <div className="bg-card border-b border-border px-6 py-4">
           <div className="flex items-center justify-between max-w-[1800px] mx-auto">
             <div className="flex items-center gap-4">
               <Button variant="ghost" size="sm" onClick={() => navigate(`/courses/${courseId}`)}>
                 <LuArrowLeft className="w-4 h-4 mr-2" />
                 Back to Course
               </Button>
-              <div className="h-6 w-px bg-[rgba(0,0,0,0.08)]" />
+              <div className="h-6 w-px bg-border" />
               <div>
-                <h2 className="font-semibold text-[#1a1a2e]">{lesson.title}</h2>
-                <p className="text-xs text-[#6B7280]">{module.title} - {course.title}</p>
+                <h2 className="font-semibold text-foreground">{lesson.title}</h2>
+                <p className="text-xs text-muted-foreground">{module.title} - {course.title}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
               {isCompleted && (
-                <Badge className="bg-[#10B981] text-white">
+                <Badge className="bg-success text-success-foreground">
                   <LuCircleCheck className="w-3 h-3 mr-1" />
                   Completed
                 </Badge>
               )}
-              <Badge variant="outline" className="border-[#0747a1] text-[#0747a1]">
+              <Badge variant="outline" className="border-primary text-primary">
                 <LuZap className="w-3 h-3 mr-1" />
                 {lesson.xpReward} XP
               </Badge>
@@ -185,14 +185,14 @@ export default function LessonView() {
         </div>
 
         <div className="flex-1 flex overflow-hidden">
-          <div className="w-1/2 overflow-y-auto bg-white p-8 border-r border-[rgba(0,0,0,0.08)]">
+          <div className="w-1/2 overflow-y-auto bg-card p-8 border-r border-border">
             <div className="max-w-2xl mx-auto">
               <div className="prose prose-slate max-w-none mb-8">
-                <div className="whitespace-pre-wrap text-[#1a1a2e] leading-relaxed">{lesson.content}</div>
+                <div className="whitespace-pre-wrap text-foreground leading-relaxed">{lesson.content}</div>
               </div>
 
-              <Card className="mb-8 border-[rgba(0,0,0,0.08)] overflow-hidden">
-                <div className="bg-[#1a1a2e] px-4 py-2 flex items-center justify-between">
+              <Card className="mb-8 border-border overflow-hidden">
+                <div className="bg-foreground px-4 py-2 flex items-center justify-between">
                   <span className="text-sm text-white/70">Example</span>
                   <Badge className="bg-white/10 text-white text-xs">{lesson.language}</Badge>
                 </div>
@@ -214,15 +214,15 @@ export default function LessonView() {
                 </div>
               </Card>
 
-              <Card className="border-[rgba(91,79,255,0.2)] bg-[#0747a1]/5">
+              <Card className="border-primary/20 bg-primary/5">
                 <CardContent className="p-6">
                   <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-[#0747a1] flex items-center justify-center flex-shrink-0">
-                      <LuTrophy className="w-4 h-4 text-white" />
+                    <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
+                      <LuTrophy className="w-4 h-4 text-primary-foreground" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-[#1a1a2e] mb-2">Your Challenge</h3>
-                      <p className="text-sm text-[#6B7280]">{lesson.exercise.prompt}</p>
+                      <h3 className="font-semibold text-foreground mb-2">Your Challenge</h3>
+                      <p className="text-sm text-muted-foreground">{lesson.exercise.prompt}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -233,15 +233,15 @@ export default function LessonView() {
                   variant="outline"
                   size="sm"
                   onClick={() => setShowHint(!showHint)}
-                  className="border-[#F59E0B] text-[#F59E0B] hover:bg-[#F59E0B]/10"
+                  className="border-accent text-accent hover:bg-accent/10"
                 >
                   <LuLightbulb className="w-4 h-4 mr-2" />
                   {showHint ? 'Hide' : 'Show'} Hint
                 </Button>
                 {showHint && (
-                  <Card className="mt-3 border-[#F59E0B]/20 bg-[#F59E0B]/5">
+                  <Card className="mt-3 border-accent/20 bg-accent/5">
                     <CardContent className="p-4">
-                      <p className="text-sm text-[#6B7280]">
+                      <p className="text-sm text-muted-foreground">
                         Try breaking down the problem into smaller steps. Make sure to use the correct variable types and syntax.
                       </p>
                     </CardContent>
@@ -254,14 +254,14 @@ export default function LessonView() {
                   variant="outline"
                   size="sm"
                   onClick={() => setShowSolution(!showSolution)}
-                  className="border-[#6B7280] text-[#6B7280]"
+                  className="border-muted-foreground text-muted-foreground"
                 >
                   {showSolution ? <LuEyeOff className="w-4 h-4 mr-2" /> : <LuEye className="w-4 h-4 mr-2" />}
                   {showSolution ? 'Hide' : 'View'} Solution
                 </Button>
                 {showSolution && (
-                  <Card className="mt-3 border-[rgba(0,0,0,0.08)] overflow-hidden">
-                    <div className="bg-[#1a1a2e] px-4 py-2">
+                  <Card className="mt-3 border-border overflow-hidden">
+                    <div className="bg-foreground px-4 py-2">
                       <span className="text-sm text-white/70">Solution</span>
                     </div>
                     <div className="bg-[#1e1e1e]">
@@ -314,15 +314,14 @@ export default function LessonView() {
                 <LuPlay className="w-4 h-4 mr-2" />
                 Run Code
               </Button>
-              <Button onClick={handleSubmit} disabled={isRunning} style={{ backgroundColor: '#0747a1' }}>
+              <Button onClick={handleSubmit} disabled={isRunning} className="bg-primary text-primary-foreground hover:bg-primary/90">
                 <LuCircleCheck className="w-4 h-4 mr-2" />
                 {isCompleted ? 'Completed' : 'Submit'}
               </Button>
               {nextLesson && isCompleted && (
                 <Button
                   onClick={() => navigate(`/courses/${nextLesson.courseId}/modules/${nextLesson.moduleId}/lessons/${nextLesson.lessonId}`)}
-                  style={{ backgroundColor: '#10B981' }}
-                  className="ml-auto"
+                  className="ml-auto bg-success text-success-foreground hover:bg-success/90"
                 >
                   Next Lesson
                   <LuChevronRight className="w-4 h-4 ml-2" />

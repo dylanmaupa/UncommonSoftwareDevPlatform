@@ -31,16 +31,16 @@ export default function ProjectDetail() {
     return (
       <DashboardLayout>
         <div className="p-8 text-center">
-          <p className="text-[#6B7280]">Project not found</p>
+          <p className="text-muted-foreground">Project not found</p>
         </div>
       </DashboardLayout>
     );
   }
 
   const difficultyColor = {
-    Beginner: 'bg-[#10B981] text-white',
-    Intermediate: 'bg-[#F59E0B] text-white',
-    Advanced: 'bg-[#EF4444] text-white',
+    Beginner: 'bg-success text-success-foreground',
+    Intermediate: 'bg-accent text-accent-foreground',
+    Advanced: 'bg-destructive text-destructive-foreground',
   }[project.difficulty];
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -73,7 +73,7 @@ export default function ProjectDetail() {
           Back to Projects
         </Button>
 
-        <div className="bg-gradient-to-br from-[#FF6B35] to-[#F59E0B] rounded-2xl p-8 text-white mb-8">
+        <div className="bg-gradient-to-br from-accent to-primary rounded-2xl p-8 text-white mb-8">
           <div className="flex items-start gap-6">
             <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center flex-shrink-0">
               <LuRocket className="w-8 h-8" />
@@ -82,7 +82,7 @@ export default function ProjectDetail() {
               <div className="flex items-center gap-2 mb-2">
                 <h1 className="text-3xl heading-font">{project.title}</h1>
                 {isCompleted && (
-                  <Badge className="bg-[#10B981] text-white">
+                  <Badge className="bg-success text-success-foreground">
                     <LuCircleCheck className="w-3 h-3 mr-1" />
                     Completed
                   </Badge>
@@ -102,7 +102,7 @@ export default function ProjectDetail() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
-            <Card className="border-[rgba(0,0,0,0.08)]">
+            <Card className="border-border">
               <CardHeader>
                 <CardTitle className="heading-font">Project Brief</CardTitle>
               </CardHeader>
@@ -110,17 +110,17 @@ export default function ProjectDetail() {
                 <div className="space-y-4">
                   {project.instructions.map((instruction, index) => (
                     <div key={index} className="flex gap-3">
-                      <div className="w-6 h-6 rounded-full bg-[#0747a1] text-white flex items-center justify-center text-sm font-semibold flex-shrink-0">
+                      <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-semibold flex-shrink-0">
                         {index + 1}
                       </div>
-                      <p className="text-[#1a1a2e] flex-1 pt-0.5">{instruction}</p>
+                      <p className="text-foreground flex-1 pt-0.5">{instruction}</p>
                     </div>
                   ))}
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="border-[rgba(0,0,0,0.08)]">
+            <Card className="border-border">
               <CardHeader>
                 <CardTitle className="heading-font">Submit Your Project</CardTitle>
               </CardHeader>
@@ -129,7 +129,7 @@ export default function ProjectDetail() {
                   <div className="space-y-2">
                     <Label htmlFor="github-url">GitHub Repository URL</Label>
                     <div className="relative">
-                      <LuGithub className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#6B7280]" />
+                      <LuGithub className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                       <Input
                         id="github-url"
                         type="url"
@@ -138,17 +138,16 @@ export default function ProjectDetail() {
                         onChange={(e) => setGithubUrl(e.target.value)}
                         required
                         disabled={isCompleted}
-                        className="pl-10 h-12 rounded-xl bg-[#F5F5FA] border-0"
+                        className="pl-10 h-12 rounded-xl bg-secondary border-0"
                       />
                     </div>
-                    <p className="text-sm text-[#6B7280]">Share your project repository so others can learn from it</p>
+                    <p className="text-sm text-muted-foreground">Share your project repository so others can learn from it</p>
                   </div>
 
                   <Button
                     type="submit"
                     disabled={isSubmitting || isCompleted}
-                    className="w-full h-12 rounded-xl"
-                    style={{ backgroundColor: '#0747a1' }}
+                    className="w-full h-12 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90"
                   >
                     {isCompleted ? (
                       <>
@@ -169,7 +168,7 @@ export default function ProjectDetail() {
                     href={githubUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-2 mt-3 text-sm text-[#0747a1] hover:underline"
+                    className="flex items-center justify-center gap-2 mt-3 text-sm text-primary hover:underline"
                   >
                     View your submission
                     <LuExternalLink className="w-3 h-3" />
@@ -180,14 +179,14 @@ export default function ProjectDetail() {
           </div>
 
           <div className="space-y-6">
-            <Card className="border-[rgba(0,0,0,0.08)]">
+            <Card className="border-border">
               <CardHeader>
                 <CardTitle className="heading-font text-lg">Skills You'll Practice</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex flex-wrap gap-2">
                   {project.skills.map((skill, index) => (
-                    <Badge key={index} className="bg-[#0747a1]/10 text-[#0747a1] border-0">
+                    <Badge key={index} className="bg-primary/10 text-primary border-0">
                       {skill}
                     </Badge>
                   ))}
@@ -195,11 +194,11 @@ export default function ProjectDetail() {
               </CardContent>
             </Card>
 
-            <Card className="border-[rgba(0,0,0,0.08)] bg-gradient-to-br from-[#0747a1]/5 to-[#8B5CF6]/5">
+            <Card className="border-border bg-gradient-to-br from-primary/5 to-accent/5">
               <CardHeader>
                 <CardTitle className="heading-font text-lg">Tips</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3 text-sm text-[#6B7280]">
+              <CardContent className="space-y-3 text-sm text-muted-foreground">
                 <p>Break the project into smaller tasks</p>
                 <p>Test your code frequently</p>
                 <p>Write clean, readable code</p>

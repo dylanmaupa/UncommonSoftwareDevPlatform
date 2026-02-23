@@ -58,17 +58,17 @@ export default function Settings() {
     <DashboardLayout>
       <div className="p-4 lg:p-6 max-w-7xl mx-auto">
         <div className="mb-6">
-          <h1 className="text-3xl lg:text-4xl heading-font mb-2" style={{ color: '#1a1a2e' }}>
+          <h1 className="text-3xl lg:text-4xl heading-font mb-2 text-foreground">
             Settings
           </h1>
-          <p className="text-[#6B7280]">Manage your account settings and preferences</p>
+          <p className="text-muted-foreground">Manage your account settings and preferences</p>
         </div>
 
         <div className="space-y-6">
-          <Card className="rounded-2xl border-[rgba(0,0,0,0.08)]">
+          <Card className="rounded-2xl border-border">
             <CardHeader>
               <div className="flex items-center gap-2">
-                <LuUser className="w-5 h-5 text-[#0747a1]" />
+                <LuUser className="w-5 h-5 text-primary" />
                 <CardTitle className="heading-font">Account Information</CardTitle>
               </div>
               <CardDescription>Your basic account details</CardDescription>
@@ -77,12 +77,12 @@ export default function Settings() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Email</Label>
-                  <Input value={user.email} disabled className="bg-[#F5F5FA] border-0" />
+                  <Input value={user.email} disabled className="bg-secondary border-0" />
                 </div>
                 <div className="space-y-2">
                   <Label>Nickname</Label>
-                  <Input value={user.nickname} disabled className="bg-[#F5F5FA] border-0" />
-                  <p className="text-xs text-[#6B7280]">Edit your nickname from your profile page</p>
+                  <Input value={user.nickname} disabled className="bg-secondary border-0" />
+                  <p className="text-xs text-muted-foreground">Edit your nickname from your profile page</p>
                 </div>
               </div>
 
@@ -96,21 +96,21 @@ export default function Settings() {
                       year: 'numeric',
                     })}
                     disabled
-                    className="bg-[#F5F5FA] border-0"
+                    className="bg-secondary border-0"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label>Account ID</Label>
-                  <Input value={user.id} disabled className="bg-[#F5F5FA] border-0" />
+                  <Input value={user.id} disabled className="bg-secondary border-0" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="rounded-2xl border-[rgba(0,0,0,0.08)]">
+          <Card className="rounded-2xl border-border">
             <CardHeader>
               <div className="flex items-center gap-2">
-                <LuKey className="w-5 h-5 text-[#0747a1]" />
+                <LuKey className="w-5 h-5 text-primary" />
                 <CardTitle className="heading-font">Change Password</CardTitle>
               </div>
               <CardDescription>Update your password to keep your account secure</CardDescription>
@@ -125,7 +125,7 @@ export default function Settings() {
                     value={oldPassword}
                     onChange={(e) => setOldPassword(e.target.value)}
                     required
-                    className="h-12 rounded-xl bg-[#F5F5FA] border-0"
+                    className="h-12 rounded-xl bg-secondary border-0"
                   />
                 </div>
 
@@ -138,7 +138,7 @@ export default function Settings() {
                     onChange={(e) => setNewPassword(e.target.value)}
                     required
                     minLength={6}
-                    className="h-12 rounded-xl bg-[#F5F5FA] border-0"
+                    className="h-12 rounded-xl bg-secondary border-0"
                   />
                 </div>
 
@@ -151,11 +151,11 @@ export default function Settings() {
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
                     minLength={6}
-                    className="h-12 rounded-xl bg-[#F5F5FA] border-0"
+                    className="h-12 rounded-xl bg-secondary border-0"
                   />
                 </div>
 
-                <Button type="submit" className="rounded-xl" style={{ backgroundColor: '#0747a1' }}>
+                <Button type="submit" className="rounded-xl bg-primary text-primary-foreground hover:bg-primary/90">
                   <LuSave className="w-4 h-4 mr-2" />
                   Update Password
                 </Button>
@@ -163,25 +163,25 @@ export default function Settings() {
             </CardContent>
           </Card>
 
-          <Card className="rounded-2xl border-[#EF4444] bg-[#EF4444]/5">
+          <Card className="rounded-2xl border-destructive bg-destructive/5">
             <CardHeader>
               <div className="flex items-center gap-2">
-                <LuCircleAlert className="w-5 h-5 text-[#EF4444]" />
-                <CardTitle className="heading-font text-[#EF4444]">Danger Zone</CardTitle>
+                <LuCircleAlert className="w-5 h-5 text-destructive" />
+                <CardTitle className="heading-font text-destructive">Danger Zone</CardTitle>
               </div>
               <CardDescription>Irreversible actions for your account</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h4 className="font-semibold text-[#1a1a2e] mb-1">Delete Account</h4>
-                  <p className="text-sm text-[#6B7280]">
+                  <h4 className="font-semibold text-foreground mb-1">Delete Account</h4>
+                  <p className="text-sm text-muted-foreground">
                     Permanently delete your account and all associated data. This action cannot be undone.
                   </p>
                 </div>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button variant="destructive" className="flex-shrink-0 bg-[#EF4444] hover:bg-[#DC2626]">
+                    <Button variant="destructive" className="flex-shrink-0">
                       <LuTrash2 className="w-4 h-4 mr-2" />
                       Delete Account
                     </Button>
@@ -201,7 +201,10 @@ export default function Settings() {
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={handleDeleteAccount} className="bg-[#EF4444] hover:bg-[#DC2626]">
+                      <AlertDialogAction
+                        onClick={handleDeleteAccount}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
                         Delete Account
                       </AlertDialogAction>
                     </AlertDialogFooter>
@@ -211,13 +214,13 @@ export default function Settings() {
             </CardContent>
           </Card>
 
-          <Card className="rounded-2xl border-[rgba(0,0,0,0.08)] bg-gradient-to-br from-[#0747a1]/5 to-[#8B5CF6]/5">
+          <Card className="rounded-2xl border-border bg-gradient-to-br from-primary/5 to-accent/5">
             <CardContent className="p-6">
-              <h4 className="font-semibold heading-font text-[#1a1a2e] mb-2">About This Platform</h4>
-              <p className="text-sm text-[#6B7280] mb-3">
+              <h4 className="font-semibold heading-font text-foreground mb-2">About This Platform</h4>
+              <p className="text-sm text-muted-foreground mb-3">
                 A free, open-access coding education platform. All courses and features are completely free with no premium tiers or paywalls.
               </p>
-              <p className="text-xs text-[#6B7280]">Version 1.0.0 - Made for learners everywhere</p>
+              <p className="text-xs text-muted-foreground">Version 1.0.0 - Made for learners everywhere</p>
             </CardContent>
           </Card>
         </div>
