@@ -85,7 +85,7 @@ function DashboardMain({
             </div>
           </div>
 
-          <Card className="overflow-hidden rounded-2xl border-border bg-gradient-to-br from-primary to-accent">
+          <Card className="overflow-hidden rounded-2xl border-border bg-primary">
             <CardContent className="p-6">
               <p className="text-xs uppercase tracking-wider text-white/80">Online Course</p>
               <h2 className="mt-2 max-w-md text-3xl leading-tight text-white heading-font">

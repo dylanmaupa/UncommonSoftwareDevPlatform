@@ -35,12 +35,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { icon: LuUser, label: 'Profile', path: '/profile' },
   ];
 
-  const friends = [
-    { name: 'Bagas Mahpie', status: 'Friend' },
-    { name: 'Sir Dandy', status: 'Old Friend' },
-    { name: 'Jhon Tosan', status: 'Friend' },
-  ];
-
   const handleLogout = () => {
     authService.logout();
     toast.success('Logged out successfully');
@@ -64,46 +58,27 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             </span>
           </Link>
 
-          <div className="space-y-7">
-            <div>
-              <p className="px-2 pb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">Overview</p>
-              <nav className="space-y-1">
-                {overviewItems.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = location.pathname === item.path;
+          <div>
+            <p className="px-2 pb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">Overview</p>
+            <nav className="space-y-1">
+              {overviewItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = location.pathname === item.path;
 
-                  return (
-                    <Link
-                      key={`${item.label}-${item.path}`}
-                      to={item.path}
-                      className={`flex items-center gap-2 rounded-lg px-2 py-2 text-sm transition-colors ${
-                        isActive ? 'text-foreground' : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
-                      }`}
-                    >
-                      <Icon className="h-4 w-4" />
-                      <span>{item.label}</span>
-                    </Link>
-                  );
-                })}
-              </nav>
-            </div>
-
-            <div>
-              <p className="px-2 pb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">Friends</p>
-              <div className="space-y-3 px-2">
-                {friends.map((friend) => (
-                  <div key={friend.name} className="flex items-center gap-2">
-                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-secondary text-[10px] text-muted-foreground">
-                      {friend.name[0]}
-                    </div>
-                    <div>
-                      <p className="text-xs text-foreground">{friend.name}</p>
-                      <p className="text-[10px] text-muted-foreground">{friend.status}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+                return (
+                  <Link
+                    key={`${item.label}-${item.path}`}
+                    to={item.path}
+                    className={`flex items-center gap-2 rounded-lg px-2 py-2 text-sm transition-colors ${
+                      isActive ? 'text-foreground' : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                    }`}
+                  >
+                    <Icon className="h-4 w-4" />
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
+            </nav>
           </div>
 
           <div className="mt-auto space-y-1 pt-8">
