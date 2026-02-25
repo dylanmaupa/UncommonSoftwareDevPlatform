@@ -19,9 +19,16 @@ export default function Signup() {
     setIsLoading(true);
 
     setTimeout(() => {
-      const user = authService.signup(email, password, nickname);
+      const normalizedEmail = email.trim().toLowerCase();
+      const normalizedNickname = nickname.trim();
+      const isUncommonEmail = normalizedEmail.endsWith('@uncommon.org');
+      const user = authService.signup(normalizedEmail, password, normalizedNickname);
       if (user) {
-        toast.success('Account created! Welcome to your coding journey!');
+        toast.success(
+          isUncommonEmail
+            ? 'Uncommon account created! Redirecting to dashboard.'
+            : 'Account created! Welcome to your coding journey!',
+        );
         navigate('/dashboard');
       } else {
         toast.error('Email already exists');
