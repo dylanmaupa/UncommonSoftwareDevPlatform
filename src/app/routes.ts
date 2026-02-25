@@ -3,6 +3,7 @@ import Root from './components/Root';
 import Login from './components/auth/Login';
 import Signup from './components/auth/Signup';
 import Dashboard from './components/dashboard/Dashboard';
+import Admin from './components/admin/Admin';
 import Courses from './components/courses/Courses';
 import CourseDetail from './components/courses/CourseDetail';
 import LessonView from './components/courses/LessonView';
@@ -21,6 +22,7 @@ export const router = createBrowserRouter([
       { index: true, Component: Login },
       { path: 'signup', Component: Signup },
       { path: 'dashboard', Component: Dashboard },
+      { path: 'admin', Component: Admin },
       { path: 'courses', Component: Courses },
       { path: 'courses/:courseId', Component: CourseDetail },
       { path: 'courses/:courseId/modules/:moduleId/lessons/:lessonId', Component: LessonView },
