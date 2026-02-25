@@ -30,7 +30,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const overviewItems = [
     { icon: LuLayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-    { icon: LuShieldCheck, label: 'Admin', path: '/admin' },
+    { icon: LuShieldCheck, label: 'Instructor', path: '/instructor' },
     { icon: LuBookOpen, label: 'Courses', path: '/courses' },
     { icon: LuFolderKanban, label: 'Projects', path: '/projects' },
     { icon: LuTrophy, label: 'Achievements', path: '/achievements' },

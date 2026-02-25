@@ -89,11 +89,16 @@ export default function Login() {
             <div className="flex items-start gap-2">
               <LuSparkles className="w-5 h-5 text-[#0747a1] flex-shrink-0 mt-0.5" />
               <div className="text-sm">
-                <p className="font-medium text-[#1a1a2e] mb-1">Try the demo account:</p>
+                <p className="font-medium text-[#1a1a2e] mb-1">Try one of these accounts:</p>
                 <p className="text-[#6B7280]">
                   Email: <span className="font-mono">demo@example.com</span>
                   <br />
                   Password: <span className="font-mono">demo123</span>
+                  <br />
+                  <br />
+                  Email: <span className="font-mono">vincent@uncommon.org</span>
+                  <br />
+                  Password: <span className="font-mono">vin12345</span>
                 </p>
               </div>
             </div>
