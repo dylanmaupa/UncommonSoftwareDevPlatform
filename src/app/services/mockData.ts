@@ -95,6 +95,24 @@ users.set('demo@example.com', {
   },
 });
 
+// Seeded uncommon.org account for direct sign-in
+users.set('vincent@uncommon.org', {
+  password: 'vin12345',
+  user: {
+    id: '2',
+    email: 'vincent@uncommon.org',
+    nickname: 'Vincent',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Vincent',
+    xp: 0,
+    level: 1,
+    streak: 0,
+    completedLessons: [],
+    completedProjects: [],
+    achievements: [],
+    createdAt: new Date().toISOString(),
+  },
+});
+
 // Mock courses data
 export const coursesData: Course[] = [
   {
