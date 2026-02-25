@@ -34,6 +34,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { icon: LuTrophy, label: 'Achievements', path: '/achievements' },
     { icon: LuUser, label: 'Profile', path: '/profile' },
   ];
+  const mobileNavItems = [...overviewItems, { icon: LuSettings, label: 'Settings', path: '/settings' }];
 
   const handleLogout = () => {
     authService.logout();
@@ -42,9 +43,69 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   };
 
   return (
-    <div className="min-h-screen bg-sidebar p-0">
-      <div className="mx-auto flex h-screen max-w-[1280px] overflow-hidden border border-border bg-card shadow-sm">
-        <aside className="flex w-56 shrink-0 flex-col overflow-y-auto border-r border-border bg-card px-3 py-6">
+    <div className="min-h-screen bg-sidebar">
+      <div className="mx-auto flex min-h-screen max-w-[1280px] flex-col border-x border-border bg-card shadow-sm lg:h-screen lg:flex-row lg:overflow-hidden lg:border">
+        <header className="sticky top-0 z-20 border-b border-border bg-card/95 backdrop-blur lg:hidden">
+          <div className="flex items-center justify-between gap-3 px-4 py-3">
+            <Link to="/dashboard" className="flex items-center gap-2">
+              <div className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-full bg-primary/10">
+                <img
+                  src="https://uncommon.org/images/hd-logo.svg"
+                  alt="Uncommon logo"
+                  className="h-5 w-5 object-contain"
+                />
+              </div>
+              <span className="heading-font text-base normal-case text-foreground">Coursue</span>
+            </Link>
+            <div className="flex items-center gap-2">
+              <Link
+                to="/settings"
+                className={`flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-foreground ${
+                  location.pathname === '/settings'
+                    ? 'bg-secondary text-foreground'
+                    : 'bg-card hover:bg-secondary hover:text-foreground'
+                }`}
+                aria-label="Settings"
+              >
+                <LuSettings className="h-4 w-4" />
+              </Link>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleLogout}
+                className="h-9 w-9 rounded-full border border-border bg-card text-accent hover:bg-secondary hover:text-accent"
+              >
+                <LuLogOut className="h-4 w-4" />
+                <span className="sr-only">Logout</span>
+              </Button>
+            </div>
+          </div>
+          <nav className="overflow-x-auto px-2 pb-3">
+            <div className="flex w-max items-center gap-1">
+              {mobileNavItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = location.pathname === item.path;
+
+                return (
+                  <Link
+                    key={`${item.label}-${item.path}-mobile`}
+                    to={item.path}
+                    className={`flex items-center gap-2 whitespace-nowrap rounded-full px-3 py-2 text-sm transition-colors ${
+                      isActive
+                        ? 'bg-secondary text-foreground'
+                        : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                    }`}
+                  >
+                    <Icon className="h-4 w-4" />
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </nav>
+        </header>
+
+        <aside className="hidden w-56 shrink-0 flex-col overflow-y-auto border-r border-border bg-card px-3 py-6 lg:flex">
           <Link to="/dashboard" className="mb-8 flex items-center gap-2 px-2">
             <div className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-full bg-primary/10">
               <img
@@ -53,9 +114,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 className="h-5 w-5 object-contain"
               />
             </div>
-            <span className="heading-font text-base normal-case text-foreground">
-              Coursue
-            </span>
+            <span className="heading-font text-base normal-case text-foreground">Coursue</span>
           </Link>
 
           <div>
@@ -105,7 +164,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
         </aside>
 
-        <main className="flex-1 overflow-y-auto">{children}</main>
+        <main className="min-h-0 flex-1 lg:overflow-y-auto">{children}</main>
       </div>
     </div>
   );

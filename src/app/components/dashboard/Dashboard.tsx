@@ -57,11 +57,11 @@ function DashboardMain({
   const featuredCourses = coursesData.slice(0, 3);
 
   return (
-    <div className="p-4 lg:p-6">
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_300px]">
+    <div className="p-3 sm:p-4 lg:p-6">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_280px] xl:grid-cols-[minmax(0,1fr)_300px]">
         <div className="space-y-4">
           <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-sidebar p-3">
-            <div className="relative min-w-[220px] flex-1">
+            <div className="order-1 relative w-full min-w-0 sm:min-w-[220px] sm:flex-1">
               <LuSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <input
                 type="text"
@@ -70,25 +70,27 @@ function DashboardMain({
                 className="h-10 w-full rounded-full border border-border bg-card pl-9 pr-3 text-sm text-foreground outline-none"
               />
             </div>
-            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full border border-border bg-card text-muted-foreground">
-              <LuBell className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full border border-border bg-card text-muted-foreground">
-              <LuSparkles className="h-4 w-4" />
-            </Button>
-            <div className="ml-auto flex items-center gap-2 rounded-full border border-border bg-card px-2 py-1">
+            <div className="order-2 flex items-center gap-2">
+              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full border border-border bg-card text-muted-foreground">
+                <LuBell className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full border border-border bg-card text-muted-foreground">
+                <LuSparkles className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="order-3 ml-auto flex items-center gap-2 rounded-full border border-border bg-card px-2 py-1">
               <Avatar className="h-8 w-8">
                 <AvatarImage src={dashboardAvatar} alt={nickname} />
                 <AvatarFallback>{nickname[0]}</AvatarFallback>
               </Avatar>
-              <span className="pr-2 text-sm text-foreground">{nickname}</span>
+              <span className="hidden pr-2 text-sm text-foreground sm:block">{nickname}</span>
             </div>
           </div>
 
           <Card className="overflow-hidden rounded-2xl border-border bg-primary">
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <p className="text-xs uppercase tracking-wider text-white/80">Online Course</p>
-              <h2 className="mt-2 max-w-md text-3xl leading-tight text-white heading-font">
+              <h2 className="heading-font mt-2 max-w-md text-2xl leading-tight text-white sm:text-3xl">
                 Sharpen Your Skills with Professional Online Courses
               </h2>
               <p className="mt-2 text-sm text-white/80">Continue with: {nextCourse.title}</p>
@@ -99,7 +101,7 @@ function DashboardMain({
             </CardContent>
           </Card>
 
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
             <Card className="rounded-2xl border-border bg-sidebar">
               <CardContent className="flex items-center justify-between p-4">
                 <div>
@@ -136,7 +138,7 @@ function DashboardMain({
                 <LuChevronRight className="h-4 w-4" />
               </Button>
             </div>
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {featuredCourses.map((course) => (
                 <Card key={course.id} className="rounded-2xl border-border">
                   <CardContent className="space-y-3 p-3">
@@ -167,7 +169,7 @@ function DashboardMain({
                 <Link to="/courses" className="text-xs text-muted-foreground hover:text-foreground">See all</Link>
               </div>
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[520px] text-left">
+                <table className="w-full min-w-[480px] text-left">
                   <thead>
                     <tr className="text-xs text-muted-foreground">
                       <th className="px-4 py-3 font-medium">Mentor</th>
@@ -178,8 +180,8 @@ function DashboardMain({
                   </thead>
                   <tbody>
                     <tr className="border-t border-border text-sm text-foreground">
-                      <td className="px-4 py-3">Padhang Satrio</td>
-                      <td className="px-4 py-3">UI/UX Design</td>
+                      <td className="whitespace-nowrap px-4 py-3">Padhang Satrio</td>
+                      <td className="whitespace-nowrap px-4 py-3">UI/UX Design</td>
                       <td className="px-4 py-3">Understand of UI/UX Design</td>
                       <td className="px-4 py-3">
                         <Button size="sm" className="h-8 rounded-full bg-primary px-3 text-primary-foreground hover:bg-primary/90">
