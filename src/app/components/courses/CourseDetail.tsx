@@ -1,6 +1,5 @@
 import { Link, useNavigate, useParams } from 'react-router';
 import DashboardLayout from '../layout/DashboardLayout';
-import { coursesData, progressService } from '../../services/mockData';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
@@ -15,12 +14,75 @@ import {
   LuClock,
   LuTarget,
 } from 'react-icons/lu';
+import { useEffect, useState } from 'react';
+import { supabase } from '../../../lib/supabase';
 
 export default function CourseDetail() {
   const { courseId } = useParams();
   const navigate = useNavigate();
-  
-  const course = coursesData.find(c => c.id === courseId);
+
+  const [course, setCourse] = useState<any>(null);
+  const [userProgress, setUserProgress] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadCourseData() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return navigate('/');
+
+        const { data: cData, error: cErr } = await supabase
+          .from('courses')
+          .select(`
+            *,
+            modules (
+              *,
+              lessons (*)
+            )
+          `)
+          .eq('id', courseId)
+          .single();
+
+        if (!cErr && cData) {
+          // Sort modules and lessons
+          cData.modules.sort((a: any, b: any) => a.order - b.order);
+          cData.modules.forEach((m: any) => {
+            if (m.lessons) {
+              m.lessons.sort((a: any, b: any) => a.order - b.order);
+            } else {
+              m.lessons = [];
+            }
+          });
+          setCourse(cData);
+        }
+
+        const { data: pData, error: pErr } = await supabase
+          .from('user_progress')
+          .select('*')
+          .eq('user_id', user.id);
+
+        if (!pErr && pData) {
+          setUserProgress(pData);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    if (courseId) {
+      loadCourseData();
+    }
+  }, [courseId, navigate]);
+
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <div className="p-8 text-center text-muted-foreground">Loading course details...</div>
+      </DashboardLayout>
+    );
+  }
 
   if (!course) {
     return (
@@ -35,18 +97,21 @@ export default function CourseDetail() {
     );
   }
 
-  const courseProgress = progressService.getCourseProgress(course.id);
-  const totalLessons = course.modules.reduce((sum, m) => sum + m.lessons.length, 0);
+  const isLessonCompleted = (id: string) => userProgress.some(p => p.item_id === id && p.item_type === 'lesson' && p.status === 'completed');
+  const courseP = userProgress.find(p => p.item_id === course.id && p.item_type === 'course');
+  const courseProgress = courseP ? courseP.progress_percentage : 0;
+
+  const totalLessons = course.modules.reduce((sum: number, m: any) => sum + (m.lessons?.length || 0), 0);
   const completedLessons = course.modules
-    .flatMap(m => m.lessons)
-    .filter(l => progressService.isLessonCompleted(l.id))
+    .flatMap((m: any) => m.lessons || [])
+    .filter((l: any) => isLessonCompleted(l.id))
     .length;
 
-  const difficultyColor = {
+  const difficultyColor: any = {
     Beginner: 'bg-success text-success-foreground',
     Intermediate: 'bg-accent text-accent-foreground',
     Advanced: 'bg-destructive text-destructive-foreground',
-  }[course.difficulty];
+  }[course.difficulty] || '';
 
   return (
     <DashboardLayout>
@@ -77,7 +142,7 @@ export default function CourseDetail() {
               <p className="text-white/90 text-lg mb-6">
                 {course.description}
               </p>
-              
+
               {/* Meta Info */}
               <div className="flex items-center gap-6 text-sm mb-6">
                 <div className="flex items-center gap-2">
@@ -86,7 +151,7 @@ export default function CourseDetail() {
                 </div>
                 <div className="flex items-center gap-2">
                   <LuClock className="w-5 h-5" />
-                  <span>{course.estimatedHours} hours</span>
+                  <span>{course.estimated_hours} hours</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <LuTarget className="w-5 h-5" />
@@ -118,10 +183,11 @@ export default function CourseDetail() {
               </div>
             ) : (
               <Accordion type="multiple" defaultValue={[course.modules[0]?.id]} className="space-y-4">
-                {course.modules.map((module, moduleIndex) => {
-                  const moduleProgress = progressService.getModuleProgress(module.id);
-                  const completedInModule = module.lessons.filter(l => 
-                    progressService.isLessonCompleted(l.id)
+                {course.modules.map((module: any, moduleIndex: number) => {
+                  const mP = userProgress.find(p => p.item_id === module.id && p.item_type === 'module');
+                  const moduleProgress = mP ? mP.progress_percentage : 0;
+                  const completedInModule = (module.lessons || []).filter((l: any) =>
+                    isLessonCompleted(l.id)
                   ).length;
 
                   return (
@@ -140,16 +206,16 @@ export default function CourseDetail() {
                               {module.title}
                             </h3>
                             <p className="text-sm text-muted-foreground">
-                              {completedInModule}/{module.lessons.length} lessons • {moduleProgress}% complete
+                              {completedInModule}/{(module.lessons || []).length} lessons • {moduleProgress}% complete
                             </p>
                           </div>
                         </div>
                       </AccordionTrigger>
                       <AccordionContent className="pb-4">
                         <div className="pl-14 space-y-2">
-                          {module.lessons.map((lesson, lessonIndex) => {
-                            const isCompleted = progressService.isLessonCompleted(lesson.id);
-                            
+                          {(module.lessons || []).map((lesson: any, lessonIndex: number) => {
+                            const isCompleted = isLessonCompleted(lesson.id);
+
                             return (
                               <Link
                                 key={lesson.id}
@@ -164,13 +230,12 @@ export default function CourseDetail() {
                                   )}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <p className={`font-medium ${
-                                    isCompleted ? 'text-muted-foreground' : 'text-foreground'
-                                  }`}>
+                                  <p className={`font-medium ${isCompleted ? 'text-muted-foreground' : 'text-foreground'
+                                    }`}>
                                     {lessonIndex + 1}. {lesson.title}
                                   </p>
                                   <p className="text-xs text-muted-foreground">
-                                    +{lesson.xpReward} XP
+                                    +{lesson.xp_reward} XP
                                   </p>
                                 </div>
                                 <LuChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />

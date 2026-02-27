@@ -1,6 +1,5 @@
-﻿import { useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import DashboardLayout from '../layout/DashboardLayout';
-import { authService, coursesData, progressService } from '../../services/mockData';
 import profileAvatar from '../../../assets/avatar2.png';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
@@ -21,42 +20,113 @@ import {
   LuX,
   LuZap,
 } from 'react-icons/lu';
+import { supabase } from '../../../lib/supabase';
 
 export default function Profile() {
-  const user = authService.getCurrentUser();
+  const [userProfile, setUserProfile] = useState<any>(null);
+  const [authUser, setAuthUser] = useState<any>(null);
+  const [courses, setCourses] = useState<any[]>([]);
+  const [userProgress, setUserProgress] = useState<any[]>([]);
+
   const [isEditing, setIsEditing] = useState(false);
-  const [nickname, setNickname] = useState(user?.nickname || '');
+  const [nickname, setNickname] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
 
-  if (!user) return null;
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        setAuthUser(user);
 
-  const handleSave = () => {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+
+        if (profile) {
+          setUserProfile(profile);
+          setNickname(profile.full_name || '');
+        }
+
+        const { data: cData } = await supabase.from('courses').select('*');
+        if (cData) setCourses(cData);
+
+        const { data: pData } = await supabase
+          .from('user_progress')
+          .select('*')
+          .eq('user_id', user.id);
+        if (pData) setUserProgress(pData);
+
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadData();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <div className="p-8 text-center text-muted-foreground">Loading profile...</div>
+      </DashboardLayout>
+    );
+  }
+
+  if (!userProfile || !authUser) return null;
+
+  const handleSave = async () => {
     if (!nickname.trim()) {
-      toast.error('Nickname cannot be empty');
+      toast.error('Name cannot be empty');
       return;
     }
 
-    authService.updateUser({ nickname: nickname.trim() });
-    toast.success('Profile updated successfully');
-    setIsEditing(false);
+    try {
+      await supabase
+        .from('profiles')
+        .update({ full_name: nickname.trim() })
+        .eq('id', authUser.id);
+
+      setUserProfile((prev: any) => ({ ...prev, full_name: nickname.trim() }));
+      toast.success('Profile updated successfully');
+      setIsEditing(false);
+    } catch (err) {
+      toast.error('Failed to update profile');
+    }
   };
 
   const handleCancel = () => {
-    setNickname(user.nickname);
+    setNickname(userProfile.full_name || '');
     setIsEditing(false);
   };
 
-  const xpToNextLevel = user.level * 500 - user.xp;
-  const progressToNextLevel = ((user.xp % 500) / 500) * 100;
+  // Mocked out gamification stats that would typically live in another table
+  const userStats = {
+    xp: 0,
+    level: 1,
+    streak: 0,
+    completedLessons: userProgress.filter(p => p.item_type === 'lesson' && p.status === 'completed'),
+    completedProjects: [],
+    achievements: [],
+  };
 
-  const coursesInProgress = coursesData.filter(course => {
-    const progress = progressService.getCourseProgress(course.id);
-    return progress > 0 && progress < 100;
+  const xpToNextLevel = userStats.level * 500 - userStats.xp;
+  const progressToNextLevel = ((userStats.xp % 500) / 500) * 100;
+
+  const coursesWithProgress = courses.map(course => {
+    const courseProgressRecord = userProgress.find(p => p.item_id === course.id && p.item_type === 'course');
+    return {
+      ...course,
+      progress: courseProgressRecord ? courseProgressRecord.progress_percentage : 0
+    };
   });
 
-  const completedCourses = coursesData.filter(course => {
-    const progress = progressService.getCourseProgress(course.id);
-    return progress === 100;
-  });
+  const coursesInProgress = coursesWithProgress.filter(c => c.progress > 0 && c.progress < 100);
+  const completedCourses = coursesWithProgress.filter(c => c.progress === 100);
 
   return (
     <DashboardLayout>
@@ -74,14 +144,14 @@ export default function Profile() {
               <CardContent className="p-4">
                 <div className="flex flex-col items-center mb-4">
                   <Avatar className="w-20 h-20 mb-3">
-                    <AvatarImage src={profileAvatar} alt={user.nickname} />
-                    <AvatarFallback className="text-2xl">{user.nickname[0]}</AvatarFallback>
+                    <AvatarImage src={profileAvatar} alt={userProfile.full_name} />
+                    <AvatarFallback className="text-2xl">{userProfile.full_name?.[0] || 'U'}</AvatarFallback>
                   </Avatar>
 
                   {isEditing ? (
                     <div className="w-full space-y-3">
                       <div className="space-y-2">
-                        <Label htmlFor="nickname">Nickname</Label>
+                        <Label htmlFor="nickname">Name</Label>
                         <Input
                           id="nickname"
                           value={nickname}
@@ -106,8 +176,8 @@ export default function Profile() {
                     </div>
                   ) : (
                     <>
-                      <h2 className="text-xl heading-font text-foreground mb-1">{user.nickname}</h2>
-                      <p className="text-sm text-muted-foreground mb-3">{user.email}</p>
+                      <h2 className="text-xl heading-font text-foreground mb-1">{userProfile.full_name}</h2>
+                      <p className="text-sm text-muted-foreground mb-3">{authUser.email}</p>
                       <Button onClick={() => setIsEditing(true)} size="sm" variant="outline" className="rounded-lg">
                         <LuPencil className="w-4 h-4 mr-2" />
                         Edit Profile
@@ -120,15 +190,15 @@ export default function Profile() {
                   <div className="p-4 rounded-xl bg-gradient-to-br from-primary/10 to-accent/10">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm text-muted-foreground">Level</span>
-                      <span className="text-2xl font-semibold heading-font text-primary">{user.level}</span>
+                      <span className="text-2xl font-semibold heading-font text-primary">{userStats.level}</span>
                     </div>
                     <Progress value={progressToNextLevel} className="h-2 mb-2" />
-                    <p className="text-xs text-muted-foreground">{xpToNextLevel} XP to level {user.level + 1}</p>
+                    <p className="text-xs text-muted-foreground">{xpToNextLevel} XP to level {userStats.level + 1}</p>
                   </div>
 
                   <div className="text-center text-sm text-muted-foreground">
                     Member since{' '}
-                    {new Date(user.createdAt).toLocaleDateString('en-US', {
+                    {new Date(authUser.created_at).toLocaleDateString('en-US', {
                       month: 'long',
                       year: 'numeric',
                     })}
@@ -147,7 +217,7 @@ export default function Profile() {
                       <LuZap className="w-5 h-5 text-primary" />
                     </div>
                     <div>
-                      <p className="text-xl font-semibold heading-font text-foreground">{user.xp}</p>
+                      <p className="text-xl font-semibold heading-font text-foreground">{userStats.xp}</p>
                       <p className="text-xs text-muted-foreground">Total XP</p>
                     </div>
                   </div>
@@ -161,7 +231,7 @@ export default function Profile() {
                       <LuFlame className="w-5 h-5 text-accent" />
                     </div>
                     <div>
-                      <p className="text-xl font-semibold heading-font text-foreground">{user.streak}</p>
+                      <p className="text-xl font-semibold heading-font text-foreground">{userStats.streak}</p>
                       <p className="text-xs text-muted-foreground">Day Streak</p>
                     </div>
                   </div>
@@ -175,7 +245,7 @@ export default function Profile() {
                       <LuBookOpen className="w-5 h-5 text-success" />
                     </div>
                     <div>
-                      <p className="text-xl font-semibold heading-font text-foreground">{user.completedLessons.length}</p>
+                      <p className="text-xl font-semibold heading-font text-foreground">{userStats.completedLessons.length}</p>
                       <p className="text-xs text-muted-foreground">Lessons</p>
                     </div>
                   </div>
@@ -189,7 +259,7 @@ export default function Profile() {
                       <LuFolderKanban className="w-5 h-5 text-primary" />
                     </div>
                     <div>
-                      <p className="text-xl font-semibold heading-font text-foreground">{user.completedProjects.length}</p>
+                      <p className="text-xl font-semibold heading-font text-foreground">{userStats.completedProjects.length}</p>
                       <p className="text-xs text-muted-foreground">Projects</p>
                     </div>
                   </div>
@@ -203,7 +273,7 @@ export default function Profile() {
                       <LuTrophy className="w-5 h-5 text-accent" />
                     </div>
                     <div>
-                      <p className="text-xl font-semibold heading-font text-foreground">{user.achievements.length}</p>
+                      <p className="text-xl font-semibold heading-font text-foreground">{userStats.achievements.length}</p>
                       <p className="text-xs text-muted-foreground">Achievements</p>
                     </div>
                   </div>
@@ -233,8 +303,6 @@ export default function Profile() {
                 {coursesInProgress.length > 0 ? (
                   <div className="space-y-3">
                     {coursesInProgress.map((course) => {
-                      const progress = progressService.getCourseProgress(course.id);
-
                       return (
                         <div key={course.id} className="flex items-center gap-3 rounded-xl bg-sidebar p-2">
                           <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center text-xl flex-shrink-0">
@@ -243,8 +311,8 @@ export default function Profile() {
                           <div className="flex-1 min-w-0">
                             <h4 className="font-semibold text-foreground mb-1">{course.title}</h4>
                             <div className="flex items-center gap-2">
-                              <Progress value={progress} className="h-2 flex-1" />
-                              <span className="text-sm font-medium text-primary">{progress}%</span>
+                              <Progress value={course.progress} className="h-2 flex-1" />
+                              <span className="text-sm font-medium text-primary">{course.progress}%</span>
                             </div>
                           </div>
                         </div>
@@ -257,14 +325,14 @@ export default function Profile() {
               </CardContent>
             </Card>
 
-            {user.achievements.length > 0 && (
+            {userStats.achievements.length > 0 && (
               <Card className="rounded-2xl border-border">
                 <CardHeader className="pb-2">
                   <CardTitle className="heading-font">Recent Achievements</CardTitle>
                 </CardHeader>
                 <CardContent className="pt-0">
                   <div className="flex flex-wrap gap-3">
-                    {user.achievements.slice(0, 6).map((achievementId) => (
+                    {userStats.achievements.slice(0, 6).map((achievementId) => (
                       <Badge key={achievementId} className="bg-gradient-to-br from-accent to-primary text-white px-4 py-2">
                         <LuTrophy className="w-4 h-4 mr-2" />
                         Achievement

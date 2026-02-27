@@ -1,12 +1,42 @@
 ﻿import { Link } from 'react-router';
 import DashboardLayout from '../layout/DashboardLayout';
-import { coursesData, progressService } from '../../services/mockData';
 import { Card, CardContent } from '../ui/card';
 import { Progress } from '../ui/progress';
 import { Badge } from '../ui/badge';
 import { LuArrowRight, LuBookOpen, LuClock } from 'react-icons/lu';
+import { useEffect, useState } from 'react';
+import { supabase } from '../../../lib/supabase';
 
 export default function Courses() {
+  const [courses, setCourses] = useState<any[]>([]);
+  const [userProgress, setUserProgress] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadCourses() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data: cData, error: cErr } = await supabase.from('courses').select('*');
+        if (!cErr && cData) setCourses(cData);
+
+        const { data: pData, error: pErr } = await supabase
+          .from('user_progress')
+          .select('*')
+          .eq('user_id', user.id);
+
+        if (!pErr && pData) setUserProgress(pData);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadCourses();
+  }, []);
+
   const getCourseImage = (title: string) => {
     const normalized = title.toLowerCase();
 
@@ -23,6 +53,14 @@ export default function Courses() {
     return 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1000&q=80';
   };
 
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <div className="p-8 text-center text-muted-foreground">Loading courses...</div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout>
       <div className="p-4 lg:p-6 max-w-7xl mx-auto">
@@ -36,15 +74,16 @@ export default function Courses() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {coursesData.map((course) => {
-            const progress = progressService.getCourseProgress(course.id);
+          {courses.map((course) => {
+            const pEntry = userProgress.find(p => p.item_id === course.id && p.item_type === 'course');
+            const progress = pEntry ? pEntry.progress_percentage : 0;
             const isStarted = progress > 0;
 
-            const difficultyColor = {
+            const difficultyColor: any = {
               Beginner: 'bg-success/10 text-success border-success/20',
               Intermediate: 'bg-accent/10 text-accent border-accent/20',
               Advanced: 'bg-destructive/10 text-destructive border-destructive/20',
-            }[course.difficulty];
+            }[course.difficulty] || '';
 
             return (
               <Link key={course.id} to={`/courses/${course.id}`}>
@@ -66,11 +105,11 @@ export default function Courses() {
                     <div className="flex items-center gap-4 text-xs text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <LuBookOpen className="w-4 h-4" />
-                        <span>{course.totalLessons} lessons</span>
+                        <span>{course.total_lessons} lessons</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <LuClock className="w-4 h-4" />
-                        <span>{course.estimatedHours}h</span>
+                        <span>{course.estimated_hours}h</span>
                       </div>
                     </div>
                     {isStarted ? (
@@ -96,7 +135,7 @@ export default function Courses() {
           })}
         </div>
 
-        {coursesData.length === 0 && (
+        {courses.length === 0 && (
           <div className="text-center py-12">
             <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mx-auto mb-4">
               <LuBookOpen className="w-8 h-8 text-muted-foreground" />

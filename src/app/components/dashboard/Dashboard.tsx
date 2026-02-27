@@ -1,6 +1,5 @@
-﻿import { Link } from 'react-router';
+﻿import { Link, useNavigate } from 'react-router';
 import DashboardLayout from '../layout/DashboardLayout';
-import { authService, coursesData, progressService } from '../../services/mockData';
 import dashboardAvatar from '../../../assets/avatar2.png';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
@@ -17,26 +16,46 @@ import {
   LuTarget,
   LuUsers,
 } from 'react-icons/lu';
+import { useEffect, useState } from 'react';
+import { supabase } from '../../../lib/supabase';
+
+interface UserProfile {
+  id: string;
+  email: string;
+  full_name: string;
+  role: 'student' | 'instructor';
+  hub_location: string;
+  specialization?: string | null;
+}
 
 interface DashboardMainProps {
-  nickname: string;
+  profile: UserProfile;
+  students: UserProfile[];
+  instructors: UserProfile[];
+  courses: any[];
   xp: number;
   level: number;
   streak: number;
   completedLessons: number;
-  nextCourse: (typeof coursesData)[number];
+  nextCourse: any;
+  inProgressCourses: any[];
 }
 
 function DashboardMain({
-  nickname,
+  profile,
+  students,
+  instructors,
+  courses,
   xp,
   level,
   streak,
   completedLessons,
   nextCourse,
+  inProgressCourses,
 }: DashboardMainProps) {
+  const navigate = useNavigate();
   const getCourseImage = (title: string) => {
-    const normalized = title.toLowerCase();
+    const normalized = title?.toLowerCase() || '';
 
     if (normalized.includes('python')) {
       return 'https://images.unsplash.com/photo-1526379095098-d400fd0bf935?auto=format&fit=crop&w=1000&q=80';
@@ -54,7 +73,8 @@ function DashboardMain({
     return 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80';
   };
 
-  const featuredCourses = coursesData.slice(0, 3);
+  const featuredCourses = courses.slice(0, 3);
+  const nickname = profile.full_name;
 
   return (
     <div className="p-3 sm:p-4 lg:p-6">
@@ -81,9 +101,19 @@ function DashboardMain({
             <div className="order-3 ml-auto flex items-center gap-2 rounded-full border border-border bg-card px-2 py-1">
               <Avatar className="h-8 w-8">
                 <AvatarImage src={dashboardAvatar} alt={nickname} />
-                <AvatarFallback>{nickname[0]}</AvatarFallback>
+                <AvatarFallback>{nickname ? nickname[0] : 'U'}</AvatarFallback>
               </Avatar>
               <span className="hidden pr-2 text-sm text-foreground sm:block">{nickname}</span>
+              <Button
+                variant="ghost"
+                onClick={async () => {
+                  await supabase.auth.signOut();
+                  navigate('/');
+                }}
+                className="rounded-full bg-red-100 text-red-600 hover:bg-red-200 hover:text-red-700 h-8 ml-2"
+              >
+                Log out
+              </Button>
             </div>
           </div>
 
@@ -131,66 +161,112 @@ function DashboardMain({
             </Card>
           </div>
 
-          <div>
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-lg text-foreground heading-font">Continue Watching</h3>
-              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground">
-                <LuChevronRight className="h-4 w-4" />
-              </Button>
+          {inProgressCourses.length > 0 && (
+            <div>
+              <div className="mb-3 flex items-center justify-between">
+                <h3 className="text-lg text-foreground heading-font">Timeline</h3>
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground">
+                  <LuChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {inProgressCourses.slice(0, 3).map((course) => (
+                  <Card key={course.id} className="rounded-2xl border-border">
+                    <CardContent className="space-y-3 p-3">
+                      <img
+                        src={getCourseImage(course.title)}
+                        alt={course.title}
+                        className="h-24 w-full rounded-xl object-cover"
+                        loading="lazy"
+                      />
+                      <div>
+                        <p className="line-clamp-2 text-sm text-foreground">{course.title}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">{course.difficulty}</p>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs text-muted-foreground">{course.progress}% complete</p>
+                        <span className="text-sm">{course.icon}</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             </div>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              {featuredCourses.map((course) => (
-                <Card key={course.id} className="rounded-2xl border-border">
-                  <CardContent className="space-y-3 p-3">
-                    <img
-                      src={getCourseImage(course.title)}
-                      alt={course.title}
-                      className="h-24 w-full rounded-xl object-cover"
-                      loading="lazy"
-                    />
-                    <div>
-                      <p className="line-clamp-2 text-sm text-foreground">{course.title}</p>
-                      <p className="mt-1 text-xs text-muted-foreground">{course.difficulty}</p>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <p className="text-xs text-muted-foreground">{progressService.getCourseProgress(course.id)}% complete</p>
-                      <span className="text-sm">{course.icon}</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
+          )}
 
           <Card className="rounded-2xl border-border">
             <CardContent className="p-0">
               <div className="flex items-center justify-between border-b border-border px-4 py-3">
-                <h3 className="text-lg text-foreground heading-font">Your Lesson</h3>
+                <h3 className="text-lg text-foreground heading-font">
+                  {profile.role === 'instructor' ? 'Student Directory' : 'Your Lesson'}
+                </h3>
                 <Link to="/courses" className="text-xs text-muted-foreground hover:text-foreground">See all</Link>
               </div>
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[480px] text-left">
-                  <thead>
-                    <tr className="text-xs text-muted-foreground">
-                      <th className="px-4 py-3 font-medium">Mentor</th>
-                      <th className="px-4 py-3 font-medium">Type</th>
-                      <th className="px-4 py-3 font-medium">Desc</th>
-                      <th className="px-4 py-3 font-medium">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr className="border-t border-border text-sm text-foreground">
-                      <td className="whitespace-nowrap px-4 py-3">Padhang Satrio</td>
-                      <td className="whitespace-nowrap px-4 py-3">UI/UX Design</td>
-                      <td className="px-4 py-3">Understand of UI/UX Design</td>
-                      <td className="px-4 py-3">
-                        <Button size="sm" className="h-8 rounded-full bg-primary px-3 text-primary-foreground hover:bg-primary/90">
-                          Start
-                        </Button>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+                {profile.role === 'instructor' ? (
+                  <table className="w-full min-w-[480px] text-left">
+                    <thead>
+                      <tr className="text-xs text-muted-foreground">
+                        <th className="px-4 py-3 font-medium">Name</th>
+                        <th className="px-4 py-3 font-medium">Email</th>
+                        <th className="px-4 py-3 font-medium">Hub</th>
+                        <th className="px-4 py-3 font-medium">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {students.length > 0 ? (
+                        students.map((student) => (
+                          <tr key={student.id} className="border-t border-border text-sm text-foreground">
+                            <td className="whitespace-nowrap px-4 py-3">{student.full_name}</td>
+                            <td className="whitespace-nowrap px-4 py-3">{student.email}</td>
+                            <td className="px-4 py-3">{student.hub_location}</td>
+                            <td className="px-4 py-3">
+                              <Button size="sm" className="h-8 rounded-full bg-primary px-3 text-primary-foreground hover:bg-primary/90">
+                                View
+                              </Button>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={4} className="text-center py-4 text-muted-foreground">No students found for this hub location.</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                ) : (
+                  <table className="w-full min-w-[480px] text-left">
+                    <thead>
+                      <tr className="text-xs text-muted-foreground">
+                        <th className="px-4 py-3 font-medium">Instructor</th>
+                        <th className="px-4 py-3 font-medium">Type</th>
+                        <th className="px-4 py-3 font-medium">Desc</th>
+                        <th className="px-4 py-3 font-medium">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {instructors.length > 0 ? (
+                        instructors.slice(0, 1).map((instructor) => (
+                          <tr key={instructor.id} className="border-t border-border text-sm text-foreground">
+                            <td className="whitespace-nowrap px-4 py-3">{instructor.full_name}</td>
+                            <td className="whitespace-nowrap px-4 py-3">{instructor.specialization || 'Software Engineering'}</td>
+                            <td className="px-4 py-3">Learn {instructor.specialization || 'Software Engineering'} today</td>
+                            <td className="px-4 py-3">
+                              <Button size="sm" className="h-8 rounded-full bg-primary px-3 text-primary-foreground hover:bg-primary/90">
+                                Start
+                              </Button>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr className="border-t border-border text-sm text-foreground">
+                          <td className="whitespace-nowrap px-4 py-3 text-muted-foreground" colSpan={4}>Waiting for an instructor to join your Hub.</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                )}
+
               </div>
             </CardContent>
           </Card>
@@ -206,10 +282,10 @@ function DashboardMain({
               <div className="flex flex-col items-center">
                 <Avatar className="h-20 w-20 border border-border">
                   <AvatarImage src={dashboardAvatar} alt={nickname} />
-                  <AvatarFallback>{nickname[0]}</AvatarFallback>
+                  <AvatarFallback>{nickname ? nickname[0] : 'U'}</AvatarFallback>
                 </Avatar>
                 <p className="mt-3 text-base text-foreground">Good Morning {nickname}</p>
-                <p className="text-xs text-muted-foreground">Continue your journey to your target</p>
+                <p className="text-xs text-muted-foreground">{profile.role === 'instructor' ? `Hub: ${profile.hub_location}` : 'Continue your journey to your target'}</p>
               </div>
               <div className="rounded-2xl bg-secondary p-3">
                 <div className="mb-2 flex items-end gap-2">
@@ -237,27 +313,24 @@ function DashboardMain({
           <Card className="rounded-2xl border-border">
             <CardContent className="space-y-3 p-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-base text-foreground heading-font">Your mentor</h3>
+                <h3 className="text-base text-foreground heading-font">
+                  {profile.role === 'instructor' ? 'Other Instructors' : 'Your Instructors'}
+                </h3>
                 <LuUsers className="h-4 w-4 text-muted-foreground" />
               </div>
-              {[
-                'Padhang Satrio',
-                'Zakir Horizontal',
-                'Leonardo Samuel',
-              ].map((mentor) => (
-                <div key={mentor} className="flex items-center justify-between rounded-xl bg-sidebar p-2">
+              {instructors.length > 0 ? instructors.map((instructor) => (
+                <div key={instructor.id} className="flex items-center justify-between rounded-xl bg-sidebar p-2">
                   <div>
-                    <p className="text-sm text-foreground">{mentor}</p>
-                    <p className="text-xs text-muted-foreground">Mentor</p>
+                    <p className="text-sm text-foreground">{instructor.full_name}</p>
+                    <p className="text-xs text-muted-foreground">{instructor.specialization || 'Instructor'}</p>
                   </div>
                   <Button variant="ghost" size="sm" className="h-8 rounded-full border border-border text-xs text-muted-foreground">
                     Follow
                   </Button>
                 </div>
-              ))}
-              <Button variant="ghost" className="w-full rounded-full bg-secondary text-muted-foreground hover:bg-secondary/90">
-                See All
-              </Button>
+              )) : (
+                <p className="text-xs text-muted-foreground">No instructors available yet in {profile.hub_location}.</p>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -267,29 +340,119 @@ function DashboardMain({
 }
 
 export default function Dashboard() {
-  const user = authService.getCurrentUser();
+  const navigate = useNavigate();
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [students, setStudents] = useState<UserProfile[]>([]);
+  const [instructors, setInstructors] = useState<UserProfile[]>([]);
+  const [courses, setCourses] = useState<any[]>([]);
+  const [userProgress, setUserProgress] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  if (!user) return null;
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-  const totalLessons = user.completedLessons.length;
+        if (authError || !user) {
+          navigate('/');
+          return;
+        }
 
-  const coursesWithProgress = coursesData.map(course => ({
-    ...course,
-    progress: progressService.getCourseProgress(course.id),
-  }));
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+
+        if (profileError || !profileData) {
+          console.error("Failed to load profile", profileError);
+          // Optional: handle user with no profile gracefully
+          return;
+        }
+
+        setProfile(profileData);
+
+        if (profileData.role === 'instructor') {
+          const { data: studentData, error: studentError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('role', 'student')
+            .eq('hub_location', profileData.hub_location);
+
+          if (!studentError && studentData) {
+            setStudents(studentData);
+          }
+        }
+
+        // Load instructors for the hub location (relevant for both students and instructors viewing peers)
+        const { data: instructorData, error: instructorError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('role', 'instructor')
+          .eq('hub_location', profileData.hub_location)
+          .neq('id', profileData.id); // don't show self in the sidebar list
+
+        if (!instructorError && instructorData) {
+          setInstructors(instructorData);
+        }
+
+        // Load courses
+        const { data: coursesData, error: coursesError } = await supabase
+          .from('courses')
+          .select('*');
+
+        if (!coursesError && coursesData) {
+          setCourses(coursesData);
+        }
+
+        // Load user progress
+        const { data: progressData, error: progressError } = await supabase
+          .from('user_progress')
+          .select('*')
+          .eq('user_id', user.id);
+
+        if (!progressError && progressData) {
+          setUserProgress(progressData);
+        }
+
+      } catch (err) {
+        console.error("Error loading dashboard data", err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadData();
+  }, [navigate]);
+
+  if (isLoading) return <div className="p-8 text-center text-muted-foreground">Loading dashboard...</div>;
+  if (!profile) return null;
+
+  const totalLessons = userProgress.filter(p => p.item_type === 'lesson' && p.status === 'completed').length;
+  const coursesWithProgress = courses.map(course => {
+    const p = userProgress.find(up => up.item_id === course.id && up.item_type === 'course');
+    return {
+      ...course,
+      progress: p ? p.progress_percentage : 0,
+    };
+  });
 
   const inProgressCourses = coursesWithProgress.filter(c => c.progress > 0 && c.progress < 100);
-  const nextCourse = inProgressCourses[0] || coursesData[0];
+  const nextCourse = inProgressCourses[0] || courses[0] || { title: 'Explore Courses', id: 'explore' };
 
   return (
     <DashboardLayout>
       <DashboardMain
-        nickname={user.nickname}
-        xp={user.xp}
-        level={user.level}
-        streak={user.streak}
+        profile={profile}
+        students={students}
+        instructors={instructors}
+        courses={courses}
+        xp={0} // Mocked out for now
+        level={1} // Mocked out for now
+        streak={0} // Mocked out for now
         completedLessons={totalLessons}
         nextCourse={nextCourse}
+        inProgressCourses={inProgressCourses}
       />
     </DashboardLayout>
   );

@@ -1,5 +1,4 @@
 ﻿import { Link } from 'react-router';
-import { authService } from '../../services/mockData';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -7,6 +6,7 @@ import { toast } from 'sonner';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { LuCode, LuSparkles } from 'react-icons/lu';
+import { supabase } from '../../../lib/supabase';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -14,20 +14,27 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    setTimeout(() => {
-      const user = authService.login(email, password);
-      if (user) {
-        toast.success(`Welcome back, ${user.nickname}!`);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        toast.error(error.message);
+      } else if (data.session) {
+        toast.success(`Welcome back!`);
         navigate('/dashboard');
-      } else {
-        toast.error('Invalid email or password');
       }
+    } catch (err: any) {
+      toast.error(err.message || 'An unexpected error occurred during login.');
+    } finally {
       setIsLoading(false);
-    }, 500);
+    }
   };
 
   return (
@@ -85,25 +92,6 @@ export default function Login() {
             </Button>
           </form>
 
-          <div className="mt-6 p-4 rounded-xl bg-[#F5F5FA] border border-[rgba(91,79,255,0.2)]">
-            <div className="flex items-start gap-2">
-              <LuSparkles className="w-5 h-5 text-[#0747a1] flex-shrink-0 mt-0.5" />
-              <div className="text-sm">
-                <p className="font-medium text-[#1a1a2e] mb-1">Try one of these accounts:</p>
-                <p className="text-[#6B7280]">
-                  Email: <span className="font-mono">demo@example.com</span>
-                  <br />
-                  Password: <span className="font-mono">demo123</span>
-                  <br />
-                  <br />
-                  Email: <span className="font-mono">vincent@uncommon.org</span>
-                  <br />
-                  Password: <span className="font-mono">vin12345</span>
-                </p>
-              </div>
-            </div>
-          </div>
-
           <div className="mt-6 text-center text-sm text-[#6B7280]">
             Don't have an account?{' '}
             <Link to="/signup" className="text-[#0747a1] hover:underline font-medium">
@@ -119,3 +107,4 @@ export default function Login() {
     </div>
   );
 }
+

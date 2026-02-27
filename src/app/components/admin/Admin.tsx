@@ -1,6 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import DashboardLayout from '../layout/DashboardLayout';
-import { authService, coursesData } from '../../services/mockData';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
@@ -18,6 +17,8 @@ import {
   LuUsers,
   LuZap,
 } from 'react-icons/lu';
+import { useNavigate } from 'react-router';
+import { supabase } from '../../../lib/supabase';
 
 const instructorSections = [
   {
@@ -207,6 +208,7 @@ const recentStudentActivity = [
   'Priya Das started Lesson: Lists and Dictionaries',
 ] as const;
 
+/* Left mock stats structure to fit the UI but we won't show real students array if empty just yet */
 const studentStats = [
   { name: 'Ari Johnson', completionRate: 72, averageScore: 88, lastActiveDays: 1 },
   { name: 'Mina Lopez', completionRate: 84, averageScore: 92, lastActiveDays: 0 },
@@ -215,7 +217,7 @@ const studentStats = [
   { name: 'Noah Kim', completionRate: 29, averageScore: 69, lastActiveDays: 11 },
 ] as const;
 
-const stageBadgeVariant: Record<(typeof instructorSections)[number]['stage'], 'default' | 'secondary' | 'outline'> = {
+const stageBadgeVariant: Record<(typeof instructorSections)[number]['stage'] | 'Advanced', 'default' | 'secondary' | 'outline'> = {
   MVP: 'default',
   Intermediate: 'secondary',
   Advanced: 'outline',
@@ -229,32 +231,97 @@ const submissionBadgeVariant: Record<(typeof submissionQueue)[number]['status'],
 
 type SectionId = (typeof instructorSections)[number]['id'];
 
+interface UserProfile {
+  id: string;
+  email: string;
+  full_name: string;
+  role: 'student' | 'instructor';
+  hub_location: string;
+}
+
 export default function Admin() {
-  const user = authService.getCurrentUser();
+  const navigate = useNavigate();
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [students, setStudents] = useState<UserProfile[]>([]);
+  const [activeCoursesCount, setActiveCoursesCount] = useState<number>(0);
+  const [isLoading, setIsLoading] = useState(true);
   const [activeSection, setActiveSection] = useState<SectionId>('dashboard');
 
-  if (!user) return null;
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+        if (authError || !user) {
+          navigate('/');
+          return;
+        }
+
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+
+        if (profileError || !profileData) {
+          console.error("Failed to load profile", profileError);
+          return;
+        }
+
+        setProfile(profileData);
+
+        if (profileData.role === 'instructor') {
+          const { data: studentData, error: studentError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('role', 'student')
+            .eq('hub_location', profileData.hub_location);
+
+          if (!studentError && studentData) {
+            setStudents(studentData);
+          }
+
+          const { count, error: courseError } = await supabase
+            .from('courses')
+            .select('*', { count: 'exact', head: true });
+
+          if (!courseError && count !== null) {
+            setActiveCoursesCount(count);
+          }
+        } else {
+          // Admin UI is not for students
+          navigate('/dashboard');
+        }
+      } catch (err) {
+        console.error("Error loading dashboard data", err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadData();
+  }, [navigate]);
+
+
+  if (isLoading) return <div className="p-8 text-center text-muted-foreground">Loading instructor workspace...</div>;
+  if (!profile) return null;
 
   const selectedSection = instructorSections.find((section) => section.id === activeSection) ?? instructorSections[0];
-  const activeCourses = coursesData.length;
-  const totalStudents = studentStats.length;
+  const activeCourses = activeCoursesCount;
+  // Use real count if students returned, fallback to mock UI stat if empty (just to match previous visual state)
+  const totalStudents = students.length > 0 ? students.length : studentStats.length;
   const assignmentsPendingReview = submissionQueue.filter((item) => item.status === 'Pending').length;
   const recentActivityCount = recentStudentActivity.length;
 
-  const analyticsSnapshot = useMemo(() => {
-    const avgCompletion = Math.round(
+  // We are keeping these computations to satisfy existing mock UI until deeper supabase schema is designed for course completions.
+  const analyticsSnapshot = {
+    avgCompletion: Math.round(
       studentStats.reduce((sum, student) => sum + student.completionRate, 0) / studentStats.length,
-    );
-    const avgScore = Math.round(studentStats.reduce((sum, student) => sum + student.averageScore, 0) / studentStats.length);
-    const inactiveStudents = studentStats.filter((student) => student.lastActiveDays >= 7).length;
-
-    return {
-      avgCompletion,
-      avgScore,
-      inactiveStudents,
-      dropOffPoint: 'Module 2: Control Flow',
-    };
-  }, []);
+    ),
+    avgScore: Math.round(studentStats.reduce((sum, student) => sum + student.averageScore, 0) / studentStats.length),
+    inactiveStudents: studentStats.filter((student) => student.lastActiveDays >= 7).length,
+    dropOffPoint: 'Module 2: Control Flow',
+  };
 
   return (
     <DashboardLayout>
@@ -262,17 +329,29 @@ export default function Admin() {
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3 sm:mb-6">
           <div>
             <Badge variant="secondary" className="rounded-full px-3 py-1 text-[11px] uppercase tracking-wider">
-              Instructor Workspace
+              Instructor Workspace: {profile.hub_location}
             </Badge>
             <h1 className="heading-font mt-2 text-2xl text-foreground sm:text-3xl">Instructor Dashboard</h1>
             <p className="mt-1 text-sm text-muted-foreground">
               Optimize teaching efficiency, student visibility, and content control without extra complexity.
             </p>
           </div>
-          <Button className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90">
-            <LuBell className="mr-2 h-4 w-4" />
-            Send Announcement
-          </Button>
+          <div className="flex gap-2">
+            <Button className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90">
+              <LuBell className="mr-2 h-4 w-4" />
+              Send Announcement
+            </Button>
+            <Button
+              variant="outline"
+              onClick={async () => {
+                await supabase.auth.signOut();
+                navigate('/');
+              }}
+              className="rounded-full text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 h-10"
+            >
+              Log out
+            </Button>
+          </div>
         </div>
 
         <div className="space-y-4">
@@ -293,11 +372,10 @@ export default function Admin() {
                         key={section.id}
                         type="button"
                         onClick={() => setActiveSection(section.id)}
-                        className={`flex items-center gap-2 rounded-full border px-3 py-2 text-sm transition-colors ${
-                          isActive
-                            ? 'border-primary bg-primary/10 text-foreground'
-                            : 'border-border bg-card text-muted-foreground hover:bg-secondary hover:text-foreground'
-                        }`}
+                        className={`flex items-center gap-2 rounded-full border px-3 py-2 text-sm transition-colors ${isActive
+                          ? 'border-primary bg-primary/10 text-foreground'
+                          : 'border-border bg-card text-muted-foreground hover:bg-secondary hover:text-foreground'
+                          }`}
                       >
                         <Icon className="h-4 w-4" />
                         <span>{section.label}</span>
@@ -313,127 +391,177 @@ export default function Admin() {
           </Card>
 
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
+            {/* Left Column (Main content area based on section) */}
             <div className="space-y-4">
-              <Card className="overflow-hidden rounded-2xl border-border bg-primary">
-                <CardContent className="p-4 sm:p-6">
-                  <p className="text-xs uppercase tracking-wider text-white/80">Overview / Home</p>
-                  <h2 className="heading-font mt-2 max-w-2xl text-2xl leading-tight text-white sm:text-3xl">
-                    Real instructor operations mapped directly to backend behavior
-                  </h2>
-                  <p className="mt-2 text-sm text-white/80">
-                    Every action here is designed as a live case study for students: data reads, mutations, and workflow
-                    transitions.
-                  </p>
-                </CardContent>
-              </Card>
-
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                <Card className="rounded-2xl border-border bg-sidebar">
-                  <CardContent className="p-4">
-                    <p className="text-xs text-muted-foreground">Total students enrolled</p>
-                    <p className="mt-2 text-2xl text-foreground">{totalStudents}</p>
-                  </CardContent>
-                </Card>
-                <Card className="rounded-2xl border-border bg-sidebar">
-                  <CardContent className="p-4">
-                    <p className="text-xs text-muted-foreground">Active courses</p>
-                    <p className="mt-2 text-2xl text-foreground">{activeCourses}</p>
-                  </CardContent>
-                </Card>
-                <Card className="rounded-2xl border-border bg-sidebar">
-                  <CardContent className="p-4">
-                    <p className="text-xs text-muted-foreground">Assignments pending review</p>
-                    <p className="mt-2 text-2xl text-foreground">{assignmentsPendingReview}</p>
-                  </CardContent>
-                </Card>
-                <Card className="rounded-2xl border-border bg-sidebar">
-                  <CardContent className="p-4">
-                    <p className="text-xs text-muted-foreground">Recent student activity</p>
-                    <p className="mt-2 text-2xl text-foreground">{recentActivityCount}</p>
-                  </CardContent>
-                </Card>
-              </div>
-
-              <Card className="rounded-2xl border-border">
-                <CardHeader>
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <CardTitle className="heading-font text-lg text-foreground">{selectedSection.label}</CardTitle>
-                      <CardDescription className="mt-1">{selectedSection.purpose}</CardDescription>
-                    </div>
-                    <Badge variant={stageBadgeVariant[selectedSection.stage]} className="rounded-full px-3 py-1 text-[11px]">
-                      {selectedSection.stage}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="grid grid-cols-1 gap-4 pt-0 md:grid-cols-2">
-                  <div className="rounded-xl bg-sidebar p-3">
-                    <p className="mb-2 text-xs uppercase tracking-wider text-muted-foreground">Feature Set</p>
-                    <ul className="space-y-2 text-sm text-foreground">
-                      {selectedSection.features.map((item) => (
-                        <li key={item} className="flex items-start gap-2">
-                          <LuCircleCheck className="mt-0.5 h-4 w-4 text-primary" />
-                          <span>{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div className="rounded-xl bg-sidebar p-3">
-                    <p className="mb-2 text-xs uppercase tracking-wider text-muted-foreground">Teaching Value</p>
-                    <ul className="space-y-2 text-sm text-foreground">
-                      {selectedSection.teachingValue.map((item) => (
-                        <li key={item} className="flex items-start gap-2">
-                          <LuSparkles className="mt-0.5 h-4 w-4 text-accent" />
-                          <span>{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="rounded-2xl border-border">
-                <CardHeader className="pb-2">
-                  <CardTitle className="heading-font text-lg text-foreground">Submission Review & Feedback</CardTitle>
-                  <CardDescription>Core instructor workflow: review, feedback, and state transitions.</CardDescription>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <div className="overflow-x-auto">
-                    <table className="w-full min-w-[620px] text-left">
-                      <thead>
-                        <tr className="border-y border-border text-xs text-muted-foreground">
-                          <th className="px-4 py-3 font-medium">Submission ID</th>
-                          <th className="px-4 py-3 font-medium">Student</th>
-                          <th className="px-4 py-3 font-medium">Assignment</th>
-                          <th className="px-4 py-3 font-medium">Status</th>
-                          <th className="px-4 py-3 font-medium">Submitted</th>
-                          <th className="px-4 py-3 font-medium">Action</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {submissionQueue.map((item) => (
-                          <tr key={item.id} className="border-b border-border text-sm text-foreground last:border-b-0">
-                            <td className="whitespace-nowrap px-4 py-3">{item.id}</td>
-                            <td className="whitespace-nowrap px-4 py-3">{item.student}</td>
-                            <td className="px-4 py-3">{item.assignment}</td>
-                            <td className="px-4 py-3">
-                              <Badge variant={submissionBadgeVariant[item.status]}>{item.status}</Badge>
-                            </td>
-                            <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">{item.submitted}</td>
-                            <td className="px-4 py-3">
-                              <Button size="sm" variant="ghost" className="rounded-full border border-border text-xs">
-                                Review
-                              </Button>
-                            </td>
+              {activeSection === 'students' ? (
+                <Card className="rounded-2xl border-border bg-card">
+                  <CardHeader>
+                    <CardTitle className="heading-font text-xl text-foreground">Student Directory ({profile.hub_location})</CardTitle>
+                    <CardDescription>All students currently registered at your hub.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <div className="overflow-x-auto">
+                      <table className="w-full min-w-[620px] text-left">
+                        <thead>
+                          <tr className="border-y border-border text-xs text-muted-foreground bg-sidebar/50">
+                            <th className="px-4 py-3 font-medium">Name</th>
+                            <th className="px-4 py-3 font-medium">Email</th>
+                            <th className="px-4 py-3 font-medium">Role</th>
+                            <th className="px-4 py-3 font-medium">Action</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {students.length > 0 ? (
+                            students.map((student) => (
+                              <tr key={student.id} className="border-b border-border text-sm text-foreground last:border-b-0 hover:bg-sidebar/30 transition-colors">
+                                <td className="whitespace-nowrap px-4 py-3 font-medium">{student.full_name}</td>
+                                <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">{student.email}</td>
+                                <td className="px-4 py-3 capitalize">{student.role}</td>
+                                <td className="px-4 py-3">
+                                  <Button size="sm" variant="outline" className="rounded-full text-xs h-8">
+                                    View Profile
+                                  </Button>
+                                </td>
+                              </tr>
+                            ))
+                          ) : (
+                            <tr>
+                              <td colSpan={4} className="text-center py-8 text-muted-foreground bg-sidebar/30">
+                                No students have registered for {profile.hub_location} yet.
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                <>
+                  {/* Keep the original dashboard placeholders for other sections until fully built out */}
+                  <Card className="overflow-hidden rounded-2xl border-border bg-primary">
+                    <CardContent className="p-4 sm:p-6">
+                      <p className="text-xs uppercase tracking-wider text-white/80">Overview / Home</p>
+                      <h2 className="heading-font mt-2 max-w-2xl text-2xl leading-tight text-white sm:text-3xl">
+                        Real instructor operations mapped directly to backend behavior
+                      </h2>
+                      <p className="mt-2 text-sm text-white/80">
+                        Every action here is designed as a live case study for students: data reads, mutations, and workflow
+                        transitions.
+                      </p>
+                    </CardContent>
+                  </Card>
+
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                    <Card className="rounded-2xl border-border bg-sidebar">
+                      <CardContent className="p-4">
+                        <p className="text-xs text-muted-foreground">Total students enrolled at Hub</p>
+                        <p className="mt-2 text-2xl text-foreground">{students.length}</p>
+                      </CardContent>
+                    </Card>
+                    <Card className="rounded-2xl border-border bg-sidebar">
+                      <CardContent className="p-4">
+                        <p className="text-xs text-muted-foreground">Active courses</p>
+                        <p className="mt-2 text-2xl text-foreground">{activeCourses}</p>
+                      </CardContent>
+                    </Card>
+                    <Card className="rounded-2xl border-border bg-sidebar">
+                      <CardContent className="p-4">
+                        <p className="text-xs text-muted-foreground">Assignments pending review</p>
+                        <p className="mt-2 text-2xl text-foreground">{assignmentsPendingReview}</p>
+                      </CardContent>
+                    </Card>
+                    <Card className="rounded-2xl border-border bg-sidebar">
+                      <CardContent className="p-4">
+                        <p className="text-xs text-muted-foreground">Recent student activity</p>
+                        <p className="mt-2 text-2xl text-foreground">{recentActivityCount}</p>
+                      </CardContent>
+                    </Card>
                   </div>
-                </CardContent>
-              </Card>
+
+                  <Card className="rounded-2xl border-border">
+                    <CardHeader>
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <CardTitle className="heading-font text-lg text-foreground">{selectedSection.label}</CardTitle>
+                          <CardDescription className="mt-1">{selectedSection.purpose}</CardDescription>
+                        </div>
+                        <Badge variant={stageBadgeVariant[selectedSection.stage]} className="rounded-full px-3 py-1 text-[11px]">
+                          {selectedSection.stage}
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="grid grid-cols-1 gap-4 pt-0 md:grid-cols-2">
+                      <div className="rounded-xl bg-sidebar p-3">
+                        <p className="mb-2 text-xs uppercase tracking-wider text-muted-foreground">Feature Set</p>
+                        <ul className="space-y-2 text-sm text-foreground">
+                          {selectedSection.features.map((item) => (
+                            <li key={item} className="flex items-start gap-2">
+                              <LuCircleCheck className="mt-0.5 h-4 w-4 text-primary" />
+                              <span>{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                      <div className="rounded-xl bg-sidebar p-3">
+                        <p className="mb-2 text-xs uppercase tracking-wider text-muted-foreground">Teaching Value</p>
+                        <ul className="space-y-2 text-sm text-foreground">
+                          {selectedSection.teachingValue.map((item) => (
+                            <li key={item} className="flex items-start gap-2">
+                              <LuSparkles className="mt-0.5 h-4 w-4 text-accent" />
+                              <span>{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="rounded-2xl border-border">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="heading-font text-lg text-foreground">Submission Review & Feedback</CardTitle>
+                      <CardDescription>Core instructor workflow: review, feedback, and state transitions.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                      <div className="overflow-x-auto">
+                        <table className="w-full min-w-[620px] text-left">
+                          <thead>
+                            <tr className="border-y border-border text-xs text-muted-foreground">
+                              <th className="px-4 py-3 font-medium">Submission ID</th>
+                              <th className="px-4 py-3 font-medium">Student</th>
+                              <th className="px-4 py-3 font-medium">Assignment</th>
+                              <th className="px-4 py-3 font-medium">Status</th>
+                              <th className="px-4 py-3 font-medium">Submitted</th>
+                              <th className="px-4 py-3 font-medium">Action</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {submissionQueue.map((item) => (
+                              <tr key={item.id} className="border-b border-border text-sm text-foreground last:border-b-0">
+                                <td className="whitespace-nowrap px-4 py-3">{item.id}</td>
+                                <td className="whitespace-nowrap px-4 py-3">{item.student}</td>
+                                <td className="px-4 py-3">{item.assignment}</td>
+                                <td className="px-4 py-3">
+                                  <Badge variant={submissionBadgeVariant[item.status]}>{item.status}</Badge>
+                                </td>
+                                <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">{item.submitted}</td>
+                                <td className="px-4 py-3">
+                                  <Button size="sm" variant="ghost" className="rounded-full border border-border text-xs">
+                                    Review
+                                  </Button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </>
+              )}
             </div>
 
+            {/* Right Column (Sidebar) */}
             <div className="space-y-4">
               <Card className="rounded-2xl border-border">
                 <CardHeader>

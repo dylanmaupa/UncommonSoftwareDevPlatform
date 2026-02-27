@@ -1,46 +1,93 @@
 ﻿import { Link, useNavigate } from 'react-router';
-import { authService } from '../../services/mockData';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { toast } from 'sonner';
 import { useState } from 'react';
 import { LuRocket } from 'react-icons/lu';
+import { supabase } from '../../../lib/supabase';
+
+const HUB_LOCATIONS = [
+  'Dzivarasekwa',
+  'Kuwadzana',
+  'Kambuzuma',
+  'Mbare',
+  'Mufakose',
+  'Warren Park',
+  'Bulawayo',
+  'Victoria Falls',
+  'Gwai',
+  'Gokwe',
+];
+
+const SPECIALIZATIONS = [
+  'Digital Marketing',
+  'Product Design',
+  'Software Engineering'
+];
 
 export default function Signup() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [nickname, setNickname] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [role, setRole] = useState<'student' | 'instructor'>('student');
+  const [hubLocation, setHubLocation] = useState('');
+  const [specialization, setSpecialization] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSignup = (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!hubLocation) {
+      toast.error('Please select a Hub Location');
+      return;
+    }
+
+    if (role === 'instructor' && !specialization) {
+      toast.error('Please select an Area of Specialization');
+      return;
+    }
+
     setIsLoading(true);
 
-    setTimeout(() => {
-      const normalizedEmail = email.trim().toLowerCase();
-      const normalizedNickname = nickname.trim();
-      const isUncommonEmail = normalizedEmail.endsWith('@uncommon.org');
-      const user = authService.signup(normalizedEmail, password, normalizedNickname);
-      if (user) {
-        toast.success(
-          isUncommonEmail
-            ? 'Uncommon account created! Redirecting to dashboard.'
-            : 'Account created! Welcome to your coding journey!',
-        );
-        navigate('/dashboard');
-      } else {
-        toast.error('Email already exists');
+    try {
+      // 1. Sign up the user (this creates the auth.users record)
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+            role: role,
+            hub_location: hubLocation,
+            specialization: role === 'instructor' ? specialization : null,
+          },
+        },
+      });
+
+      if (authError) {
+        toast.error(authError.message);
+        return;
       }
+
+      if (authData.user) {
+        // We now rely on a Supabase Database Trigger to create the profile
+        // automatically using the metadata we passed in the options.data object.
+        toast.success('Account created! Welcome to your coding journey!');
+        navigate('/dashboard');
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'An unexpected error occurred during signup.');
+    } finally {
       setIsLoading(false);
-    }, 500);
+    }
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0747a1]/5 via-white to-[#FF6B35]/5 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="text-center mb-8">
+        <div className="text-center mb-6">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-[#0747a1] to-[#8B5CF6] mb-4">
             <LuRocket className="w-8 h-8 text-white" />
           </div>
@@ -51,15 +98,15 @@ export default function Signup() {
         </div>
 
         <div className="bg-white rounded-2xl shadow-lg p-8 border border-[rgba(0,0,0,0.08)]">
-          <form onSubmit={handleSignup} className="space-y-5">
+          <form onSubmit={handleSignup} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="nickname">Nickname</Label>
+              <Label htmlFor="fullName">Full Name</Label>
               <Input
-                id="nickname"
+                id="fullName"
                 type="text"
-                placeholder="Choose a cool nickname"
-                value={nickname}
-                onChange={(e) => setNickname(e.target.value)}
+                placeholder="John Doe"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
                 required
                 className="h-12 rounded-xl bg-[#F5F5FA] border-0"
               />
@@ -90,10 +137,53 @@ export default function Signup() {
                 minLength={6}
                 className="h-12 rounded-xl bg-[#F5F5FA] border-0"
               />
-              <p className="text-xs text-[#6B7280]">At least 6 characters</p>
             </div>
 
-            <Button type="submit" disabled={isLoading} className="w-full h-12 rounded-xl text-base" style={{ backgroundColor: '#0747a1' }}>
+            <div className="space-y-2">
+              <Label htmlFor="role">I am a</Label>
+              <Select value={role} onValueChange={(value: 'student' | 'instructor') => setRole(value)} required>
+                <SelectTrigger className="w-full h-12 bg-[#F5F5FA] border-0 rounded-xl">
+                  <SelectValue placeholder="Select your role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="student">Student</SelectItem>
+                  <SelectItem value="instructor">Instructor</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="hubLocation">Reporting Hub Location</Label>
+              <Select value={hubLocation} onValueChange={setHubLocation} required>
+                <SelectTrigger className="w-full h-12 bg-[#F5F5FA] border-0 rounded-xl">
+                  <SelectValue placeholder="Select Hub Location" />
+                </SelectTrigger>
+                <SelectContent>
+                  {HUB_LOCATIONS.map((hub) => (
+                    <SelectItem key={hub} value={hub}>{hub}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {role === 'instructor' && (
+              <div className="space-y-2">
+                <Label htmlFor="specialization">Area of Specialization</Label>
+                <Select value={specialization} onValueChange={setSpecialization} required={role === 'instructor'}>
+                  <SelectTrigger className="w-full h-12 bg-[#F5F5FA] border-0 rounded-xl">
+                    <SelectValue placeholder="Select your specialization" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SPECIALIZATIONS.map((spec) => (
+                      <SelectItem key={spec} value={spec}>{spec}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+
+            <Button type="submit" disabled={isLoading} className="w-full h-12 rounded-xl text-base mt-2" style={{ backgroundColor: '#0747a1' }}>
               {isLoading ? 'Creating account...' : 'Create Account'}
             </Button>
           </form>
@@ -105,19 +195,8 @@ export default function Signup() {
             </Link>
           </div>
         </div>
-
-        <div className="mt-6 space-y-2">
-          {[
-            'All courses and content unlocked',
-            'Interactive coding challenges',
-            'Earn XP and unlock achievements',
-          ].map((feature, index) => (
-            <div key={index} className="flex items-center gap-2 text-sm text-[#6B7280]">
-              <span>{feature}</span>
-            </div>
-          ))}
-        </div>
       </div>
     </div>
   );
 }
+
