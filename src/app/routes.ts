@@ -22,7 +22,6 @@ export const router = createBrowserRouter([
       { index: true, Component: Login },
       { path: 'signup', Component: Signup },
       { path: 'dashboard', Component: Dashboard },
-      { path: 'instructor', Component: Admin },
       { path: 'admin', Component: Admin },
       { path: 'courses', Component: Courses },
       { path: 'courses/:courseId', Component: CourseDetail },
@@ -36,3 +35,4 @@ export const router = createBrowserRouter([
     ],
   },
 ]);
+
