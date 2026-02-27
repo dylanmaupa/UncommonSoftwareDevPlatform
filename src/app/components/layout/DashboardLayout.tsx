@@ -1,12 +1,14 @@
-import { ReactNode } from 'react';
+import { useEffect, ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { authService } from '../../services/mockData';
+import { loadPyodideEnvironment } from '../../../lib/pyodide';
 import {
   LuBookOpen,
   LuFolderKanban,
   LuLayoutDashboard,
   LuLogOut,
   LuSettings,
+  LuTerminal,
   LuTrophy,
   LuUser,
 } from 'react-icons/lu';
@@ -22,6 +24,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const navigate = useNavigate();
   const user = authService.getCurrentUser();
 
+  useEffect(() => {
+    // Preload Python environment in the background silently
+    loadPyodideEnvironment().catch(console.error);
+  }, []);
+
   if (!user) {
     navigate('/');
     return null;
@@ -29,6 +36,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const overviewItems = [
     { icon: LuLayoutDashboard, label: 'Dashboard', path: '/dashboard' },
+    { icon: LuTerminal, label: 'Sandbox', path: '/sandbox' },
     { icon: LuBookOpen, label: 'Courses', path: '/courses' },
     { icon: LuFolderKanban, label: 'Projects', path: '/projects' },
     { icon: LuTrophy, label: 'Achievements', path: '/achievements' },
@@ -60,11 +68,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             <div className="flex items-center gap-2">
               <Link
                 to="/settings"
-                className={`flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-foreground ${
-                  location.pathname === '/settings'
-                    ? 'bg-secondary text-foreground'
-                    : 'bg-card hover:bg-secondary hover:text-foreground'
-                }`}
+                className={`flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-foreground ${location.pathname === '/settings'
+                  ? 'bg-secondary text-foreground'
+                  : 'bg-card hover:bg-secondary hover:text-foreground'
+                  }`}
                 aria-label="Settings"
               >
                 <LuSettings className="h-4 w-4" />
@@ -90,11 +97,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   <Link
                     key={`${item.label}-${item.path}-mobile`}
                     to={item.path}
-                    className={`flex items-center gap-2 whitespace-nowrap rounded-full px-3 py-2 text-sm transition-colors ${
-                      isActive
-                        ? 'bg-secondary text-foreground'
-                        : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
-                    }`}
+                    className={`flex items-center gap-2 whitespace-nowrap rounded-full px-3 py-2 text-sm transition-colors ${isActive
+                      ? 'bg-secondary text-foreground'
+                      : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                      }`}
                   >
                     <Icon className="h-4 w-4" />
                     <span>{item.label}</span>
@@ -128,9 +134,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   <Link
                     key={`${item.label}-${item.path}`}
                     to={item.path}
-                    className={`flex items-center gap-2 rounded-lg px-2 py-2 text-sm transition-colors ${
-                      isActive ? 'text-foreground' : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
-                    }`}
+                    className={`flex items-center gap-2 rounded-lg px-2 py-2 text-sm transition-colors ${isActive ? 'text-foreground' : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                      }`}
                   >
                     <Icon className="h-4 w-4" />
                     <span>{item.label}</span>
@@ -144,11 +149,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             <p className="px-2 pb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">Settings</p>
             <Link
               to="/settings"
-              className={`flex items-center gap-2 rounded-lg px-2 py-2 text-sm transition-colors ${
-                location.pathname === '/settings'
-                  ? 'text-foreground'
-                  : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
-              }`}
+              className={`flex items-center gap-2 rounded-lg px-2 py-2 text-sm transition-colors ${location.pathname === '/settings'
+                ? 'text-foreground'
+                : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                }`}
             >
               <LuSettings className="h-4 w-4" />
               <span>Settings</span>

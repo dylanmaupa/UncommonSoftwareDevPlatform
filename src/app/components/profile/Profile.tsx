@@ -1,5 +1,6 @@
 ﻿import { useEffect, useState } from 'react';
 import DashboardLayout from '../layout/DashboardLayout';
+// @ts-ignore
 import profileAvatar from '../../../assets/avatar2.png';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
@@ -21,6 +22,7 @@ import {
   LuZap,
 } from 'react-icons/lu';
 import { supabase } from '../../../lib/supabase';
+import StreakWidget from '../dashboard/StreakWidget';
 
 export default function Profile() {
   const [userProfile, setUserProfile] = useState<any>(null);
@@ -106,9 +108,9 @@ export default function Profile() {
 
   // Mocked out gamification stats that would typically live in another table
   const userStats = {
-    xp: 0,
+    xp: userProfile.xp || 0,
     level: 1,
-    streak: 0,
+    streak: userProfile.streak || 0,
     completedLessons: userProgress.filter(p => p.item_type === 'lesson' && p.status === 'completed'),
     completedProjects: [],
     achievements: [],
@@ -227,20 +229,6 @@ export default function Profile() {
               <Card className="rounded-2xl border-border">
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center">
-                      <LuFlame className="w-5 h-5 text-accent" />
-                    </div>
-                    <div>
-                      <p className="text-xl font-semibold heading-font text-foreground">{userStats.streak}</p>
-                      <p className="text-xs text-muted-foreground">Day Streak</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="rounded-2xl border-border">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center">
                       <LuBookOpen className="w-5 h-5 text-success" />
                     </div>
@@ -294,6 +282,8 @@ export default function Profile() {
                 </CardContent>
               </Card>
             </div>
+
+            <StreakWidget streak={userStats.streak} userId={authUser.id} />
 
             <Card className="rounded-2xl border-border">
               <CardHeader className="pb-2">

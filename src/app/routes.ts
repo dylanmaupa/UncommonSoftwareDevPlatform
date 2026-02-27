@@ -7,6 +7,7 @@ import Admin from './components/admin/Admin';
 import Courses from './components/courses/Courses';
 import CourseDetail from './components/courses/CourseDetail';
 import LessonView from './components/courses/LessonView';
+import Sandbox from './components/sandbox/Sandbox';
 import Projects from './components/projects/Projects';
 import ProjectDetail from './components/projects/ProjectDetail';
 import Achievements from './components/achievements/Achievements';
@@ -23,6 +24,7 @@ export const router = createBrowserRouter([
       { path: 'signup', Component: Signup },
       { path: 'dashboard', Component: Dashboard },
       { path: 'admin', Component: Admin },
+      { path: 'sandbox', Component: Sandbox },
       { path: 'courses', Component: Courses },
       { path: 'courses/:courseId', Component: CourseDetail },
       { path: 'courses/:courseId/modules/:moduleId/lessons/:lessonId', Component: LessonView },

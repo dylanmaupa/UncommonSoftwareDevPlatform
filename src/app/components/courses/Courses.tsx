@@ -26,7 +26,24 @@ export default function Courses() {
           .select('*')
           .eq('user_id', user.id);
 
-        if (!pErr && pData) setUserProgress(pData);
+        if (!pErr && pData) {
+          setUserProgress(pData);
+
+          // Sort courses by user progress (most used first)
+          if (cData) {
+            const sortedCourses = [...cData].sort((a, b) => {
+              const pA = pData.find(p => p.item_id === a.id && p.item_type === 'course');
+              const pB = pData.find(p => p.item_id === b.id && p.item_type === 'course');
+              const progressA = pA ? pA.progress_percentage : 0;
+              const progressB = pB ? pB.progress_percentage : 0;
+
+              return progressB - progressA; // Descending order
+            });
+            setCourses(sortedCourses);
+          }
+        } else if (cData) {
+          setCourses(cData);
+        }
       } catch (err) {
         console.error(err);
       } finally {

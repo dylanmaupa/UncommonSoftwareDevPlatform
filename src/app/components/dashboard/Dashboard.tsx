@@ -1,5 +1,7 @@
 ﻿import { Link, useNavigate } from 'react-router';
 import DashboardLayout from '../layout/DashboardLayout';
+import StreakWidget from './StreakWidget';
+// @ts-ignore
 import dashboardAvatar from '../../../assets/avatar2.png';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
@@ -26,6 +28,8 @@ interface UserProfile {
   role: 'student' | 'instructor';
   hub_location: string;
   specialization?: string | null;
+  streak?: number;
+  xp?: number;
 }
 
 interface DashboardMainProps {
@@ -301,11 +305,14 @@ function DashboardMain({
                   <span>21-30 Aug</span>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-2 text-xs">
+
+              <div className="grid grid-cols-2 gap-2 text-xs mt-4">
                 <div className="rounded-xl bg-sidebar p-2 text-muted-foreground">XP: {xp}</div>
                 <div className="rounded-xl bg-sidebar p-2 text-muted-foreground">Level: {level}</div>
-                <div className="rounded-xl bg-sidebar p-2 text-muted-foreground">Streak: {streak}</div>
                 <div className="rounded-xl bg-sidebar p-2 text-muted-foreground">Lessons: {completedLessons}</div>
+              </div>
+              <div className="mt-4">
+                <StreakWidget streak={streak || profile.streak || 0} userId={profile.id} />
               </div>
             </CardContent>
           </Card>
@@ -447,8 +454,8 @@ export default function Dashboard() {
         students={students}
         instructors={instructors}
         courses={courses}
-        xp={0} // Mocked out for now
-        level={1} // Mocked out for now
+        xp={profile.xp || 0}
+        level={1} // Level can be derived from XP later
         streak={0} // Mocked out for now
         completedLessons={totalLessons}
         nextCourse={nextCourse}

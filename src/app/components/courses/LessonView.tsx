@@ -19,13 +19,7 @@ import {
   LuZap,
 } from 'react-icons/lu';
 import { supabase } from '../../../lib/supabase';
-
-declare global {
-  interface Window {
-    loadPyodide: any;
-    pyodideLocal: any;
-  }
-}
+import { loadPyodideEnvironment } from '../../../lib/pyodide';
 
 export default function LessonView() {
   const { courseId, moduleId, lessonId } = useParams();
@@ -44,6 +38,8 @@ export default function LessonView() {
   const [showSolution, setShowSolution] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
   const [showXPAnimation, setShowXPAnimation] = useState(false);
+  const [hintUsed, setHintUsed] = useState(false);
+  const [solutionUsed, setSolutionUsed] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -113,6 +109,8 @@ export default function LessonView() {
       setOutput('');
       setShowHint(false);
       setShowSolution(false);
+      setHintUsed(false);
+      setSolutionUsed(false);
     }
   }, [lessonId, lesson]);
 
@@ -165,24 +163,10 @@ export default function LessonView() {
 
     if (lang === 'python') {
       try {
-        if (!window.pyodideLocal) {
-          if (!document.getElementById('pyodide-script')) {
-            await new Promise((resolve, reject) => {
-              const script = document.createElement('script');
-              script.id = 'pyodide-script';
-              script.src = 'https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js';
-              script.onload = resolve;
-              script.onerror = reject;
-              document.head.appendChild(script);
-            });
-          }
-          window.pyodideLocal = await window.loadPyodide({
-            indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.25.0/full/',
-          });
-        }
+        const pyodide = await loadPyodideEnvironment();
 
-        // Redirect stdout/stderr
-        await window.pyodideLocal.runPythonAsync(`
+        // Redirect stdout/stderr specifically for this run
+        await pyodide.runPythonAsync(`
 import sys
 import io
 sys.stdout = io.StringIO()
@@ -190,45 +174,54 @@ sys.stderr = io.StringIO()
 `);
 
         try {
-          await window.pyodideLocal.runPythonAsync(sourceCode);
-          const stdout = await window.pyodideLocal.runPythonAsync("sys.stdout.getvalue()");
-          const stderr = await window.pyodideLocal.runPythonAsync("sys.stderr.getvalue()");
+          await pyodide.runPythonAsync(sourceCode);
+          const stdout = await pyodide.runPythonAsync("sys.stdout.getvalue()");
+          const stderr = await pyodide.runPythonAsync("sys.stderr.getvalue()");
           return { run: { output: stdout || stderr, code: stderr ? 1 : 0, stderr } };
         } catch (execErr: any) {
           return { run: { output: String(execErr), code: 1, stderr: String(execErr) } };
         }
       } catch (err: any) {
         console.error('Pyodide Error:', err);
-        return { run: { output: 'Failed to load Python environment: \\n' + String(err), code: 1, stderr: 'Error' } };
+        return { run: { output: 'Failed to load Python environment: \n' + String(err), code: 1, stderr: 'Error' } };
       }
     } else {
       // JavaScript
-      try {
-        let stdout = '';
-        const originalLog = console.log;
-        console.log = (...args) => {
-          stdout += args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ') + '\\n';
-        };
+      let stdout = '';
+      const originalLog = console.log;
+      console.log = (...args) => {
+        stdout += args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ') + '\n';
+      };
 
+      try {
         const func = new Function(sourceCode);
         func();
-
-        console.log = originalLog;
         return { run: { output: stdout, code: 0, stderr: '' } };
       } catch (err: any) {
-        return { run: { output: String(err), code: 1, stderr: String(err) } };
+        return { run: { output: stdout + '\n' + String(err), code: 1, stderr: String(err) } };
+      } finally {
+        console.log = originalLog;
       }
     }
   };
 
   const handleRun = async () => {
-    setIsRunning(true);
-    setOutput('Running code...\\n');
+    try {
+      setIsRunning(true);
+      const lang = lesson?.language || 'javascript';
+      if (lang === 'python' && !window.pyodideLocal) {
+        setOutput('Connecting to Python environment...\n');
+      } else {
+        setOutput('Running code...\n');
+      }
 
-    const result = await executeCode(code);
-    setOutput(result.run?.output || 'No output.');
-
-    setIsRunning(false);
+      const result = await executeCode(code);
+      setOutput(result?.run?.output || 'No output.');
+    } catch (e: any) {
+      setOutput(`Execution failed: ${e?.message || String(e)}`);
+    } finally {
+      setIsRunning(false);
+    }
   };
 
   const handleSubmit = async () => {
@@ -240,105 +233,126 @@ sys.stderr = io.StringIO()
       return;
     }
 
-    setIsRunning(true);
-    setOutput('Running test cases...\\n');
-
-    const result = await executeCode(code);
-    const executionOutput = result.run?.output || '';
-    const exitCode = result.run?.code || 0;
-    const stderr = result.run?.stderr || '';
-
-    setOutput(executionOutput);
-
-    let isCorrect = exitCode === 0 && !stderr && executionOutput.trim().length > 0;
-
-    // Verify against solution output if a solution exists
-    if (isCorrect && lesson.exercise_solution) {
-      setOutput((prev) => prev + '\\nVerifying against solution...\\n');
-      const solutionResult = await executeCode(lesson.exercise_solution);
-      const solutionOutput = solutionResult.run?.output || '';
-
-      if (executionOutput.trim() !== solutionOutput.trim()) {
-        isCorrect = false;
-        setOutput((prev) => prev + `\\nVerification failed.\\nExpected Output:\\n${solutionOutput.trim()}\\n\\nYour Output:\\n${executionOutput.trim()}`);
+    try {
+      setIsRunning(true);
+      const lang = lesson?.language || 'javascript';
+      if (lang === 'python' && !window.pyodideLocal) {
+        setOutput('Connecting to Python environment...\n');
       } else {
-        setOutput((prev) => prev + '\\nOutput matches solution perfectly!\\n');
+        setOutput('Running test cases...\n');
       }
-    }
 
-    if (isCorrect && user) {
-      try {
-        // Upsert lesson progress
-        const lessonProgressEntry = {
-          user_id: user.id,
-          item_id: lesson.id,
-          item_type: 'lesson',
-          status: 'completed',
-          progress_percentage: 100,
-          updated_at: new Date().toISOString()
-        };
+      const result = await executeCode(code);
+      const executionOutput = result?.run?.output || '';
+      const exitCode = result?.run?.code || 0;
+      const stderr = result?.run?.stderr || '';
 
-        await supabase.from('user_progress').upsert(lessonProgressEntry, { onConflict: 'user_id, item_id, item_type' });
+      setOutput(executionOutput);
 
-        // Calculate and update module progress
-        const updatedProgress = [...userProgress, lessonProgressEntry];
-        const completedInModule = module.lessons.filter((l: any) =>
-          updatedProgress.some(p => p.item_id === l.id && p.item_type === 'lesson' && p.status === 'completed')
-        ).length;
-        const moduleProgressObj = {
-          user_id: user.id,
-          item_id: module.id,
-          item_type: 'module',
-          status: completedInModule === module.lessons.length ? 'completed' : 'in_progress',
-          progress_percentage: Math.round((completedInModule / (module.lessons.length || 1)) * 100),
-          updated_at: new Date().toISOString()
-        };
-        await supabase.from('user_progress').upsert(moduleProgressObj, { onConflict: 'user_id, item_id, item_type' });
+      let isCorrect = exitCode === 0 && !stderr && executionOutput.trim().length > 0;
 
-        // Calculate and update course progress
-        const totalLessons = course.modules.reduce((sum: number, m: any) => sum + (m.lessons?.length || 0), 0);
-        const completedInCourse = course.modules.reduce((sum: number, m: any) => {
-          return sum + m.lessons.filter((l: any) =>
+      // Verify against solution output if a solution exists
+      if (isCorrect && lesson.exercise_solution) {
+        setOutput((prev) => prev + '\nVerifying against solution...\n');
+        const solutionResult = await executeCode(lesson.exercise_solution);
+        const solutionOutput = solutionResult?.run?.output || '';
+
+        if (executionOutput.trim() !== solutionOutput.trim()) {
+          isCorrect = false;
+          setOutput((prev) => prev + `\nVerification failed.\nExpected Output:\n${solutionOutput.trim()}\n\nYour Output:\n${executionOutput.trim()}`);
+        } else {
+          setOutput((prev) => prev + '\nOutput matches solution perfectly!\n');
+        }
+      }
+
+      if (isCorrect && user) {
+        try {
+          // Upsert lesson progress
+          const lessonProgressEntry = {
+            user_id: user.id,
+            item_id: lesson.id,
+            item_type: 'lesson',
+            status: 'completed',
+            progress_percentage: 100,
+            updated_at: new Date().toISOString()
+          };
+
+          await supabase.from('user_progress').upsert(lessonProgressEntry, { onConflict: 'user_id, item_id, item_type' });
+
+          // Calculate and update module progress
+          const updatedProgress = [...userProgress, lessonProgressEntry];
+          const completedInModule = module.lessons.filter((l: any) =>
             updatedProgress.some(p => p.item_id === l.id && p.item_type === 'lesson' && p.status === 'completed')
           ).length;
-        }, 0);
-        const courseProgressObj = {
-          user_id: user.id,
-          item_id: course.id,
-          item_type: 'course',
-          status: completedInCourse === totalLessons ? 'completed' : 'in_progress',
-          progress_percentage: Math.round((completedInCourse / (totalLessons || 1)) * 100),
-          updated_at: new Date().toISOString()
-        };
-        await supabase.from('user_progress').upsert(courseProgressObj, { onConflict: 'user_id, item_id, item_type' });
+          const moduleProgressObj = {
+            user_id: user.id,
+            item_id: module.id,
+            item_type: 'module',
+            status: completedInModule === module.lessons.length ? 'completed' : 'in_progress',
+            progress_percentage: Math.round((completedInModule / (module.lessons.length || 1)) * 100),
+            updated_at: new Date().toISOString()
+          };
+          await supabase.from('user_progress').upsert(moduleProgressObj, { onConflict: 'user_id, item_id, item_type' });
 
-        setUserProgress([...userProgress, lessonProgressEntry, moduleProgressObj, courseProgressObj]);
-        setShowXPAnimation(true);
+          // Calculate and update course progress
+          const totalLessons = course.modules.reduce((sum: number, m: any) => sum + (m.lessons?.length || 0), 0);
+          const completedInCourse = course.modules.reduce((sum: number, m: any) => {
+            return sum + m.lessons.filter((l: any) =>
+              updatedProgress.some(p => p.item_id === l.id && p.item_type === 'lesson' && p.status === 'completed')
+            ).length;
+          }, 0);
+          const courseProgressObj = {
+            user_id: user.id,
+            item_id: course.id,
+            item_type: 'course',
+            status: completedInCourse === totalLessons ? 'completed' : 'in_progress',
+            progress_percentage: Math.round((completedInCourse / (totalLessons || 1)) * 100),
+            updated_at: new Date().toISOString()
+          };
+          await supabase.from('user_progress').upsert(courseProgressObj, { onConflict: 'user_id, item_id, item_type' });
 
-        toast.success(
+          // Log activity for streaks on successful completion
+          await supabase.rpc('record_user_activity', { p_user_id: user.id });
+
+          setUserProgress([...userProgress, lessonProgressEntry, moduleProgressObj, courseProgressObj]);
+          setShowXPAnimation(true);
+
+          let finalXp = lesson.xp_reward;
+          if (solutionUsed) {
+            finalXp = 0;
+          } else if (hintUsed) {
+            finalXp = Math.max(1, Math.floor(lesson.xp_reward * 0.5));
+          }
+
+          if (finalXp > 0) {
+            await supabase.rpc('add_user_xp', { p_user_id: user.id, p_amount: finalXp });
+          }
+
+          toast.success(
+            <div>
+              <p className="font-semibold">{solutionUsed ? 'Lesson Finished' : 'Lesson Complete!'}</p>
+              <p className="text-sm">+{finalXp} XP earned {solutionUsed ? '(Solution used: 0 XP)' : hintUsed ? '(Hint used: -50%)' : ''}</p>
+            </div>
+          );
+
+          setTimeout(() => {
+            setShowXPAnimation(false);
+          }, 2000);
+        } catch (e) {
+          console.error('Failed to submit lesson', e);
+          toast.error('Failed to save progress.');
+        }
+      } else if (!isCorrect) {
+        toast.error(
           <div>
-            <p className="font-semibold">Lesson Complete!</p>
-            <p className="text-sm">+{lesson.xp_reward} XP earned</p>
+            <p className="font-semibold">Not quite right</p>
+            <p className="text-sm">Check your code and any output errors.</p>
           </div>
         );
-
-        setTimeout(() => {
-          setShowXPAnimation(false);
-        }, 2000);
-      } catch (e) {
-        console.error('Failed to submit lesson', e);
-        toast.error('Failed to save progress.');
       }
-    } else if (!isCorrect) {
-      toast.error(
-        <div>
-          <p className="font-semibold">Not quite right</p>
-          <p className="text-sm">Check your code and any output errors.</p>
-        </div>
-      );
+    } finally {
+      setIsRunning(false);
     }
-
-    setIsRunning(false);
   };
 
   return (
@@ -354,7 +368,7 @@ sys.stderr = io.StringIO()
             <div className="flex items-center gap-3">
               <LuTrophy className="w-12 h-12" />
               <div>
-                <p className="text-2xl font-bold heading-font">+{lesson.xp_reward} XP</p>
+                <p className="text-2xl font-bold heading-font">+{solutionUsed ? 0 : hintUsed ? Math.max(1, Math.floor(lesson.xp_reward * 0.5)) : lesson.xp_reward} XP</p>
                 <p className="text-white/90">Level Up!</p>
               </div>
             </div>
@@ -436,15 +450,32 @@ sys.stderr = io.StringIO()
               </Card>
 
               <div className="mt-6">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowHint(!showHint)}
-                  className="border-accent text-accent hover:bg-accent/10"
-                >
-                  <LuLightbulb className="w-4 h-4 mr-2" />
-                  {showHint ? 'Hide' : 'Show'} Hint
-                </Button>
+                <div className="flex items-center gap-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      if (!showHint && !hintUsed) {
+                        if (user) {
+                          await supabase.rpc('add_user_xp', { p_user_id: user.id, p_amount: -100 });
+                          toast.info("100 XP deducted for using a hint!");
+                        }
+                        setHintUsed(true);
+                      }
+                      setShowHint(!showHint);
+                    }}
+                    className="border-accent text-accent hover:bg-accent/10"
+                  >
+                    <LuLightbulb className="w-4 h-4 mr-2" />
+                    {showHint ? 'Hide' : 'Show'} Hint
+                  </Button>
+                  {!showHint && !hintUsed && (
+                    <span className="text-xs text-accent/80 font-medium">Costs 100 XP</span>
+                  )}
+                  {hintUsed && (
+                    <span className="text-xs text-muted-foreground font-medium">-100 XP applied</span>
+                  )}
+                </div>
                 {showHint && (
                   <Card className="mt-3 border-accent/20 bg-accent/5">
                     <CardContent className="p-4">
@@ -457,15 +488,26 @@ sys.stderr = io.StringIO()
               </div>
 
               <div className="mt-4">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowSolution(!showSolution)}
-                  className="border-muted-foreground text-muted-foreground"
-                >
-                  {showSolution ? <LuEyeOff className="w-4 h-4 mr-2" /> : <LuEye className="w-4 h-4 mr-2" />}
-                  {showSolution ? 'Hide' : 'View'} Solution
-                </Button>
+                <div className="flex items-center gap-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setShowSolution(!showSolution);
+                      if (!showSolution) setSolutionUsed(true);
+                    }}
+                    className="border-destructive/60 text-destructive hover:bg-destructive/10"
+                  >
+                    {showSolution ? <LuEyeOff className="w-4 h-4 mr-2" /> : <LuEye className="w-4 h-4 mr-2" />}
+                    {showSolution ? 'Hide' : 'View'} Solution
+                  </Button>
+                  {!showSolution && !solutionUsed && (
+                    <span className="text-xs text-destructive/80 font-medium">⚠️ Forfeits all XP for this lesson</span>
+                  )}
+                  {solutionUsed && (
+                    <span className="text-xs text-muted-foreground font-medium">0 XP will be awarded</span>
+                  )}
+                </div>
                 {showSolution && (
                   <Card className="mt-3 border-border overflow-hidden">
                     <div className="bg-foreground px-4 py-2">
