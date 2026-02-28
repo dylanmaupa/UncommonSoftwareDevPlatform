@@ -634,74 +634,95 @@ sys.stderr = io.StringIO()
             </div>
           </div>
 
-          <div className="w-1/2 flex flex-col bg-[#1e1e1e]">
-            <div className="flex-1 overflow-hidden">
-              <Editor
-                height="100%"
-                language={lesson.language || 'javascript'}
-                value={code}
-                onChange={(value) => setCode(value || '')}
-                theme="vs-dark"
-                onMount={(editor, monaco) => {
-                  editor.onKeyDown((e: any) => {
-                    // Prevent Ctrl+V or Cmd+V
-                    if ((e.ctrlKey || e.metaKey) && e.keyCode === monaco.KeyCode.KeyV) {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      toast.warning("Pasting is disabled! Typing it out helps you learn.");
-                    }
-                  });
-                  // Prevent native right-click paste
-                  const domNode = editor.getDomNode();
-                  if (domNode) {
-                    domNode.addEventListener('paste', (e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      toast.warning("Pasting is disabled! Typing it out helps you learn.");
-                    }, true);
-                  }
-                }}
-                options={{
-                  minimap: { enabled: false },
-                  fontSize: 14,
-                  lineNumbers: 'on',
-                  scrollBeyondLastLine: false,
-                  automaticLayout: true,
-                  tabSize: 2,
-                }}
-              />
-            </div>
+          <div className="w-1/2 flex flex-col bg-[#0d0f14] border-l border-white/5">
+            <div className="flex-1 p-6">
+              <div className="h-full rounded-2xl border border-white/10 bg-[#141518] shadow-[0_0_0_1px_rgba(255,255,255,0.04),0_30px_80px_-40px_rgba(0,0,0,0.9)] overflow-hidden flex flex-col">
+                <div className="px-4 py-3 bg-[#101114] border-b border-white/10 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-red-500/80" />
+                    <span className="h-2 w-2 rounded-full bg-yellow-500/80" />
+                    <span className="h-2 w-2 rounded-full bg-blue-500/80" />
+                  </div>
+                  <span className="text-xs text-white/50 font-mono tracking-wider">
+                    {lesson.language === 'python' ? 'main.py' : 'index.js'}
+                  </span>
+                  <span className="text-[10px] uppercase tracking-[0.2em] text-white/30">Practice</span>
+                </div>
 
-            <div className="bg-[#252525] px-6 py-4 border-t border-[#3e3e3e] flex items-center gap-3">
-              <Button
-                onClick={handleRun}
-                disabled={isRunning}
-                variant="outline"
-                className="bg-[#1e1e1e] text-white border-[#3e3e3e] hover:bg-[#2d2d2d]"
-              >
-                <LuPlay className="w-4 h-4 mr-2" />
-                Run Code
-              </Button>
-              <Button onClick={handleSubmit} disabled={isRunning} className="bg-primary text-primary-foreground hover:bg-primary/90">
-                <LuCircleCheck className="w-4 h-4 mr-2" />
-                {isCompleted ? 'Completed' : 'Submit'}
-              </Button>
-              {nextLesson && isCompleted && (
-                <Button
-                  onClick={() => navigate(`/courses/${nextLesson?.courseId}/modules/${nextLesson?.moduleId}/lessons/${nextLesson?.lessonId}`)}
-                  className="ml-auto bg-success text-success-foreground hover:bg-success/90"
-                >
-                  Next Lesson
-                  <LuChevronRight className="w-4 h-4 ml-2" />
-                </Button>
-              )}
-            </div>
+                <div className="flex-1 overflow-hidden bg-[#141518]">
+                  <Editor
+                    height="100%"
+                    language={lesson.language || 'javascript'}
+                    value={code}
+                    onChange={(value) => setCode(value || '')}
+                    theme="vs-dark"
+                    onMount={(editor, monaco) => {
+                      editor.onKeyDown((e: any) => {
+                        // Prevent Ctrl+V or Cmd+V
+                        if ((e.ctrlKey || e.metaKey) && e.keyCode === monaco.KeyCode.KeyV) {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          toast.warning("Pasting is disabled! Typing it out helps you learn.");
+                        }
+                      });
+                      // Prevent native right-click paste
+                      const domNode = editor.getDomNode();
+                      if (domNode) {
+                        domNode.addEventListener('paste', (e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          toast.warning("Pasting is disabled! Typing it out helps you learn.");
+                        }, true);
+                      }
+                    }}
+                    options={{
+                      minimap: { enabled: false },
+                      fontSize: 14,
+                      lineNumbers: 'on',
+                      scrollBeyondLastLine: false,
+                      automaticLayout: true,
+                      tabSize: 2,
+                    }}
+                  />
+                </div>
 
-            <div className="h-48 bg-[#1e1e1e] border-t border-[#3e3e3e] overflow-auto">
-              <div className="px-6 py-3 bg-[#252525] border-b border-[#3e3e3e]">
-                <span className="text-sm text-white/70">Console Output</span>
+                <div className="px-4 py-3 bg-[#111214] border-t border-white/10 flex items-center gap-3">
+                  <Button
+                    onClick={handleRun}
+                    disabled={isRunning}
+                    variant="outline"
+                    className="bg-[#141518] text-white border-white/10 hover:bg-[#1c1f24] hover:border-white/20"
+                  >
+                    <LuPlay className="w-4 h-4 mr-2" />
+                    Run Code
+                  </Button>
+                  <Button
+                    onClick={handleSubmit}
+                    disabled={isRunning}
+                    className="bg-blue-500 text-white hover:bg-blue-400 shadow-lg shadow-blue-500/20"
+                  >
+                    <LuCircleCheck className="w-4 h-4 mr-2" />
+                    {isCompleted ? 'Completed' : 'Submit'}
+                  </Button>
+                  {nextLesson && isCompleted && (
+                    <Button
+                      onClick={() => navigate(`/courses/${nextLesson?.courseId}/modules/${nextLesson?.moduleId}/lessons/${nextLesson?.lessonId}`)}
+                      className="ml-auto bg-[#1a2b22] text-emerald-200 hover:bg-[#203528] border border-emerald-500/20"
+                    >
+                      Next Lesson
+                      <LuChevronRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  )}
+                </div>
+
+                <div className="h-52 bg-[#0f1012] border-t border-white/10 overflow-auto">
+                  <div className="px-4 py-2 bg-[#121316] border-b border-white/10 flex items-center justify-between">
+                    <span className="text-xs uppercase tracking-[0.2em] text-white/40">Console</span>
+                    <span className="text-xs text-white/40">Output</span>
+                  </div>
+                  <pre className="p-5 text-sm text-white/90 font-mono">{output || '// Run your code to see output here'}</pre>
+                </div>
               </div>
-              <pre className="p-6 text-sm text-white/90 font-mono">{output || '// Run your code to see output here'}</pre>
             </div>
           </div>
         </div>
