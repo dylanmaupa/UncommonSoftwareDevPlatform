@@ -634,8 +634,8 @@ sys.stderr = io.StringIO()
             </div>
           </div>
 
-          <div className="w-1/2 flex flex-col bg-[#0d0f14] border-l border-white/5">
-            <div className="flex-1 p-6">
+          <div className="w-1/2 flex flex-col bg-white border-l border-black/10">
+            <div className="flex-1 p-0">
               <div className="h-full rounded-2xl border border-white/10 bg-[#141518] shadow-[0_0_0_1px_rgba(255,255,255,0.04),0_30px_80px_-40px_rgba(0,0,0,0.9)] overflow-hidden flex flex-col">
                 <div className="px-4 py-3 bg-[#101114] border-b border-white/10 flex items-center justify-between">
                   <div className="flex items-center gap-2">
