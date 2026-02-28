@@ -1,17 +1,50 @@
+import { useEffect, useState } from 'react';
 import DashboardLayout from '../layout/DashboardLayout';
 import { achievementsData, authService } from '../../services/mockData';
 import { Card, CardContent } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { LuFlame, LuLock, LuSparkles, LuTarget, LuTrophy } from 'react-icons/lu';
+import { supabase } from '../../../lib/supabase';
+import { calculateUserLevel } from '../../../lib/gamificationUtils';
 
 export default function Achievements() {
-  const user = authService.getCurrentUser();
+  const [userProfile, setUserProfile] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  if (!user) return null;
+  useEffect(() => {
+    async function fetchAchievements() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (profile) {
+        setUserProfile(profile);
+      }
+      setIsLoading(false);
+    }
+    fetchAchievements();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <div className="p-8 text-center text-muted-foreground">Loading achievements...</div>
+      </DashboardLayout>
+    );
+  }
+
+  if (!userProfile) return null;
+
+  const userAchievements: string[] = userProfile.achievements || [];
 
   const unlockedAchievements = achievementsData.map((achievement) => ({
     ...achievement,
-    unlocked: user.achievements.includes(achievement.id),
+    unlocked: userAchievements.includes(achievement.id),
   }));
 
   const unlockedCount = unlockedAchievements.filter((achievement) => achievement.unlocked).length;
@@ -54,7 +87,7 @@ export default function Achievements() {
                 <CardContent className="flex items-center justify-between p-4">
                   <div>
                     <p className="text-xs text-muted-foreground">Total XP</p>
-                    <p className="text-sm text-foreground">{user.xp} points</p>
+                    <p className="text-sm text-foreground">{userProfile.xp || 0} points</p>
                   </div>
                   <LuSparkles className="h-4 w-4 text-muted-foreground" />
                 </CardContent>
@@ -63,7 +96,7 @@ export default function Achievements() {
                 <CardContent className="flex items-center justify-between p-4">
                   <div>
                     <p className="text-xs text-muted-foreground">Current Level</p>
-                    <p className="text-sm text-foreground">Level {user.level}</p>
+                    <p className="text-sm text-foreground">Level {calculateUserLevel(userProfile.xp)}</p>
                   </div>
                   <LuTarget className="h-4 w-4 text-muted-foreground" />
                 </CardContent>
@@ -85,9 +118,8 @@ export default function Achievements() {
                       <CardContent className="p-4">
                         <div className="flex items-start gap-3">
                           <div
-                            className={`flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl text-xl ${
-                              achievement.unlocked ? 'bg-primary/15 text-primary' : 'bg-secondary'
-                            }`}
+                            className={`flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl text-xl ${achievement.unlocked ? 'bg-primary/15 text-primary' : 'bg-secondary'
+                              }`}
                           >
                             {achievement.unlocked ? achievement.icon : <LuLock className="h-4 w-4 text-muted-foreground" />}
                           </div>
@@ -140,9 +172,9 @@ export default function Achievements() {
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <div className="rounded-xl bg-sidebar p-2 text-muted-foreground">Rate: {completionRate}%</div>
-                  <div className="rounded-xl bg-sidebar p-2 text-muted-foreground">Level: {user.level}</div>
-                  <div className="rounded-xl bg-sidebar p-2 text-muted-foreground">XP: {user.xp}</div>
-                  <div className="rounded-xl bg-sidebar p-2 text-muted-foreground">Streak: {user.streak}</div>
+                  <div className="rounded-xl bg-sidebar p-2 text-muted-foreground">Level: {calculateUserLevel(userProfile.xp)}</div>
+                  <div className="rounded-xl bg-sidebar p-2 text-muted-foreground">XP: {userProfile.xp || 0}</div>
+                  <div className="rounded-xl bg-sidebar p-2 text-muted-foreground">Streak: {userProfile.streak || 0}</div>
                 </div>
               </CardContent>
             </Card>

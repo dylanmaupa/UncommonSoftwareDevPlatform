@@ -22,6 +22,7 @@ import {
   LuZap,
 } from 'react-icons/lu';
 import { supabase } from '../../../lib/supabase';
+import { calculateUserLevel, calculateNextLevelXp, calculateLevelProgress } from '../../../lib/gamificationUtils';
 import StreakWidget from '../dashboard/StreakWidget';
 
 export default function Profile() {
@@ -109,15 +110,15 @@ export default function Profile() {
   // Mocked out gamification stats that would typically live in another table
   const userStats = {
     xp: userProfile.xp || 0,
-    level: 1,
+    level: calculateUserLevel(userProfile.xp),
     streak: userProfile.streak || 0,
     completedLessons: userProgress.filter(p => p.item_type === 'lesson' && p.status === 'completed'),
     completedProjects: [],
-    achievements: [],
+    achievements: userProfile.achievements || [],
   };
 
-  const xpToNextLevel = userStats.level * 500 - userStats.xp;
-  const progressToNextLevel = ((userStats.xp % 500) / 500) * 100;
+  const xpToNextLevel = calculateNextLevelXp(userStats.level) - userStats.xp;
+  const progressToNextLevel = calculateLevelProgress(userStats.xp);
 
   const coursesWithProgress = courses.map(course => {
     const courseProgressRecord = userProgress.find(p => p.item_id === course.id && p.item_type === 'course');

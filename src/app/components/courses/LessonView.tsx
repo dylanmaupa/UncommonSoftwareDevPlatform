@@ -26,6 +26,7 @@ export default function LessonView() {
   const navigate = useNavigate();
 
   const [user, setUser] = useState<any>(null);
+  const [userProfile, setUserProfile] = useState<any>(null);
   const [course, setCourse] = useState<any>(null);
   const [module, setModule] = useState<any>(null);
   const [lesson, setLesson] = useState<any>(null);
@@ -47,6 +48,16 @@ export default function LessonView() {
         const { data: { user: currentUser } } = await supabase.auth.getUser();
         if (!currentUser) return navigate('/');
         setUser(currentUser);
+
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', currentUser.id)
+          .single();
+
+        if (profileData) {
+          setUserProfile(profileData);
+        }
 
         const { data: cData } = await supabase
           .from('courses')
@@ -225,14 +236,6 @@ sys.stderr = io.StringIO()
   };
 
   const handleSubmit = async () => {
-    if (isCompleted) {
-      toast.info('You already completed this lesson!');
-      if (nextLesson) {
-        navigate(`/courses/${nextLesson.courseId}/modules/${nextLesson.moduleId}/lessons/${nextLesson.lessonId}`);
-      }
-      return;
-    }
-
     try {
       setIsRunning(true);
       const lang = lesson?.language || 'javascript';
@@ -267,77 +270,163 @@ sys.stderr = io.StringIO()
 
       if (isCorrect && user) {
         try {
-          // Upsert lesson progress
-          const lessonProgressEntry = {
-            user_id: user.id,
-            item_id: lesson.id,
-            item_type: 'lesson',
-            status: 'completed',
-            progress_percentage: 100,
-            updated_at: new Date().toISOString()
-          };
-
-          await supabase.from('user_progress').upsert(lessonProgressEntry, { onConflict: 'user_id, item_id, item_type' });
-
-          // Calculate and update module progress
-          const updatedProgress = [...userProgress, lessonProgressEntry];
-          const completedInModule = module.lessons.filter((l: any) =>
-            updatedProgress.some(p => p.item_id === l.id && p.item_type === 'lesson' && p.status === 'completed')
-          ).length;
-          const moduleProgressObj = {
-            user_id: user.id,
-            item_id: module.id,
-            item_type: 'module',
-            status: completedInModule === module.lessons.length ? 'completed' : 'in_progress',
-            progress_percentage: Math.round((completedInModule / (module.lessons.length || 1)) * 100),
-            updated_at: new Date().toISOString()
-          };
-          await supabase.from('user_progress').upsert(moduleProgressObj, { onConflict: 'user_id, item_id, item_type' });
-
-          // Calculate and update course progress
-          const totalLessons = course.modules.reduce((sum: number, m: any) => sum + (m.lessons?.length || 0), 0);
-          const completedInCourse = course.modules.reduce((sum: number, m: any) => {
-            return sum + m.lessons.filter((l: any) =>
-              updatedProgress.some(p => p.item_id === l.id && p.item_type === 'lesson' && p.status === 'completed')
-            ).length;
-          }, 0);
-          const courseProgressObj = {
-            user_id: user.id,
-            item_id: course.id,
-            item_type: 'course',
-            status: completedInCourse === totalLessons ? 'completed' : 'in_progress',
-            progress_percentage: Math.round((completedInCourse / (totalLessons || 1)) * 100),
-            updated_at: new Date().toISOString()
-          };
-          await supabase.from('user_progress').upsert(courseProgressObj, { onConflict: 'user_id, item_id, item_type' });
-
-          // Log activity for streaks on successful completion
+          // Log activity for streaks on successful completion ALWAYS
           await supabase.rpc('record_user_activity', { p_user_id: user.id });
 
-          setUserProgress([...userProgress, lessonProgressEntry, moduleProgressObj, courseProgressObj]);
-          setShowXPAnimation(true);
+          if (!isCompleted) {
+            // Upsert lesson progress
+            const lessonProgressEntry = {
+              user_id: user.id,
+              item_id: lesson.id,
+              item_type: 'lesson',
+              status: 'completed',
+              progress_percentage: 100,
+              updated_at: new Date().toISOString()
+            };
 
-          let finalXp = lesson.xp_reward;
-          if (solutionUsed) {
-            finalXp = 0;
-          } else if (hintUsed) {
-            finalXp = Math.max(1, Math.floor(lesson.xp_reward * 0.5));
+            await supabase.from('user_progress').upsert(lessonProgressEntry, { onConflict: 'user_id, item_id, item_type' });
+
+            // Calculate and update module progress
+            const updatedProgress = [...userProgress, lessonProgressEntry];
+            const completedInModule = module.lessons.filter((l: any) =>
+              updatedProgress.some(p => p.item_id === l.id && p.item_type === 'lesson' && p.status === 'completed')
+            ).length;
+            const moduleProgressObj = {
+              user_id: user.id,
+              item_id: module.id,
+              item_type: 'module',
+              status: completedInModule === module.lessons.length ? 'completed' : 'in_progress',
+              progress_percentage: Math.round((completedInModule / (module.lessons.length || 1)) * 100),
+              updated_at: new Date().toISOString()
+            };
+            await supabase.from('user_progress').upsert(moduleProgressObj, { onConflict: 'user_id, item_id, item_type' });
+
+            // Calculate and update course progress
+            const totalLessons = course.modules.reduce((sum: number, m: any) => sum + (m.lessons?.length || 0), 0);
+            const completedInCourse = course.modules.reduce((sum: number, m: any) => {
+              return sum + m.lessons.filter((l: any) =>
+                updatedProgress.some(p => p.item_id === l.id && p.item_type === 'lesson' && p.status === 'completed')
+              ).length;
+            }, 0);
+            const courseProgressObj = {
+              user_id: user.id,
+              item_id: course.id,
+              item_type: 'course',
+              status: completedInCourse === totalLessons ? 'completed' : 'in_progress',
+              progress_percentage: Math.round((completedInCourse / (totalLessons || 1)) * 100),
+              updated_at: new Date().toISOString()
+            };
+            await supabase.from('user_progress').upsert(courseProgressObj, { onConflict: 'user_id, item_id, item_type' });
+
+            setUserProgress([...userProgress, lessonProgressEntry, moduleProgressObj, courseProgressObj]);
+            setShowXPAnimation(true);
+
+            let finalXp = lesson.xp_reward;
+            if (solutionUsed) {
+              finalXp = 0;
+            } else if (hintUsed) {
+              finalXp = Math.max(1, Math.floor(lesson.xp_reward * 0.5));
+            }
+
+            if (finalXp > 0) {
+              await supabase.rpc('add_user_xp', { p_user_id: user.id, p_amount: finalXp });
+              if (userProfile) {
+                userProfile.xp = (userProfile.xp || 0) + finalXp;
+              }
+            }
+
+            // --- ACHIEVEMENT CHECKS ---
+            if (userProfile) {
+              const currentAchievements: string[] = userProfile.achievements || [];
+              const newlyUnlocked: string[] = [];
+
+              // 1. First Blood (Complete first lesson)
+              if (!currentAchievements.includes('first_blood')) {
+                newlyUnlocked.push('first_blood');
+              }
+
+              // 2. Night Owl (Code between 12 AM and 4 AM)
+              const hour = new Date().getHours();
+              if (hour >= 0 && hour <= 4 && !currentAchievements.includes('night_owl')) {
+                newlyUnlocked.push('night_owl');
+              }
+
+              // 3. Desperate Times (Use hint)
+              if (hintUsed && !currentAchievements.includes('hint_abuser')) {
+                newlyUnlocked.push('hint_abuser');
+              }
+
+              // 4. On Fire (3-day streak)
+              if ((userProfile.streak || 0) >= 3 && !currentAchievements.includes('on_fire')) {
+                newlyUnlocked.push('on_fire');
+              }
+
+              // 5. Unstoppable (7-day streak)
+              if ((userProfile.streak || 0) >= 7 && !currentAchievements.includes('unstoppable')) {
+                newlyUnlocked.push('unstoppable');
+              }
+
+              // 6. Deep Pockets (Accumulate 500 XP)
+              if ((userProfile.xp || 0) >= 500 && !currentAchievements.includes('wealthy')) {
+                newlyUnlocked.push('wealthy');
+              }
+
+              if (newlyUnlocked.length > 0) {
+                const updatedAchievements = [...currentAchievements, ...newlyUnlocked];
+
+                // Update DB
+                await supabase
+                  .from('profiles')
+                  .update({ achievements: updatedAchievements })
+                  .eq('id', user.id);
+
+                // Update Local State
+                setUserProfile({ ...userProfile, achievements: updatedAchievements });
+
+                // Dispatch notification for each
+                newlyUnlocked.forEach(achId => {
+                  // We can infer title from id or just show a general message since we lack the full dict here
+                  const titles: Record<string, string> = {
+                    first_blood: 'First Blood',
+                    night_owl: 'Night Owl',
+                    hint_abuser: 'Desperate Times',
+                    on_fire: 'On Fire',
+                    unstoppable: 'Unstoppable',
+                    wealthy: 'Deep Pockets'
+                  };
+                  toast(
+                    <div className="flex items-center gap-2">
+                      <LuTrophy className="w-5 h-5 text-yellow-500" />
+                      <div>
+                        <p className="font-bold text-yellow-500">Achievement Unlocked!</p>
+                        <p className="text-sm">{titles[achId] || 'New Badge Earned'}</p>
+                      </div>
+                    </div>,
+                    { duration: 5000 }
+                  );
+                });
+              }
+            }
+            // --- END CHECKS ---
+
+            toast.success(
+              <div>
+                <p className="font-semibold">{solutionUsed ? 'Lesson Finished' : 'Lesson Complete!'}</p>
+                <p className="text-sm">+{finalXp} XP earned {solutionUsed ? '(Solution used: 0 XP)' : hintUsed ? '(Hint used: -50%)' : ''}</p>
+              </div>
+            );
+
+            setTimeout(() => {
+              setShowXPAnimation(false);
+            }, 2000);
+          } else {
+            toast.success(
+              <div>
+                <p className="font-semibold">Correct!</p>
+                <p className="text-sm">Code executed successfully.</p>
+              </div>
+            );
           }
-
-          if (finalXp > 0) {
-            await supabase.rpc('add_user_xp', { p_user_id: user.id, p_amount: finalXp });
-          }
-
-          toast.success(
-            <div>
-              <p className="font-semibold">{solutionUsed ? 'Lesson Finished' : 'Lesson Complete!'}</p>
-              <p className="text-sm">+{finalXp} XP earned {solutionUsed ? '(Solution used: 0 XP)' : hintUsed ? '(Hint used: -50%)' : ''}</p>
-            </div>
-          );
-
-          setTimeout(() => {
-            setShowXPAnimation(false);
-          }, 2000);
         } catch (e) {
           console.error('Failed to submit lesson', e);
           toast.error('Failed to save progress.');
@@ -456,9 +545,16 @@ sys.stderr = io.StringIO()
                     size="sm"
                     onClick={async () => {
                       if (!showHint && !hintUsed) {
+                        if (userProfile && (userProfile.xp || 0) < 100) {
+                          toast.error("Not enough XP! You need at least 100 XP to use a hint.");
+                          return;
+                        }
                         if (user) {
                           await supabase.rpc('add_user_xp', { p_user_id: user.id, p_amount: -100 });
                           toast.info("100 XP deducted for using a hint!");
+                          if (userProfile) {
+                            setUserProfile({ ...userProfile, xp: (userProfile.xp || 0) - 100 });
+                          }
                         }
                         setHintUsed(true);
                       }

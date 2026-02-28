@@ -19,6 +19,7 @@ import {
   LuUsers,
 } from 'react-icons/lu';
 import { useEffect, useState } from 'react';
+import { calculateUserLevel } from '../../../lib/gamificationUtils';
 import { supabase } from '../../../lib/supabase';
 
 interface UserProfile {
@@ -175,24 +176,26 @@ function DashboardMain({
               </div>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 {inProgressCourses.slice(0, 3).map((course) => (
-                  <Card key={course.id} className="rounded-2xl border-border">
-                    <CardContent className="space-y-3 p-3">
-                      <img
-                        src={getCourseImage(course.title)}
-                        alt={course.title}
-                        className="h-24 w-full rounded-xl object-cover"
-                        loading="lazy"
-                      />
-                      <div>
-                        <p className="line-clamp-2 text-sm text-foreground">{course.title}</p>
-                        <p className="mt-1 text-xs text-muted-foreground">{course.difficulty}</p>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <p className="text-xs text-muted-foreground">{course.progress}% complete</p>
-                        <span className="text-sm">{course.icon}</span>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <Link to={`/courses/${course.id}`} key={course.id} className="block group">
+                    <Card className="rounded-2xl border-border group-hover:border-primary/50 transition-colors cursor-pointer">
+                      <CardContent className="space-y-3 p-3">
+                        <img
+                          src={getCourseImage(course.title)}
+                          alt={course.title}
+                          className="h-24 w-full rounded-xl object-cover"
+                          loading="lazy"
+                        />
+                        <div>
+                          <p className="line-clamp-2 text-sm text-foreground">{course.title}</p>
+                          <p className="mt-1 text-xs text-muted-foreground">{course.difficulty}</p>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs text-muted-foreground">{course.progress}% complete</p>
+                          <span className="text-sm">{course.icon}</span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
                 ))}
               </div>
             </div>
@@ -455,8 +458,8 @@ export default function Dashboard() {
         instructors={instructors}
         courses={courses}
         xp={profile.xp || 0}
-        level={1} // Level can be derived from XP later
-        streak={0} // Mocked out for now
+        level={calculateUserLevel(profile.xp)}
+        streak={profile.streak || 0}
         completedLessons={totalLessons}
         nextCourse={nextCourse}
         inProgressCourses={inProgressCourses}
