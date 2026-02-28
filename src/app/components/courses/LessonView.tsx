@@ -1,6 +1,8 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import Editor from '@monaco-editor/react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { motion } from 'motion/react';
 import { toast } from 'sonner';
 import DashboardLayout from '../layout/DashboardLayout';
@@ -501,8 +503,8 @@ sys.stderr = io.StringIO()
                 <div className="whitespace-pre-wrap text-foreground leading-relaxed">{lesson.content}</div>
               </div>
 
-              <Card className="mb-8 border-border overflow-hidden">
-                <div className="bg-foreground px-4 py-2 flex items-center justify-between">
+              <Card className="mb-8 border-border overflow-hidden bg-[#1e1e1e]">
+                <div className="bg-[#17181b] border-b border-[#24262b] px-4 py-2 flex items-center justify-between">
                   <span className="text-sm text-white/70">Example</span>
                   <Badge className="bg-white/10 text-white text-xs">{lesson.language || 'code'}</Badge>
                 </div>
@@ -598,7 +600,7 @@ sys.stderr = io.StringIO()
                     {showSolution ? 'Hide' : 'View'} Solution
                   </Button>
                   {!showSolution && !solutionUsed && (
-                    <span className="text-xs text-destructive/80 font-medium">⚠️ Forfeits all XP for this lesson</span>
+                    <span className="text-xs text-destructive/80 font-medium">?? Forfeits all XP for this lesson</span>
                   )}
                   {solutionUsed && (
                     <span className="text-xs text-muted-foreground font-medium">0 XP will be awarded</span>
@@ -705,3 +707,5 @@ sys.stderr = io.StringIO()
     </DashboardLayout >
   );
 }
+
+

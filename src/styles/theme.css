@@ -18,7 +18,7 @@
   --accent-foreground: #ffffff;
   --destructive: #EF4444;
   --destructive-foreground: #ffffff;
-  --success: #10B981;
+  --success: #0EA5E9;
   --success-foreground: #ffffff;
   --border: rgba(0, 0, 0, 0.08);
   --input: transparent;
@@ -29,7 +29,7 @@
   --ring: #0747a1;
   --chart-1: #0747a1;
   --chart-2: #3B82F6;
-  --chart-3: #10B981;
+  --chart-3: #93C5FD;
   --chart-4: #8B5CF6;
   --chart-5: #60A5FA;
   --radius: 0.75rem;
@@ -66,7 +66,7 @@
   --font-weight-medium: 500;
   --font-weight-normal: 400;
   --chart-1: oklch(0.45 0.18 260);
-  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-2: oklch(0.62 0.16 250);
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.18 255);

@@ -92,20 +92,25 @@ sys.stderr = io.StringIO()
 
     return (
         <DashboardLayout>
-            <div className="flex flex-col h-full bg-sidebar min-h-[calc(100vh-theme(spacing.16))] lg:min-h-screen">
-                <div className="border-b border-border bg-card px-6 py-4 flex items-center justify-between">
+            <div className="relative flex flex-col min-h-[calc(100vh-theme(spacing.16))] lg:min-h-screen bg-[#0b0b0b] text-white overflow-hidden">
+                <div
+                    aria-hidden
+                    className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.12),_transparent_45%),radial-gradient(circle_at_bottom,_rgba(14,165,233,0.1),_transparent_40%)]"
+                />
+                <div className="relative z-10 flex flex-col min-h-[calc(100vh-theme(spacing.16))] lg:min-h-screen">
+                    <div className="border-b border-white/10 bg-[#0f0f10]/90 backdrop-blur px-6 py-4 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/15 text-blue-300 ring-1 ring-blue-500/30">
                             <LuTerminal className="h-5 w-5" />
                         </div>
                         <div>
-                            <h1 className="text-xl font-semibold text-foreground heading-font">Practice Sandbox</h1>
-                            <p className="text-xs text-muted-foreground">Write and test your code securely in the browser.</p>
+                            <h1 className="text-xl font-semibold text-white heading-font">Practice Sandbox</h1>
+                            <p className="text-xs text-white/60">Write and test your code securely in the browser.</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
                         <select
-                            className="bg-card border border-border rounded-lg text-sm px-3 py-2 text-foreground outline-none focus:ring-2 focus:ring-primary/20"
+                            className="bg-[#111214] border border-white/10 rounded-lg text-sm px-3 py-2 text-white/80 outline-none focus:ring-2 focus:ring-blue-500/30"
                             value={language}
                             onChange={(e) => {
                                 setLanguage(e.target.value);
@@ -122,7 +127,7 @@ sys.stderr = io.StringIO()
                         <Button
                             onClick={handleRun}
                             disabled={isRunning}
-                            className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-6"
+                            className="bg-blue-500 text-white hover:bg-blue-400 rounded-full px-6 shadow-lg shadow-blue-500/20"
                         >
                             <LuPlay className="w-4 h-4 mr-2" />
                             {isRunning ? 'Running...' : 'Run Code'}
@@ -130,20 +135,20 @@ sys.stderr = io.StringIO()
                     </div>
                 </div>
 
-                <div className="flex-1 p-4 lg:p-6 pb-0 overflow-hidden flex flex-col lg:flex-row gap-4">
+                <div className="flex-1 p-4 lg:p-6 overflow-hidden flex flex-col lg:flex-row gap-6">
 
                     {/* Editor Column */}
-                    <Card className="flex-1 flex flex-col gap-0 border-border overflow-hidden rounded-2xl shadow-sm min-h-[400px] bg-[#1e1e1e]">
-                        <div className="bg-[#1e1e1e] p-2 border-b border-[#3e3e3e] flex items-center justify-between">
+                    <Card className="flex-1 flex flex-col gap-0 border border-white/10 overflow-hidden rounded-2xl min-h-[420px] bg-[#141518] shadow-[0_0_0_1px_rgba(255,255,255,0.04),0_24px_60px_-36px_rgba(0,0,0,0.9)]">
+                        <div className="bg-[#17181b] p-2 border-b border-[#24262b] flex items-center justify-between">
                             <div className="flex gap-2 px-2">
                                 <div className="w-3 h-3 rounded-full bg-red-500/80"></div>
                                 <div className="w-3 h-3 rounded-full bg-yellow-500/80"></div>
-                                <div className="w-3 h-3 rounded-full bg-green-500/80"></div>
+                                <div className="w-3 h-3 rounded-full bg-blue-500/80"></div>
                             </div>
                             <span className="text-xs text-white/50 font-mono tracking-wider">{language === 'python' ? 'main.py' : 'index.js'}</span>
                             <div className="w-10"></div> {/* Spacer for centering */}
                         </div>
-                        <div className="flex-1 bg-[#1e1e1e] relative">
+                        <div className="flex-1 bg-[#141518] relative">
                             <Editor
                                 height="100%"
                                 language={language}
@@ -165,8 +170,8 @@ sys.stderr = io.StringIO()
                     </Card>
 
                     {/* Console Column */}
-                    <Card className="lg:w-1/3 flex flex-col gap-0 border-border overflow-hidden rounded-2xl shadow-sm min-h-[300px] lg:min-h-0 bg-[#0d0d0d]">
-                        <div className="bg-[#1a1a1a] px-4 py-2 flex items-center justify-between border-b border-[#333]">
+                    <Card className="lg:w-1/3 flex flex-col gap-0 border border-white/10 overflow-hidden rounded-2xl min-h-[300px] lg:min-h-0 bg-[#0f1012] shadow-[0_0_0_1px_rgba(255,255,255,0.04),0_24px_60px_-36px_rgba(0,0,0,0.9)]">
+                        <div className="bg-[#17181b] px-4 py-2 flex items-center justify-between border-b border-[#24262b]">
                             <span className="text-xs font-semibold uppercase tracking-wider text-white/70 flex items-center gap-2">
                                 <LuTerminal className="w-3 h-3" /> Console
                             </span>
@@ -181,11 +186,11 @@ sys.stderr = io.StringIO()
                         </div>
                         <div className="flex-1 p-4 overflow-y-auto w-full">
                             {output ? (
-                                <pre className="text-sm font-mono text-green-400 whitespace-pre-wrap leading-relaxed">
+                                <pre className="text-sm font-mono text-blue-400 whitespace-pre-wrap leading-relaxed">
                                     {output}
                                 </pre>
                             ) : (
-                                <div className="h-full flex items-center justify-center text-white/20 text-sm italic font-mono">
+                                <div className="h-full flex items-center justify-center text-white/30 text-sm italic font-mono">
                                     Output will appear here...
                                 </div>
                             )}
@@ -193,7 +198,12 @@ sys.stderr = io.StringIO()
                     </Card>
                 </div>
             </div>
+        </div>
         </DashboardLayout>
     );
 }
+
+
+
+
 
