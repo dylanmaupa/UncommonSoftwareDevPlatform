@@ -499,8 +499,10 @@ sys.stderr = io.StringIO()
         <div className="flex-1 flex overflow-hidden">
           <div className="w-1/2 overflow-y-auto bg-card p-8 border-r border-border">
             <div className="max-w-2xl mx-auto">
-              <div className="prose prose-slate max-w-none mb-8">
-                <div className="whitespace-pre-wrap text-foreground leading-relaxed">{lesson.content}</div>
+              <div className="mb-8 lesson-markdown">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {lesson.content || ''}
+                </ReactMarkdown>
               </div>
 
               <Card className="mb-8 border-border overflow-hidden bg-[#1e1e1e]">
@@ -707,5 +709,8 @@ sys.stderr = io.StringIO()
     </DashboardLayout >
   );
 }
+
+
+
 
 
