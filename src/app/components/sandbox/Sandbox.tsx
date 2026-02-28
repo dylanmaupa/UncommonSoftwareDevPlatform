@@ -133,7 +133,7 @@ sys.stderr = io.StringIO()
                 <div className="flex-1 p-4 lg:p-6 pb-0 overflow-hidden flex flex-col lg:flex-row gap-4">
 
                     {/* Editor Column */}
-                    <Card className="flex-1 flex flex-col border-border overflow-hidden rounded-2xl shadow-sm min-h-[400px]">
+                    <Card className="flex-1 flex flex-col gap-0 border-border overflow-hidden rounded-2xl shadow-sm min-h-[400px] bg-[#1e1e1e]">
                         <div className="bg-[#1e1e1e] p-2 border-b border-[#3e3e3e] flex items-center justify-between">
                             <div className="flex gap-2 px-2">
                                 <div className="w-3 h-3 rounded-full bg-red-500/80"></div>
@@ -165,7 +165,7 @@ sys.stderr = io.StringIO()
                     </Card>
 
                     {/* Console Column */}
-                    <Card className="lg:w-1/3 flex flex-col border-border overflow-hidden rounded-2xl shadow-sm min-h-[300px] lg:min-h-0 bg-[#0d0d0d]">
+                    <Card className="lg:w-1/3 flex flex-col gap-0 border-border overflow-hidden rounded-2xl shadow-sm min-h-[300px] lg:min-h-0 bg-[#0d0d0d]">
                         <div className="bg-[#1a1a1a] px-4 py-2 flex items-center justify-between border-b border-[#333]">
                             <span className="text-xs font-semibold uppercase tracking-wider text-white/70 flex items-center gap-2">
                                 <LuTerminal className="w-3 h-3" /> Console
@@ -196,3 +196,4 @@ sys.stderr = io.StringIO()
         </DashboardLayout>
     );
 }
+
