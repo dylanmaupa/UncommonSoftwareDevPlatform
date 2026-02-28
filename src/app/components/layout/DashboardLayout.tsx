@@ -80,7 +80,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 variant="ghost"
                 size="icon"
                 onClick={handleLogout}
-                className="h-9 w-9 rounded-full border border-border bg-card text-accent hover:bg-secondary hover:text-accent"
+                className="h-9 w-9 rounded-full border border-border bg-card text-[#FF6B35] hover:bg-secondary hover:text-[#FF6B35]"
               >
                 <LuLogOut className="h-4 w-4" />
                 <span className="sr-only">Logout</span>
@@ -160,7 +160,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             <Button
               variant="ghost"
               onClick={handleLogout}
-              className="mt-1 w-full justify-start gap-2 rounded-lg px-2 py-2 text-sm text-accent hover:bg-secondary hover:text-accent"
+              className="mt-1 w-full justify-start gap-2 rounded-lg px-2 py-2 text-sm text-[#FF6B35] hover:bg-secondary hover:text-[#FF6B35]"
             >
               <LuLogOut className="h-4 w-4" />
               Logout
@@ -173,5 +173,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     </div>
   );
 }
+
 
 

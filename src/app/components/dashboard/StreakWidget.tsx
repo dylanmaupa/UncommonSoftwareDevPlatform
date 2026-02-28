@@ -72,8 +72,8 @@ export default function StreakWidget({ streak, userId }: StreakWidgetProps) {
             <CardContent className="p-4 sm:p-5">
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-3">
-                        <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${isActiveToday ? 'bg-orange-500/10 text-orange-500' : 'bg-muted text-muted-foreground'}`}>
-                            <LuFlame className={`h-6 w-6 ${isActiveToday ? 'fill-orange-500 text-orange-500 drop-shadow-[0_0_8px_rgba(249,115,22,0.5)]' : 'text-muted-foreground'}`} />
+                        <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${isActiveToday ? 'bg-blue-500/10 text-blue-500' : 'bg-muted text-muted-foreground'}`}>
+                            <LuFlame className={`h-6 w-6 ${isActiveToday ? 'fill-blue-500 text-blue-500 drop-shadow-[0_0_8px_rgba(59,130,246,0.5)]' : 'text-muted-foreground'}`} />
                         </div>
                         <div>
                             <h3 className="text-xl font-bold heading-font text-foreground flex items-center gap-2">
@@ -83,7 +83,7 @@ export default function StreakWidget({ streak, userId }: StreakWidgetProps) {
                         </div>
                     </div>
                     {isActiveToday ? (
-                        <div className="px-3 py-1 rounded-full bg-orange-500/10 text-orange-500 text-xs font-bold uppercase tracking-widest border border-orange-500/20">
+                        <div className="px-3 py-1 rounded-full bg-blue-500/10 text-blue-500 text-xs font-bold uppercase tracking-widest border border-blue-500/20">
                             Active
                         </div>
                     ) : (
@@ -103,10 +103,10 @@ export default function StreakWidget({ streak, userId }: StreakWidgetProps) {
                                 <div
                                     className={`w-full max-w-[28px] aspect-square rounded-full flex items-center justify-center transition-all duration-300
                                         ${isActive
-                                            ? 'bg-orange-500 text-white shadow-[0_0_10px_rgba(249,115,22,0.3)] scale-100'
+                                            ? 'bg-blue-500 text-white shadow-[0_0_10px_rgba(59,130,246,0.3)] scale-100'
                                             : 'bg-secondary/50 border border-border/50 text-transparent scale-90'
                                         }
-                                        ${isToday && !isActive ? 'border-orange-500/50 border-2' : ''}
+                                        ${isToday && !isActive ? 'border-blue-500/50 border-2' : ''}
                                     `}
                                 >
                                     {isActive && <LuFlame className="w-3.5 h-3.5 fill-current" />}
@@ -122,3 +122,4 @@ export default function StreakWidget({ streak, userId }: StreakWidgetProps) {
         </Card>
     );
 }
+
