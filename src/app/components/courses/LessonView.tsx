@@ -145,7 +145,7 @@ export default function LessonView() {
     );
   }
 
-  const isCompleted = userProgress.some(p => p.item_id === lesson.id && p.item_type === 'lesson' && p.status === 'completed');
+  const isCompleted = userProgress.some((p: any) => p.item_id === lesson.id && p.item_type === 'lesson' && p.status === 'completed');
 
   let nextLesson: { courseId: string; moduleId: string; lessonId: string } | null = null;
   if (course && module && lesson) {
@@ -396,12 +396,21 @@ sys.stderr = io.StringIO()
                     unstoppable: 'Unstoppable',
                     wealthy: 'Deep Pockets'
                   };
+                  const achievementColors: Record<string, string> = {
+                    first_blood: 'text-sky-400',
+                    night_owl: 'text-blue-400',
+                    hint_abuser: 'text-cyan-400',
+                    on_fire: 'text-indigo-400',
+                    unstoppable: 'text-blue-500',
+                    wealthy: 'text-sky-500'
+                  };
+                  const colorClass = achievementColors[achId] || 'text-blue-400';
                   toast(
                     <div className="flex items-center gap-2">
-                      <LuTrophy className="w-5 h-5 text-yellow-500" />
+                      <LuTrophy className={`w-5 h-5 ${colorClass}`} />
                       <div>
-                        <p className="font-bold text-yellow-500">Achievement Unlocked!</p>
-                        <p className="text-sm">{titles[achId] || 'New Badge Earned'}</p>
+                        <p className={`font-bold ${colorClass}`}>Achievement Unlocked!</p>
+                        <p className="text-sm text-blue-100/80">{titles[achId] || 'New Badge Earned'}</p>
                       </div>
                     </div>,
                     { duration: 5000 }
@@ -413,8 +422,8 @@ sys.stderr = io.StringIO()
 
             toast.success(
               <div>
-                <p className="font-semibold">{solutionUsed ? 'Lesson Finished' : 'Lesson Complete!'}</p>
-                <p className="text-sm">+{finalXp} XP earned {solutionUsed ? '(Solution used: 0 XP)' : hintUsed ? '(Hint used: -50%)' : ''}</p>
+                <p className="font-semibold text-sky-400">{solutionUsed ? 'Lesson Finished' : 'Lesson Complete!'}</p>
+                <p className="text-sm text-blue-200">+{finalXp} XP earned {solutionUsed ? '(Solution used: 0 XP)' : hintUsed ? '(Hint used: -50%)' : ''}</p>
               </div>
             );
 
@@ -424,8 +433,8 @@ sys.stderr = io.StringIO()
           } else {
             toast.success(
               <div>
-                <p className="font-semibold">Correct!</p>
-                <p className="text-sm">Code executed successfully.</p>
+                <p className="font-semibold text-blue-400">Correct!</p>
+                <p className="text-sm text-sky-200">Code executed successfully.</p>
               </div>
             );
           }
@@ -730,3 +739,9 @@ sys.stderr = io.StringIO()
     </DashboardLayout >
   );
 }
+
+
+
+
+
+
