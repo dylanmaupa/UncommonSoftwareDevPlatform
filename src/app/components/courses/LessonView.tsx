@@ -1,8 +1,23 @@
-import { useNavigate } from 'react-router';
+import { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router';
+import Editor from '@monaco-editor/react';
+import { toast } from 'sonner';
 import DashboardLayout from '../layout/DashboardLayout';
 import { Button } from '../ui/button';
-import { LuArrowLeft } from 'react-icons/lu';
-
+import { Badge } from '../ui/badge';
+import { Card, CardContent } from '../ui/card';
+import {
+  LuArrowLeft,
+  LuChevronRight,
+  LuCircleCheck,
+  LuEye,
+  LuEyeOff,
+  LuLightbulb,
+  LuPlay,
+  LuTrophy,
+} from 'react-icons/lu';
+import { supabase } from '../../../lib/supabase';
+import { loadPyodideEnvironment } from '../../../lib/pyodide';
 export default function LessonView() {
   const { courseId, moduleId, lessonId } = useParams();
   const navigate = useNavigate();
@@ -125,7 +140,7 @@ export default function LessonView() {
     );
   }
 
-  const isCompleted = userProgress.some(p => p.item_id === lesson.id && p.item_type === 'lesson' && p.status === 'completed');
+  const isCompleted = userProgress.some((p: any) => p.item_id === lesson.id && p.item_type === 'lesson' && p.status === 'completed');
 
   let nextLesson: { courseId: string; moduleId: string; lessonId: string } | null = null;
   if (course && module && lesson) {
@@ -238,15 +253,15 @@ sys.stderr = io.StringIO()
 
       // Verify against solution output if a solution exists
       if (isCorrect && lesson.exercise_solution) {
-        setOutput((prev) => prev + '\nVerifying against solution...\n');
+        setOutput((prev: string) => prev + '\nVerifying against solution...\n');
         const solutionResult = await executeCode(lesson.exercise_solution);
         const solutionOutput = solutionResult?.run?.output || '';
 
         if (executionOutput.trim() !== solutionOutput.trim()) {
           isCorrect = false;
-          setOutput((prev) => prev + `\nVerification failed.\nExpected Output:\n${solutionOutput.trim()}\n\nYour Output:\n${executionOutput.trim()}`);
+          setOutput((prev: string) => prev + `\nVerification failed.\nExpected Output:\n${solutionOutput.trim()}\n\nYour Output:\n${executionOutput.trim()}`);
         } else {
-          setOutput((prev) => prev + '\nOutput matches solution perfectly!\n');
+          setOutput((prev: string) => prev + '\nOutput matches solution perfectly!\n');
         }
       }
 
@@ -540,7 +555,7 @@ sys.stderr = io.StringIO()
                     {showSolution ? 'Hide' : 'View'} Solution
                   </Button>
                   {!showSolution && !solutionUsed && (
-                    <span className="text-xs text-destructive/80 font-medium">⚠️ Forfeits all XP for this lesson</span>
+                    <span className="text-xs text-destructive/80 font-medium">?? Forfeits all XP for this lesson</span>
                   )}
                   {solutionUsed && (
                     <span className="text-xs text-muted-foreground font-medium">0 XP will be awarded</span>
@@ -578,9 +593,9 @@ sys.stderr = io.StringIO()
                 height="100%"
                 language={lesson.language || 'javascript'}
                 value={code}
-                onChange={(value) => setCode(value || '')}
+                onChange={(value: string | undefined) => setCode(value || '')}
                 theme="vs-dark"
-                onMount={(editor, monaco) => {
+                onMount={(editor: any, monaco: any) => {
                   editor.onKeyDown((e: any) => {
                     // Prevent Ctrl+V or Cmd+V
                     if ((e.ctrlKey || e.metaKey) && e.keyCode === monaco.KeyCode.KeyV) {
@@ -592,7 +607,7 @@ sys.stderr = io.StringIO()
                   // Prevent native right-click paste
                   const domNode = editor.getDomNode();
                   if (domNode) {
-                    domNode.addEventListener('paste', (e) => {
+                    domNode.addEventListener('paste', (e: Event) => {
                       e.preventDefault();
                       e.stopPropagation();
                       toast.warning("Pasting is disabled! Typing it out helps you learn.");
@@ -646,4 +661,7 @@ sys.stderr = io.StringIO()
       </div>
     </DashboardLayout>
   );
-\n}\n\nexport default LessonView;\n
+}
+
+
+
