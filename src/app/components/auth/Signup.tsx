@@ -5,6 +5,7 @@ import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { toast } from 'sonner';
 import { useState } from 'react';
+import { getRandomAvatar, type Gender } from '../../lib/avatars';
 import { LuRocket } from 'react-icons/lu';
 import { supabase } from '../../../lib/supabase';
 
@@ -35,6 +36,7 @@ export default function Signup() {
   const [role, setRole] = useState<'student' | 'instructor'>('student');
   const [hubLocation, setHubLocation] = useState('');
   const [specialization, setSpecialization] = useState('');
+  const [gender, setGender] = useState<Gender | ''>('');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -199,5 +201,7 @@ export default function Signup() {
     </div>
   );
 }
+
+
 
 
