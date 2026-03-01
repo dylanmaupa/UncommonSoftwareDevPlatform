@@ -21,7 +21,7 @@ import {
 import { supabase } from '../../../lib/supabase';
 import { loadPyodideEnvironment } from '../../../lib/pyodide';
 
-export default function LessonView() {
+function LessonView() {
   const { courseId, moduleId, lessonId } = useParams();
   const navigate = useNavigate();
 
@@ -711,7 +711,5 @@ sys.stderr = io.StringIO()
           </div>
         </div>
       </div>
-    </DashboardLayout >
-  );
-}
-
+    </DashboardLayout>
+  );\n}\n\nexport default LessonView;\n
