@@ -3,7 +3,7 @@ import DashboardLayout from '../layout/DashboardLayout';
 import { Button } from '../ui/button';
 import { LuArrowLeft } from 'react-icons/lu';
 
-function LessonView() {
+export default function LessonView() {
   const { courseId, moduleId, lessonId } = useParams();
   const navigate = useNavigate();
 
@@ -367,35 +367,26 @@ sys.stderr = io.StringIO()
 
                 // Dispatch notification for each
                 newlyUnlocked.forEach(achId => {
-  // We can infer title from id or just show a general message since we lack the full dict here
-  const titles: Record<string, string> = {
-    first_blood: 'First Blood',
-    night_owl: 'Night Owl',
-    hint_abuser: 'Desperate Times',
-    on_fire: 'On Fire',
-    unstoppable: 'Unstoppable',
-    wealthy: 'Deep Pockets'
-  };
-  const achievementColors: Record<string, string> = {
-    first_blood: 'text-sky-400',
-    night_owl: 'text-blue-400',
-    hint_abuser: 'text-cyan-400',
-    on_fire: 'text-indigo-400',
-    unstoppable: 'text-blue-500',
-    wealthy: 'text-sky-500'
-  };
-  const colorClass = achievementColors[achId] || 'text-blue-400';
-  toast(
-    <div className="flex items-center gap-2">
-      <LuTrophy className={`w-5 h-5 ${colorClass}`} />
-      <div>
-        <p className={`font-bold ${colorClass}`}>Achievement Unlocked!</p>
-        <p className="text-sm">{titles[achId] || 'New Badge Earned'}</p>
-      </div>
-    </div>,
-    { duration: 5000 }
-  );
-});
+                  // We can infer title from id or just show a general message since we lack the full dict here
+                  const titles: Record<string, string> = {
+                    first_blood: 'First Blood',
+                    night_owl: 'Night Owl',
+                    hint_abuser: 'Desperate Times',
+                    on_fire: 'On Fire',
+                    unstoppable: 'Unstoppable',
+                    wealthy: 'Deep Pockets'
+                  };
+                  toast(
+                    <div className="flex items-center gap-2">
+                      <LuTrophy className="w-5 h-5 text-yellow-500" />
+                      <div>
+                        <p className="font-bold text-yellow-500">Achievement Unlocked!</p>
+                        <p className="text-sm">{titles[achId] || 'New Badge Earned'}</p>
+                      </div>
+                    </div>,
+                    { duration: 5000 }
+                  );
+                });
               }
             }
             // --- END CHECKS ---
@@ -549,7 +540,7 @@ sys.stderr = io.StringIO()
                     {showSolution ? 'Hide' : 'View'} Solution
                   </Button>
                   {!showSolution && !solutionUsed && (
-                    <span className="text-xs text-destructive/80 font-medium">?? Forfeits all XP for this lesson</span>
+                    <span className="text-xs text-destructive/80 font-medium">⚠️ Forfeits all XP for this lesson</span>
                   )}
                   {solutionUsed && (
                     <span className="text-xs text-muted-foreground font-medium">0 XP will be awarded</span>
