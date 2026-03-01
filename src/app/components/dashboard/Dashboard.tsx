@@ -1,4 +1,4 @@
-﻿import { Link, useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import DashboardLayout from '../layout/DashboardLayout';
 import StreakWidget from './StreakWidget';
 // @ts-ignore
@@ -96,10 +96,10 @@ function DashboardMain({
               />
             </div>
             <div className="order-2 flex items-center gap-2">
-              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full border border-border bg-card text-muted-foreground">
+              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full border border-border bg-card text-muted-foreground" onClick={() => navigate('/settings')}>
                 <LuBell className="h-4 w-4" />
               </Button>
-              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full border border-border bg-card text-muted-foreground">
+              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full border border-border bg-card text-muted-foreground" onClick={() => navigate('/achievements')}>
                 <LuSparkles className="h-4 w-4" />
               </Button>
             </div>
@@ -129,7 +129,7 @@ function DashboardMain({
                 Sharpen Your Skills with Professional Online Courses
               </h2>
               <p className="mt-2 text-sm text-white/80">Continue with: {nextCourse.title}</p>
-              <Button className="mt-5 rounded-full bg-white text-foreground hover:bg-white/90">
+              <Button className="mt-5 rounded-full bg-white text-foreground hover:bg-white/90" onClick={() => navigate('/courses')}>
                 Join Now
                 <LuArrowRight className="ml-2 h-4 w-4" />
               </Button>
@@ -170,7 +170,7 @@ function DashboardMain({
             <div>
               <div className="mb-3 flex items-center justify-between">
                 <h3 className="text-lg text-foreground heading-font">Timeline</h3>
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground">
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground" onClick={() => navigate('/courses')}>
                   <LuChevronRight className="h-4 w-4" />
                 </Button>
               </div>
@@ -259,8 +259,7 @@ function DashboardMain({
                             <td className="whitespace-nowrap px-4 py-3">{instructor.specialization || 'Software Engineering'}</td>
                             <td className="px-4 py-3">Learn {instructor.specialization || 'Software Engineering'} today</td>
                             <td className="px-4 py-3">
-                              <Button size="sm" className="h-8 rounded-full bg-primary px-3 text-primary-foreground hover:bg-primary/90">
-                                Start
+                              <Button size="sm" className="h-8 rounded-full bg-primary px-3 text-primary-foreground hover:bg-primary/90" onClick={() => navigate('/courses')}>Start
                               </Button>
                             </td>
                           </tr>
@@ -467,3 +466,5 @@ export default function Dashboard() {
     </DashboardLayout>
   );
 }
+
+
