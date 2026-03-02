@@ -4,8 +4,8 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { toast } from 'sonner';
-import { useState } from 'react';
-import { getRandomAvatar, type Gender } from '../../lib/avatars';
+import { useEffect, useState } from 'react';
+import { getAvatarsByGender, getRandomAvatar, type Gender } from '../../lib/avatars';
 import { LuRocket } from 'react-icons/lu';
 import { supabase } from '../../../lib/supabase';
 
@@ -37,7 +37,27 @@ export default function Signup() {
   const [hubLocation, setHubLocation] = useState('');
   const [specialization, setSpecialization] = useState('');
   const [gender, setGender] = useState<Gender | ''>('');
+  const [selectedAvatar, setSelectedAvatar] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  const availableAvatars = gender ? getAvatarsByGender(gender) : [];
+
+  useEffect(() => {
+    if (!gender) {
+      setSelectedAvatar('');
+      return;
+    }
+
+    const pool = getAvatarsByGender(gender);
+    if (pool.length === 0) {
+      setSelectedAvatar('');
+      return;
+    }
+
+    if (!selectedAvatar || !pool.includes(selectedAvatar)) {
+      setSelectedAvatar(pool[0]);
+    }
+  }, [gender, selectedAvatar]);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,6 +71,11 @@ export default function Signup() {
       return;
     }
 
+    if (availableAvatars.length > 0 && !selectedAvatar) {
+      toast.error('Please choose an avatar');
+      return;
+    }
+
     if (role === 'instructor' && !specialization) {
       toast.error('Please select an Area of Specialization');
       return;
@@ -59,8 +84,7 @@ export default function Signup() {
     setIsLoading(true);
 
     try {
-      // 1. Sign up the user (this creates the auth.users record)
-      const avatarUrl = getRandomAvatar(gender as Gender);
+      const avatarUrl = selectedAvatar || getRandomAvatar(gender);
 
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
@@ -83,8 +107,6 @@ export default function Signup() {
       }
 
       if (authData.user) {
-        // We now rely on a Supabase Database Trigger to create the profile
-        // automatically using the metadata we passed in the options.data object.
         toast.success('Account created! Welcome to your coding journey!');
         navigate('/dashboard');
       }
@@ -190,6 +212,37 @@ export default function Signup() {
               </Select>
             </div>
 
+            {gender && (
+              <div className="space-y-2">
+                <Label>Choose Avatar</Label>
+                {availableAvatars.length > 0 ? (
+                  <div className="grid grid-cols-4 gap-2 rounded-xl bg-[#F5F5FA] p-3">
+                    {availableAvatars.map((avatar, index) => {
+                      const isActive = selectedAvatar === avatar;
+
+                      return (
+                        <button
+                          key={`${gender}-avatar-${index}`}
+                          type="button"
+                          onClick={() => setSelectedAvatar(avatar)}
+                          className={`aspect-square overflow-hidden rounded-xl border transition ${
+                            isActive
+                              ? 'border-[#0747a1] ring-2 ring-[#0747a1]/40'
+                              : 'border-transparent hover:border-[#0747a1]/40'
+                          }`}
+                          aria-label={`Select avatar ${index + 1}`}
+                        >
+                          <img src={avatar} alt={`Avatar option ${index + 1}`} className="h-full w-full object-cover" />
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-sm text-[#6B7280]">No avatars found for this gender yet.</p>
+                )}
+              </div>
+            )}
+
             {role === 'instructor' && (
               <div className="space-y-2">
                 <Label htmlFor="specialization">Area of Specialization</Label>
@@ -205,7 +258,6 @@ export default function Signup() {
                 </Select>
               </div>
             )}
-
 
             <Button type="submit" disabled={isLoading} className="w-full h-12 rounded-xl text-base mt-2" style={{ backgroundColor: '#0747a1' }}>
               {isLoading ? 'Creating account...' : 'Create Account'}
@@ -223,11 +275,3 @@ export default function Signup() {
     </div>
   );
 }
-
-
-
-
-
-
-
-

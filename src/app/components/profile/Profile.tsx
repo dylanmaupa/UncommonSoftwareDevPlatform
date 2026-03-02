@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import DashboardLayout from '../layout/DashboardLayout';
 // @ts-ignore
 import profileAvatar from '../../../assets/avatar2.png';
-import { getRandomAvatar, type Gender } from '../../lib/avatars';
+import { getAvatarsByGender, getRandomAvatar, type Gender } from '../../lib/avatars';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
@@ -38,6 +38,7 @@ export default function Profile() {
   const [isLoading, setIsLoading] = useState(true);
   const [gender, setGender] = useState<Gender | ''>('');
   const [isGenderSaving, setIsGenderSaving] = useState(false);
+  const [selectedAvatar, setSelectedAvatar] = useState('');
 
   useEffect(() => {
     async function loadData() {
@@ -56,6 +57,7 @@ export default function Profile() {
           setUserProfile(profile);
           setNickname(profile.full_name || '');
           setGender(profile.gender || '');
+          setSelectedAvatar(profile.avatar_url || '');
         }
 
         const { data: cData } = await supabase.from('courses').select('*');
@@ -409,6 +411,7 @@ export default function Profile() {
     </DashboardLayout>
   );
 }
+
 
 
 
