@@ -54,8 +54,8 @@ export default function Signup() {
       return;
     }
 
-    if (!selectedAvatar || !pool.includes(selectedAvatar)) {
-      setSelectedAvatar(pool[0]);
+    if (selectedAvatar && !pool.includes(selectedAvatar)) {
+      setSelectedAvatar('');
     }
   }, [gender, selectedAvatar]);
 
@@ -216,27 +216,35 @@ export default function Signup() {
               <div className="space-y-2">
                 <Label>Choose Avatar</Label>
                 {availableAvatars.length > 0 ? (
-                  <div className="grid grid-cols-4 gap-2 rounded-xl bg-[#F5F5FA] p-3">
-                    {availableAvatars.map((avatar, index) => {
-                      const isActive = selectedAvatar === avatar;
-
-                      return (
+                  selectedAvatar ? (
+                    <div className="flex items-center gap-3 rounded-xl bg-[#F5F5FA] p-3">
+                      <img src={selectedAvatar} alt="Selected avatar" className="h-16 w-16 rounded-xl object-cover" />
+                      <p className="flex-1 text-sm text-[#6B7280]">Selected avatar</p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="rounded-lg"
+                        onClick={() => setSelectedAvatar('')}
+                      >
+                        Change
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-4 gap-2 rounded-xl bg-[#F5F5FA] p-3">
+                      {availableAvatars.map((avatar, index) => (
                         <button
                           key={`${gender}-avatar-${index}`}
                           type="button"
                           onClick={() => setSelectedAvatar(avatar)}
-                          className={`aspect-square overflow-hidden rounded-xl border transition ${
-                            isActive
-                              ? 'border-[#0747a1] ring-2 ring-[#0747a1]/40'
-                              : 'border-transparent hover:border-[#0747a1]/40'
-                          }`}
+                          className="aspect-square overflow-hidden rounded-xl border border-transparent transition hover:border-[#0747a1]/40"
                           aria-label={`Select avatar ${index + 1}`}
                         >
                           <img src={avatar} alt={`Avatar option ${index + 1}`} className="h-full w-full object-cover" />
                         </button>
-                      );
-                    })}
-                  </div>
+                      ))}
+                    </div>
+                  )
                 ) : (
                   <p className="text-sm text-[#6B7280]">No avatars found for this gender yet.</p>
                 )}
@@ -275,3 +283,4 @@ export default function Signup() {
     </div>
   );
 }
+

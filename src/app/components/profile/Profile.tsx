@@ -137,19 +137,15 @@ export default function Profile() {
   const availableAvatars = gender ? getAvatarsByGender(gender) : [];
 
   useEffect(() => {
-    if (!gender || availableAvatars.length === 0) {
+    if (!gender) {
       setSelectedAvatar('');
       return;
     }
 
-    if (!selectedAvatar || !availableAvatars.includes(selectedAvatar)) {
-      if (userProfile?.avatar_url && availableAvatars.includes(userProfile.avatar_url)) {
-        setSelectedAvatar(userProfile.avatar_url);
-      } else {
-        setSelectedAvatar(availableAvatars[0]);
-      }
+    if (selectedAvatar && !availableAvatars.includes(selectedAvatar)) {
+      setSelectedAvatar('');
     }
-  }, [gender, availableAvatars, selectedAvatar, userProfile?.avatar_url]);
+  }, [gender, selectedAvatar, availableAvatars]);
 
   if (isLoading) {
     return (
@@ -230,27 +226,35 @@ export default function Profile() {
               <div className="space-y-2">
                 <Label>Choose Avatar</Label>
                 {availableAvatars.length > 0 ? (
-                  <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 rounded-xl bg-secondary/70 p-3">
-                    {availableAvatars.map((avatar, index) => {
-                      const isActive = selectedAvatar === avatar;
-
-                      return (
+                  selectedAvatar ? (
+                    <div className="flex items-center gap-3 rounded-xl bg-secondary/70 p-3">
+                      <img src={selectedAvatar} alt="Selected avatar" className="h-16 w-16 rounded-xl object-cover" />
+                      <p className="flex-1 text-sm text-muted-foreground">Selected avatar</p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="rounded-lg"
+                        onClick={() => setSelectedAvatar('')}
+                      >
+                        Change
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 rounded-xl bg-secondary/70 p-3">
+                      {availableAvatars.map((avatar, index) => (
                         <button
                           key={`${gender}-avatar-${index}`}
                           type="button"
                           onClick={() => setSelectedAvatar(avatar)}
-                          className={`aspect-square overflow-hidden rounded-xl border transition ${
-                            isActive
-                              ? 'border-primary ring-2 ring-primary/40'
-                              : 'border-transparent hover:border-primary/40'
-                          }`}
+                          className="aspect-square overflow-hidden rounded-xl border border-transparent transition hover:border-primary/40"
                           aria-label={`Select avatar ${index + 1}`}
                         >
                           <img src={avatar} alt={`Avatar option ${index + 1}`} className="h-full w-full object-cover" />
                         </button>
-                      );
-                    })}
-                  </div>
+                      ))}
+                    </div>
+                  )
                 ) : (
                   <p className="text-sm text-muted-foreground">No avatars found for this gender yet.</p>
                 )}
@@ -464,6 +468,7 @@ export default function Profile() {
     </DashboardLayout>
   );
 }
+
 
 
 
