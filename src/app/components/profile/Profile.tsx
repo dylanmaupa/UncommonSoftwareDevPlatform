@@ -111,6 +111,30 @@ export default function Profile() {
     setNickname(userProfile.full_name || '');
     setIsEditing(false);
   };
+  const handleGenderSave = async () => {
+    if (!gender) {
+      toast.error('Please select a gender');
+      return;
+    }
+
+    try {
+      setIsGenderSaving(true);
+      const avatarUrl = getRandomAvatar(gender as Gender) || userProfile.avatar_url || profileAvatar;
+
+      await supabase
+        .from('profiles')
+        .update({ gender, avatar_url: avatarUrl })
+        .eq('id', authUser.id);
+
+      setUserProfile((prev: any) => ({ ...prev, gender, avatar_url: avatarUrl }));
+      toast.success('Profile updated');
+    } catch (err) {
+      toast.error('Failed to update gender');
+    } finally {
+      setIsGenderSaving(false);
+    }
+  };
+
 
   // Mocked out gamification stats that would typically live in another table
   const userStats = {
@@ -369,6 +393,8 @@ export default function Profile() {
     </DashboardLayout>
   );
 }
+
+
 
 
 
