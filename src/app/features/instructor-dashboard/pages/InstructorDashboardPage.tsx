@@ -8,13 +8,16 @@ import {
   LineChart,
   ResponsiveContainer,
   Tooltip,
+  type TooltipProps,
   XAxis,
   YAxis,
 } from 'recharts';
 import {
+  LuArrowUpRight,
   LuBell,
   LuBookOpenCheck,
   LuBuilding2,
+  LuClock3,
   LuDownload,
   LuMessageSquare,
   LuSend,
@@ -44,11 +47,36 @@ type StudentView = {
   xp: number;
 };
 
-const severityBadgeClass: Record<'high' | 'medium' | 'low', string> = {
-  high: 'border-blue-500/30 bg-blue-500/15 text-blue-700 dark:text-blue-200',
-  medium: 'border-sky-500/30 bg-sky-500/15 text-sky-700 dark:text-sky-200',
-  low: 'border-cyan-500/30 bg-cyan-500/15 text-cyan-700 dark:text-cyan-200',
+const riskLabel: Record<StudentView['riskLevel'], string> = {
+  'on-track': 'On Track',
+  'needs-attention': 'Needs Attention',
+  'at-risk': 'At Risk',
 };
+
+const severityBadgeClass: Record<'high' | 'medium' | 'low', string> = {
+  high: 'border-blue-600/35 bg-blue-600/15 text-blue-700 dark:text-blue-200',
+  medium: 'border-sky-600/35 bg-sky-600/15 text-sky-700 dark:text-sky-200',
+  low: 'border-cyan-600/35 bg-cyan-600/15 text-cyan-700 dark:text-cyan-200',
+};
+
+function ChartTooltip({ active, payload, label }: TooltipProps<number, string>) {
+  if (!active || !payload || payload.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="rounded-xl border border-border bg-card px-3 py-2 shadow-sm">
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <div className="mt-1 space-y-0.5">
+        {payload.map((item) => (
+          <p key={`${item.dataKey}-${item.value}`} className="text-sm text-foreground">
+            {item.name ?? item.dataKey}: <span className="font-semibold">{item.value}</span>
+          </p>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function InstructorDashboardPage() {
   const { instructor, metrics, instructorStudents, hubSummaries } = useInstructorData();
@@ -99,8 +127,12 @@ export default function InstructorDashboardPage() {
 
   const hubPerformanceData = useMemo(() => {
     return hubSummaries.map((summary) => ({
+      hubId: summary.hub.id,
       hubName: summary.hub.name.replace(' Hub', ''),
+      city: summary.hub.city,
+      cohort: summary.hub.cohort,
       students: summary.studentCount,
+      capacity: summary.hub.capacity,
       averageProgress: summary.averageProgress,
       completionRate: summary.completionRate,
     }));
@@ -230,36 +262,76 @@ export default function InstructorDashboardPage() {
   };
 
   return (
-    <div className="space-y-5 pb-6" id="instructor-dashboard">
-      <section className="rounded-2xl border border-blue-500/20 bg-gradient-to-r from-blue-600/15 via-sky-600/10 to-cyan-600/10 p-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
+    <div className="space-y-6 pb-8" id="instructor-dashboard">
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+        <Card className="relative overflow-hidden rounded-2xl border-blue-500/20 bg-gradient-to-br from-blue-600/20 via-sky-600/10 to-cyan-500/10">
+          <div className="absolute -right-8 -top-10 h-36 w-36 rounded-full bg-blue-500/10 blur-2xl" />
+          <CardContent className="relative p-5 lg:p-6">
             <p className="text-xs font-semibold uppercase tracking-wider text-blue-700 dark:text-blue-200">Instructor Command Center</p>
-            <h1 className="mt-1 text-3xl font-semibold text-foreground">Welcome back, {instructor.fullName}</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Monitor learner momentum, resolve risk alerts, and keep hub outcomes on track.
+            <h1 className="mt-2 text-3xl font-semibold leading-tight text-foreground">
+              Welcome back, {instructor.fullName}
+            </h1>
+            <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+              Track student momentum, surface intervention points quickly, and drive consistent hub outcomes.
             </p>
-          </div>
 
-          <div className="flex flex-wrap gap-2">
-            <Link to="/instructor/students">
-              <Button className="rounded-xl bg-blue-600 text-white hover:bg-blue-700">
-                <LuUsers className="mr-2 h-4 w-4" />
-                View All Students
+            <div className="mt-4 flex flex-wrap gap-2 text-xs">
+              <Badge className="border border-blue-500/30 bg-blue-500/15 text-blue-700 dark:text-blue-200">
+                {metrics.totalHubs} hubs managed
+              </Badge>
+              <Badge className="border border-sky-500/30 bg-sky-500/15 text-sky-700 dark:text-sky-200">
+                {metrics.totalStudents} students assigned
+              </Badge>
+              <Badge className="border border-cyan-500/30 bg-cyan-500/15 text-cyan-700 dark:text-cyan-200">
+                {metrics.averageProgress}% average progress
+              </Badge>
+            </div>
+
+            <div className="mt-5 flex flex-wrap gap-2">
+              <Link to="/instructor/students">
+                <Button className="rounded-xl bg-blue-600 text-white hover:bg-blue-700">
+                  <LuUsers className="mr-2 h-4 w-4" />
+                  View All Students
+                </Button>
+              </Link>
+              <Link to="/instructor/hubs">
+                <Button variant="outline" className="rounded-xl border-blue-500/30 bg-blue-500/5">
+                  <LuBuilding2 className="mr-2 h-4 w-4" />
+                  View All Hubs
+                </Button>
+              </Link>
+              <Button variant="outline" onClick={handleExportProgress} className="rounded-xl border-blue-500/30 bg-blue-500/5">
+                <LuDownload className="mr-2 h-4 w-4" />
+                Export Progress CSV
               </Button>
-            </Link>
-            <Link to="/instructor/hubs">
-              <Button variant="outline" className="rounded-xl border-blue-500/30 bg-blue-500/5">
-                <LuBuilding2 className="mr-2 h-4 w-4" />
-                View All Hubs
-              </Button>
-            </Link>
-            <Button variant="outline" onClick={handleExportProgress} className="rounded-xl border-blue-500/30 bg-blue-500/5">
-              <LuDownload className="mr-2 h-4 w-4" />
-              Export Progress CSV
-            </Button>
-          </div>
-        </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-2xl border-border bg-card/95">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Today at a Glance</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="rounded-xl border border-border bg-secondary/20 p-3">
+              <p className="text-xs uppercase tracking-wider text-muted-foreground">Need attention</p>
+              <p className="mt-1 text-2xl font-semibold text-foreground">{fallingBehind.length}</p>
+              <p className="text-xs text-muted-foreground">Learners should receive support today.</p>
+            </div>
+            <div className="space-y-2">
+              {alerts.slice(0, 2).map((alert) => (
+                <Link
+                  key={alert.id}
+                  to={alert.actionTo}
+                  className="flex items-start gap-2 rounded-lg border border-border bg-secondary/10 p-2 text-sm transition hover:bg-secondary/25"
+                >
+                  <LuTriangleAlert className="mt-0.5 h-4 w-4 text-primary" />
+                  <span className="text-foreground">{alert.title}</span>
+                </Link>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </section>
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
@@ -295,164 +367,201 @@ export default function InstructorDashboardPage() {
         />
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-3" id="students-overview">
-        <Card className="rounded-2xl border-border bg-card xl:col-span-1">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Recent Student Activity</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {recentActivity.map((activity) => (
-              <div key={activity.id} className="rounded-xl border border-border bg-secondary/20 p-3">
-                <p className="text-sm text-foreground">{activity.text}</p>
-                <p className="mt-1 text-xs text-muted-foreground">{activity.time}</p>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+      <section className="space-y-3" id="students-overview">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold text-foreground">Students Overview</h2>
+            <p className="text-sm text-muted-foreground">Live learner signals for quick interventions.</p>
+          </div>
+          <Link to="/instructor/students" className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline">
+            Open full roster
+            <LuArrowUpRight className="h-4 w-4" />
+          </Link>
+        </div>
 
-        <Card className="rounded-2xl border-border bg-card xl:col-span-1">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Students Falling Behind</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {fallingBehind.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No students currently flagged as falling behind.</p>
-            ) : (
-              fallingBehind.map((student) => (
+        <div className="grid gap-4 xl:grid-cols-3">
+          <Card className="rounded-2xl border-border bg-card">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Recent Student Activity</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2.5">
+              {recentActivity.map((activity) => (
+                <div key={activity.id} className="rounded-xl border border-border bg-secondary/20 p-3">
+                  <p className="text-sm text-foreground">{activity.text}</p>
+                  <p className="mt-1 inline-flex items-center gap-1 text-xs text-muted-foreground">
+                    <LuClock3 className="h-3.5 w-3.5" />
+                    {activity.time}
+                  </p>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-2xl border-border bg-card">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Students Falling Behind</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2.5">
+              {fallingBehind.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No students currently flagged as falling behind.</p>
+              ) : (
+                fallingBehind.map((student) => (
+                  <Link
+                    key={student.id}
+                    to={`/instructor/students/${student.id}`}
+                    className="flex items-center gap-3 rounded-xl border border-border bg-secondary/20 p-3 transition hover:bg-secondary/35"
+                  >
+                    <img src={student.avatarUrl} alt={student.fullName} className="h-10 w-10 rounded-full object-cover" />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-foreground">{student.fullName}</p>
+                      <p className="text-xs text-muted-foreground">{riskLabel[student.riskLevel]}</p>
+                    </div>
+                    <Badge className="border border-blue-500/25 bg-blue-500/10 text-xs text-blue-700 dark:text-blue-200">
+                      {student.progressPercentage}%
+                    </Badge>
+                  </Link>
+                ))
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-2xl border-border bg-card">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Top Performing Students</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2.5">
+              {topPerformers.map((student) => (
                 <Link
                   key={student.id}
                   to={`/instructor/students/${student.id}`}
                   className="block rounded-xl border border-border bg-secondary/20 p-3 transition hover:bg-secondary/35"
                 >
                   <div className="flex items-center justify-between gap-3">
-                    <p className="text-sm font-medium text-foreground">{student.fullName}</p>
-                    <Badge className="border border-blue-500/25 bg-blue-500/10 text-xs text-blue-700 dark:text-blue-200">
-                      {student.progressPercentage}%
-                    </Badge>
+                    <div className="flex min-w-0 items-center gap-2">
+                      <img src={student.avatarUrl} alt={student.fullName} className="h-8 w-8 rounded-full object-cover" />
+                      <p className="truncate text-sm font-medium text-foreground">{student.fullName}</p>
+                    </div>
+                    <span className="text-xs font-semibold text-blue-600 dark:text-blue-300">{student.xp} XP</span>
                   </div>
-                  <p className="mt-1 text-xs text-muted-foreground">Risk: {student.riskLevel.replace('-', ' ')}</p>
+                  <div className="mt-2 flex items-center gap-2">
+                    <Progress value={student.progressPercentage} className="h-2 flex-1" />
+                    <span className="text-xs text-muted-foreground">{student.progressPercentage}%</span>
+                  </div>
                 </Link>
-              ))
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-2xl border-border bg-card xl:col-span-1">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Top Performing Students</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {topPerformers.map((student) => (
-              <Link
-                key={student.id}
-                to={`/instructor/students/${student.id}`}
-                className="block rounded-xl border border-border bg-secondary/20 p-3 transition hover:bg-secondary/35"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-sm font-medium text-foreground">{student.fullName}</p>
-                  <span className="text-xs font-semibold text-blue-600 dark:text-blue-300">{student.xp} XP</span>
-                </div>
-                <div className="mt-2 flex items-center gap-2">
-                  <Progress value={student.progressPercentage} className="h-2 flex-1" />
-                  <span className="text-xs text-muted-foreground">{student.progressPercentage}%</span>
-                </div>
-              </Link>
-            ))}
-          </CardContent>
-        </Card>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-2" id="hub-performance">
-        <Card className="rounded-2xl border-border bg-card">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Hub Performance Summary</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {hubPerformanceData.map((hub) => (
-              <div key={hub.hubName} className="rounded-xl border border-border bg-secondary/20 p-3">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium text-foreground">{hub.hubName}</p>
-                  <span className="text-xs text-muted-foreground">{hub.students} students</span>
-                </div>
-                <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-                  <span>Avg Progress: <span className="font-medium text-foreground">{hub.averageProgress}%</span></span>
-                  <span>Completion: <span className="font-medium text-foreground">{hub.completionRate}%</span></span>
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+      <section className="space-y-3" id="hub-performance">
+        <div>
+          <h2 className="text-lg font-semibold text-foreground">Hub Performance</h2>
+          <p className="text-sm text-muted-foreground">Capacity, progress, and completion signals per hub.</p>
+        </div>
 
-        <Card className="rounded-2xl border-border bg-card">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Weekly Hub Activity (Hours Learned)</CardTitle>
-          </CardHeader>
-          <CardContent className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={weeklyActivityData} margin={{ top: 8, right: 12, left: 0, bottom: 6 }}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                <XAxis dataKey="day" tickLine={false} axisLine={false} className="fill-muted-foreground text-xs" />
-                <YAxis tickLine={false} axisLine={false} className="fill-muted-foreground text-xs" />
-                <Tooltip
-                  cursor={{ strokeDasharray: '3 3' }}
-                  contentStyle={{
-                    borderRadius: '12px',
-                    border: '1px solid hsl(var(--border))',
-                    background: 'hsl(var(--card))',
-                  }}
-                />
-                <Line type="monotone" dataKey="hoursLearned" stroke="#2563eb" strokeWidth={2.5} dot={{ r: 3 }} />
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </section>
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
+          <Card className="rounded-2xl border-border bg-card">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Hub Summary Cards</CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-3 sm:grid-cols-2">
+              {hubPerformanceData.map((hub) => {
+                const loadPercentage = hub.capacity > 0 ? Math.round((hub.students / hub.capacity) * 100) : 0;
 
-      <section className="grid gap-4 xl:grid-cols-2" id="analytics">
-        <Card className="rounded-2xl border-border bg-card">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Course Completion by Hub</CardTitle>
-          </CardHeader>
-          <CardContent className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={hubPerformanceData} margin={{ top: 8, right: 12, left: 0, bottom: 6 }}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                <XAxis dataKey="hubName" tickLine={false} axisLine={false} className="fill-muted-foreground text-xs" />
-                <YAxis domain={[0, 100]} tickLine={false} axisLine={false} className="fill-muted-foreground text-xs" />
-                <Tooltip
-                  cursor={{ fill: 'hsl(var(--secondary))' }}
-                  contentStyle={{
-                    borderRadius: '12px',
-                    border: '1px solid hsl(var(--border))',
-                    background: 'hsl(var(--card))',
-                  }}
-                />
-                <Bar dataKey="completionRate" fill="#2563eb" radius={[8, 8, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-2xl border-border bg-card">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Progress Distribution</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {progressDistribution.map((bucket) => {
-              const percentage = metrics.totalStudents > 0 ? Math.round((bucket.students / metrics.totalStudents) * 100) : 0;
-
-              return (
-                <div key={bucket.range}>
-                  <div className="mb-1 flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">{bucket.range}</span>
-                    <span className="font-medium text-foreground">{bucket.students} students ({percentage}%)</span>
+                return (
+                  <div key={hub.hubId} className="rounded-xl border border-border bg-secondary/20 p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-medium text-foreground">{hub.hubName}</p>
+                      <Badge className="border border-blue-500/25 bg-blue-500/10 text-xs text-blue-700 dark:text-blue-200">
+                        {hub.city}
+                      </Badge>
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">{hub.cohort}</p>
+                    <div className="mt-2 space-y-1 text-xs text-muted-foreground">
+                      <p>
+                        Student Load: <span className="font-medium text-foreground">{hub.students}/{hub.capacity}</span>
+                      </p>
+                      <Progress value={loadPercentage} className="h-2" />
+                      <p>
+                        Avg Progress: <span className="font-medium text-foreground">{hub.averageProgress}%</span>
+                      </p>
+                      <p>
+                        Completion Rate: <span className="font-medium text-foreground">{hub.completionRate}%</span>
+                      </p>
+                    </div>
                   </div>
-                  <Progress value={percentage} className="h-2" />
-                </div>
-              );
-            })}
-          </CardContent>
-        </Card>
+                );
+              })}
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-2xl border-border bg-card">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Weekly Activity (Hours Learned)</CardTitle>
+            </CardHeader>
+            <CardContent className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={weeklyActivityData} margin={{ top: 8, right: 8, left: -12, bottom: 6 }}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                  <XAxis dataKey="day" tickLine={false} axisLine={false} className="fill-muted-foreground text-xs" />
+                  <YAxis tickLine={false} axisLine={false} className="fill-muted-foreground text-xs" />
+                  <Tooltip content={<ChartTooltip />} />
+                  <Line type="monotone" dataKey="hoursLearned" name="Hours" stroke="#2563eb" strokeWidth={2.5} dot={{ r: 3 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
+      <section className="space-y-3" id="analytics">
+        <div>
+          <h2 className="text-lg font-semibold text-foreground">Course Progress Analytics</h2>
+          <p className="text-sm text-muted-foreground">Completion trends and progress distribution across your students.</p>
+        </div>
+
+        <div className="grid gap-4 xl:grid-cols-2">
+          <Card className="rounded-2xl border-border bg-card">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Course Completion by Hub</CardTitle>
+            </CardHeader>
+            <CardContent className="h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={hubPerformanceData} margin={{ top: 8, right: 8, left: -12, bottom: 6 }}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                  <XAxis dataKey="hubName" tickLine={false} axisLine={false} className="fill-muted-foreground text-xs" />
+                  <YAxis domain={[0, 100]} tickLine={false} axisLine={false} className="fill-muted-foreground text-xs" />
+                  <Tooltip content={<ChartTooltip />} />
+                  <Bar dataKey="completionRate" name="Completion %" fill="#2563eb" radius={[8, 8, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-2xl border-border bg-card">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Progress Distribution</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {progressDistribution.map((bucket) => {
+                const percentage = metrics.totalStudents > 0 ? Math.round((bucket.students / metrics.totalStudents) * 100) : 0;
+
+                return (
+                  <div key={bucket.range} className="rounded-xl border border-border bg-secondary/20 p-3">
+                    <div className="mb-1 flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">{bucket.range}</span>
+                      <span className="font-medium text-foreground">
+                        {bucket.students} students ({percentage}%)
+                      </span>
+                    </div>
+                    <Progress value={percentage} className="h-2" />
+                  </div>
+                );
+              })}
+            </CardContent>
+          </Card>
+        </div>
       </section>
 
       <section className="grid gap-4 xl:grid-cols-2" id="alerts-tasks">
