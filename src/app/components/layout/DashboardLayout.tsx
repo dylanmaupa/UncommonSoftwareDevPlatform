@@ -31,6 +31,16 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   }, []);
 
   useEffect(() => {
+    const loadUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+      setIsAuthLoading(false);
+    };
+
+    loadUser();
+  }, []);
+
+  useEffect(() => {
     if (!isAuthLoading && !user) {
       navigate('/');
     }
@@ -183,6 +193,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     </div>
   );
 }
+
+
 
 
 

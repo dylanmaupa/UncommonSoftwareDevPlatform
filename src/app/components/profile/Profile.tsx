@@ -55,6 +55,7 @@ export default function Profile() {
         if (profile) {
           setUserProfile(profile);
           setNickname(profile.full_name || '');
+          setGender(profile.gender || '');
         }
 
         const { data: cData } = await supabase.from('courses').select('*');
@@ -368,6 +369,7 @@ export default function Profile() {
     </DashboardLayout>
   );
 }
+
 
 
 
