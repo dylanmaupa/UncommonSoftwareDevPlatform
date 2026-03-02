@@ -211,15 +211,30 @@ export default function Profile() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="gender">Gender</Label>
-              <Select value={gender} onValueChange={(value: Gender) => setGender(value)}>
-                <SelectTrigger className="w-full h-10 bg-secondary border-0 rounded-xl">
-                  <SelectValue placeholder="Select gender" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="female">Female</SelectItem>
-                  <SelectItem value="male">Male</SelectItem>
-                </SelectContent>
-              </Select>
+              {gender ? (
+                <div className="flex items-center gap-3 rounded-xl bg-secondary/70 p-3">
+                  <p className="flex-1 text-sm text-muted-foreground capitalize">Selected: {gender}</p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="rounded-lg"
+                    onClick={() => setGender('')}
+                  >
+                    Change
+                  </Button>
+                </div>
+              ) : (
+                <Select value={gender} onValueChange={(value: Gender) => setGender(value)}>
+                  <SelectTrigger className="w-full h-10 bg-secondary border-0 rounded-xl">
+                    <SelectValue placeholder="Select gender" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="female">Female</SelectItem>
+                    <SelectItem value="male">Male</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
             </div>
 
             {gender && (
@@ -468,6 +483,7 @@ export default function Profile() {
     </DashboardLayout>
   );
 }
+
 
 
 
