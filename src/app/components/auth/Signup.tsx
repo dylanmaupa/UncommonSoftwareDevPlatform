@@ -46,6 +46,11 @@ export default function Signup() {
       return;
     }
 
+    if (!gender) {
+      toast.error('Please select a Gender');
+      return;
+    }
+
     if (role === 'instructor' && !specialization) {
       toast.error('Please select an Area of Specialization');
       return;
@@ -55,6 +60,8 @@ export default function Signup() {
 
     try {
       // 1. Sign up the user (this creates the auth.users record)
+      const avatarUrl = getRandomAvatar(gender as Gender);
+
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
@@ -64,6 +71,8 @@ export default function Signup() {
             role: role,
             hub_location: hubLocation,
             specialization: role === 'instructor' ? specialization : null,
+            gender: gender,
+            avatar_url: avatarUrl,
           },
         },
       });
@@ -168,6 +177,19 @@ export default function Signup() {
               </Select>
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="gender">Gender</Label>
+              <Select value={gender} onValueChange={(value: Gender) => setGender(value)} required>
+                <SelectTrigger className="w-full h-12 bg-[#F5F5FA] border-0 rounded-xl">
+                  <SelectValue placeholder="Select gender" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="female">Female</SelectItem>
+                  <SelectItem value="male">Male</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             {role === 'instructor' && (
               <div className="space-y-2">
                 <Label htmlFor="specialization">Area of Specialization</Label>
@@ -201,6 +223,10 @@ export default function Signup() {
     </div>
   );
 }
+
+
+
+
 
 
 

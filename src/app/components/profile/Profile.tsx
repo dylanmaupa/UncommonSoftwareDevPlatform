@@ -1,9 +1,11 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import DashboardLayout from '../layout/DashboardLayout';
 // @ts-ignore
 import profileAvatar from '../../../assets/avatar2.png';
+import { getRandomAvatar, type Gender } from '../../lib/avatars';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
@@ -34,6 +36,8 @@ export default function Profile() {
   const [isEditing, setIsEditing] = useState(false);
   const [nickname, setNickname] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [gender, setGender] = useState<Gender | ''>('');
+  const [isGenderSaving, setIsGenderSaving] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -141,13 +145,38 @@ export default function Profile() {
           <p className="text-muted-foreground">Track your progress and achievements</p>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-[300px_minmax(0,1fr)] gap-4">
+        {!userProfile.gender && (
+  <Card className="rounded-2xl border-border bg-secondary/40">
+    <CardContent className="p-4 flex flex-col gap-4">
+      <div>
+        <h2 className="text-lg heading-font text-foreground">Complete your profile</h2>
+        <p className="text-sm text-muted-foreground">Select your gender to set a default avatar.</p>
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="gender">Gender</Label>
+        <Select value={gender} onValueChange={(value: Gender) => setGender(value)} required>
+          <SelectTrigger className="w-full h-10 bg-secondary border-0 rounded-xl">
+            <SelectValue placeholder="Select gender" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="female">Female</SelectItem>
+            <SelectItem value="male">Male</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <Button onClick={handleGenderSave} disabled={isGenderSaving} className="self-start rounded-xl">
+        {isGenderSaving ? 'Saving...' : 'Save Gender'}
+      </Button>
+    </CardContent>
+  </Card>
+)}
+<div className="grid grid-cols-1 xl:grid-cols-[300px_minmax(0,1fr)] gap-4">
           <div className="space-y-4">
             <Card className="rounded-2xl border-border">
               <CardContent className="p-4">
                 <div className="flex flex-col items-center mb-4">
                   <Avatar className="w-20 h-20 mb-3">
-                    <AvatarImage src={profileAvatar} alt={userProfile.full_name} />
+                    <AvatarImage src={userProfile.avatar_url || profileAvatar} alt={userProfile.full_name} />
                     <AvatarFallback className="text-2xl">{userProfile.full_name?.[0] || 'U'}</AvatarFallback>
                   </Avatar>
 
@@ -339,3 +368,7 @@ export default function Profile() {
     </DashboardLayout>
   );
 }
+
+
+
+
