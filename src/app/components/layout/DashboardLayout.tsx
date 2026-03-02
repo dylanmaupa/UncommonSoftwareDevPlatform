@@ -46,6 +46,26 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     }
   }, [user, isAuthLoading, navigate]);
 
+  useEffect(() => {
+    const ensureGender = async () => {
+      if (!user) return;
+
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('gender')
+        .eq('id', user.id)
+        .single();
+
+      if (!error && !profile?.gender && location.pathname !== '/profile') {
+        navigate('/profile?setup=gender', { replace: true });
+      }
+    };
+
+    if (!isAuthLoading && user) {
+      ensureGender();
+    }
+  }, [isAuthLoading, user, location.pathname, navigate]);
+
   if (isAuthLoading) {
     return null;
   }
@@ -193,6 +213,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     </div>
   );
 }
+
+
 
 
 

@@ -23,11 +23,25 @@ export default function Login() {
         email,
         password,
       });
-
       if (error) {
         toast.error(error.message);
       } else if (data.session) {
-        toast.success(`Welcome back!`);
+        toast.success('Welcome back!');
+        const userId = data.user?.id ?? data.session.user?.id;
+
+        if (userId) {
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('gender')
+            .eq('id', userId)
+            .single();
+
+          if (!profileError && !profile?.gender) {
+            navigate('/profile?setup=gender');
+            return;
+          }
+        }
+
         navigate('/dashboard');
       }
     } catch (err: any) {
@@ -107,6 +121,9 @@ export default function Login() {
     </div>
   );
 }
+
+
+
 
 
 

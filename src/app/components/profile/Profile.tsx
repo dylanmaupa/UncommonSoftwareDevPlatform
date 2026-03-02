@@ -160,6 +160,8 @@ export default function Profile() {
   const coursesInProgress = coursesWithProgress.filter(c => c.progress > 0 && c.progress < 100);
   const completedCourses = coursesWithProgress.filter(c => c.progress === 100);
 
+  const needsGender = !userProfile.gender;
+
   return (
     <DashboardLayout>
       <div className="p-4 lg:p-6 max-w-7xl mx-auto">
@@ -170,32 +172,46 @@ export default function Profile() {
           <p className="text-muted-foreground">Track your progress and achievements</p>
         </div>
 
-        {!userProfile.gender && (
-  <Card className="rounded-2xl border-border bg-secondary/40">
-    <CardContent className="p-4 flex flex-col gap-4">
-      <div>
-        <h2 className="text-lg heading-font text-foreground">Complete your profile</h2>
-        <p className="text-sm text-muted-foreground">Select your gender to set a default avatar.</p>
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="gender">Gender</Label>
-        <Select value={gender} onValueChange={(value: Gender) => setGender(value)} required>
-          <SelectTrigger className="w-full h-10 bg-secondary border-0 rounded-xl">
-            <SelectValue placeholder="Select gender" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="female">Female</SelectItem>
-            <SelectItem value="male">Male</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      <Button onClick={handleGenderSave} disabled={isGenderSaving} className="self-start rounded-xl">
-        {isGenderSaving ? 'Saving...' : 'Save Gender'}
-      </Button>
-    </CardContent>
-  </Card>
-)}
-<div className="grid grid-cols-1 xl:grid-cols-[300px_minmax(0,1fr)] gap-4">
+        <Card className={`rounded-2xl border-border ${needsGender ? 'bg-secondary/60 ring-1 ring-primary/20' : 'bg-secondary/40'}`}>
+          <CardContent className="p-4 flex flex-col gap-4">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-lg heading-font text-foreground">Gender</h2>
+                <p className="text-sm text-muted-foreground">
+                  {needsGender
+                    ? 'Select your gender to set a default avatar. You can update this later.'
+                    : 'Update your gender to refresh your avatar.'}
+                </p>
+              </div>
+              {needsGender && (
+                <Badge className="rounded-full border border-primary/20 bg-primary/10 px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-primary">
+                  Required
+                </Badge>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="gender">Gender</Label>
+              <Select value={gender} onValueChange={(value: Gender) => setGender(value)}>
+                <SelectTrigger className="w-full h-10 bg-secondary border-0 rounded-xl">
+                  <SelectValue placeholder="Select gender" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="female">Female</SelectItem>
+                  <SelectItem value="male">Male</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button
+              onClick={handleGenderSave}
+              disabled={!gender || isGenderSaving}
+              className="self-start rounded-xl"
+            >
+              {isGenderSaving ? 'Saving...' : 'Save Gender'}
+            </Button>
+          </CardContent>
+        </Card>
+
+        <div className="grid grid-cols-1 xl:grid-cols-[300px_minmax(0,1fr)] gap-4">
           <div className="space-y-4">
             <Card className="rounded-2xl border-border">
               <CardContent className="p-4">
@@ -393,6 +409,9 @@ export default function Profile() {
     </DashboardLayout>
   );
 }
+
+
+
 
 
 
