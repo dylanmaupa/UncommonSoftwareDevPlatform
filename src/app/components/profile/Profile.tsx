@@ -79,16 +79,6 @@ export default function Profile() {
     loadData();
   }, []);
 
-  if (isLoading) {
-    return (
-      <DashboardLayout>
-        <div className="p-8 text-center text-muted-foreground">Loading profile...</div>
-      </DashboardLayout>
-    );
-  }
-
-  if (!userProfile || !authUser) return null;
-
   const handleSave = async () => {
     if (!nickname.trim()) {
       toast.error('Name cannot be empty');
@@ -119,9 +109,15 @@ export default function Profile() {
       return;
     }
 
+    const pool = getAvatarsByGender(gender);
+    if (pool.length > 0 && !selectedAvatar) {
+      toast.error('Please choose an avatar');
+      return;
+    }
+
     try {
       setIsGenderSaving(true);
-      const avatarUrl = getRandomAvatar(gender as Gender) || userProfile.avatar_url || profileAvatar;
+      const avatarUrl = selectedAvatar || getRandomAvatar(gender) || userProfile.avatar_url || profileAvatar;
 
       await supabase
         .from('profiles')
@@ -138,6 +134,32 @@ export default function Profile() {
   };
 
 
+  const availableAvatars = gender ? getAvatarsByGender(gender) : [];
+
+  useEffect(() => {
+    if (!gender || availableAvatars.length === 0) {
+      setSelectedAvatar('');
+      return;
+    }
+
+    if (!selectedAvatar || !availableAvatars.includes(selectedAvatar)) {
+      if (userProfile?.avatar_url && availableAvatars.includes(userProfile.avatar_url)) {
+        setSelectedAvatar(userProfile.avatar_url);
+      } else {
+        setSelectedAvatar(availableAvatars[0]);
+      }
+    }
+  }, [gender, availableAvatars, selectedAvatar, userProfile?.avatar_url]);
+
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <div className="p-8 text-center text-muted-foreground">Loading profile...</div>
+      </DashboardLayout>
+    );
+  }
+
+  if (!userProfile || !authUser) return null;
   // Mocked out gamification stats that would typically live in another table
   const userStats = {
     xp: userProfile.xp || 0,
@@ -203,9 +225,40 @@ export default function Profile() {
                 </SelectContent>
               </Select>
             </div>
+
+            {gender && (
+              <div className="space-y-2">
+                <Label>Choose Avatar</Label>
+                {availableAvatars.length > 0 ? (
+                  <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 rounded-xl bg-secondary/70 p-3">
+                    {availableAvatars.map((avatar, index) => {
+                      const isActive = selectedAvatar === avatar;
+
+                      return (
+                        <button
+                          key={`${gender}-avatar-${index}`}
+                          type="button"
+                          onClick={() => setSelectedAvatar(avatar)}
+                          className={`aspect-square overflow-hidden rounded-xl border transition ${
+                            isActive
+                              ? 'border-primary ring-2 ring-primary/40'
+                              : 'border-transparent hover:border-primary/40'
+                          }`}
+                          aria-label={`Select avatar ${index + 1}`}
+                        >
+                          <img src={avatar} alt={`Avatar option ${index + 1}`} className="h-full w-full object-cover" />
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No avatars found for this gender yet.</p>
+                )}
+              </div>
+            )}
             <Button
               onClick={handleGenderSave}
-              disabled={!gender || isGenderSaving}
+              disabled={!gender || isGenderSaving || (availableAvatars.length > 0 && !selectedAvatar)}
               className="self-start rounded-xl"
             >
               {isGenderSaving ? 'Saving...' : 'Save Gender'}
@@ -411,6 +464,12 @@ export default function Profile() {
     </DashboardLayout>
   );
 }
+
+
+
+
+
+
 
 
 
