@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { useState } from 'react';
 import { LuCode } from 'react-icons/lu';
 import { supabase } from '../../../lib/supabase';
+import { fetchProfileForAuthUser } from '../../lib/profileAccess';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -33,15 +34,9 @@ export default function Login() {
         const userId = data.user?.id ?? data.session.user?.id;
 
         if (userId) {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', userId)
-            .maybeSingle();
-
-          const profileRow = (profile as Record<string, unknown> | null) ?? null;
-          const metadata = (data.user?.user_metadata as Record<string, unknown> | undefined) ??
-            (data.session.user?.user_metadata as Record<string, unknown> | undefined);
+          const authUser = data.user ?? data.session.user;
+          const profileRow = await fetchProfileForAuthUser(authUser as any);
+          const metadata = (authUser?.user_metadata as Record<string, unknown> | undefined) ?? undefined;
 
           const gender = String(profileRow?.['gender'] ?? metadata?.['gender'] ?? '').toLowerCase();
           if (!gender) {

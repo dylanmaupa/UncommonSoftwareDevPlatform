@@ -8,13 +8,26 @@ interface StreakWidgetProps {
     userId: string;
 }
 
+const buildFallbackWeek = (streak: number) => {
+    const capped = Math.max(0, Math.min(streak, 7));
+    return Array.from({ length: 7 }, (_, index) => index >= 7 - capped);
+};
+
 export default function StreakWidget({ streak, userId }: StreakWidgetProps) {
-    const [activityDays, setActivityDays] = useState<boolean[]>([false, false, false, false, false, false, false]);
-    const [isActiveToday, setIsActiveToday] = useState(false);
+    const [activityDays, setActivityDays] = useState<boolean[]>(buildFallbackWeek(streak));
+    const [isActiveToday, setIsActiveToday] = useState(streak > 0);
 
     useEffect(() => {
         const fetchActivity = async () => {
             if (!userId) return;
+
+            const useActivityLogs = import.meta.env.VITE_ENABLE_ACTIVITY_LOGS === 'true';
+            if (!useActivityLogs) {
+                const fallback = buildFallbackWeek(streak);
+                setActivityDays(fallback);
+                setIsActiveToday(fallback[6]);
+                return;
+            }
 
             // Fetch activity logs for the last 7 days
             const today = new Date();
@@ -31,7 +44,14 @@ export default function StreakWidget({ streak, userId }: StreakWidgetProps) {
                 .gte('active_date', sevenDaysAgo.toISOString().split('T')[0])
                 .lte('active_date', today.toISOString().split('T')[0]);
 
-            if (data && !error) {
+            if (error) {
+                const fallback = buildFallbackWeek(streak);
+                setActivityDays(fallback);
+                setIsActiveToday(fallback[6]);
+                return;
+            }
+
+            if (data) {
                 const activeDates = new Set(data.map(log => log.active_date));
                 const days: boolean[] = [];
                 let activeToday = false;
@@ -55,11 +75,10 @@ export default function StreakWidget({ streak, userId }: StreakWidgetProps) {
         };
 
         fetchActivity();
-    }, [userId]);
+    }, [userId, streak]);
 
     const weekDays = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
     // Adjust weekDays based on current day so 'Today' is always the right-most bubble
-    const todayIndex = new Date().getDay(); // 0 is Sunday
     const rotatedDays = [];
     for (let i = 6; i >= 0; i--) {
         const d = new Date();
@@ -122,4 +141,3 @@ export default function StreakWidget({ streak, userId }: StreakWidgetProps) {
         </Card>
     );
 }
-

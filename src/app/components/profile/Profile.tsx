@@ -24,6 +24,7 @@ import {
   LuZap,
 } from 'react-icons/lu';
 import { supabase } from '../../../lib/supabase';
+import { fetchProfileForAuthUser, updateProfileForAuthUser } from '../../lib/profileAccess';
 import { calculateUserLevel, calculateNextLevelXp, calculateLevelProgress } from '../../../lib/gamificationUtils';
 import StreakWidget from '../dashboard/StreakWidget';
 
@@ -47,18 +48,23 @@ export default function Profile() {
         if (!user) return;
         setAuthUser(user);
 
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
+        const profile = await fetchProfileForAuthUser(user as any);
+        const metadata = (user.user_metadata as Record<string, unknown> | undefined) ?? undefined;
 
-        if (profile) {
-          setUserProfile(profile);
-          setNickname(profile.full_name || '');
-          setGender(profile.gender || '');
-          setSelectedAvatar(profile.avatar_url || '');
-        }
+        const resolvedProfile = profile ?? {
+          email: user.email ?? '',
+          full_name: String(metadata?.['full_name'] ?? user.email?.split('@')[0] ?? ''),
+          xp: Number(metadata?.['xp'] ?? 0),
+          streak: Number(metadata?.['streak'] ?? 0),
+          achievements: Array.isArray(metadata?.['achievements']) ? metadata?.['achievements'] : [],
+          gender: String(metadata?.['gender'] ?? ''),
+          avatar_url: String(metadata?.['avatar_url'] ?? ''),
+        };
+
+        setUserProfile(resolvedProfile);
+        setNickname(String(resolvedProfile.full_name ?? ''));
+        setGender((String(resolvedProfile.gender ?? '') as Gender | ''));
+        setSelectedAvatar(String(resolvedProfile.avatar_url ?? ''));
 
         const { data: cData } = await supabase.from('courses').select('*');
         if (cData) setCourses(cData);
@@ -86,10 +92,8 @@ export default function Profile() {
     }
 
     try {
-      await supabase
-        .from('profiles')
-        .update({ full_name: nickname.trim() })
-        .eq('id', authUser.id);
+      await updateProfileForAuthUser(authUser as any, { full_name: nickname.trim() });
+      await supabase.auth.updateUser({ data: { full_name: nickname.trim() } });
 
       setUserProfile((prev: any) => ({ ...prev, full_name: nickname.trim() }));
       toast.success('Profile updated successfully');
@@ -119,10 +123,8 @@ export default function Profile() {
       setIsGenderSaving(true);
       const avatarUrl = selectedAvatar || getRandomAvatar(gender) || userProfile.avatar_url || profileAvatar;
 
-      await supabase
-        .from('profiles')
-        .update({ gender, avatar_url: avatarUrl })
-        .eq('id', authUser.id);
+      await updateProfileForAuthUser(authUser as any, { gender, avatar_url: avatarUrl });
+      await supabase.auth.updateUser({ data: { gender, avatar_url: avatarUrl } });
 
       setUserProfile((prev: any) => ({ ...prev, gender, avatar_url: avatarUrl }));
       toast.success('Profile updated');

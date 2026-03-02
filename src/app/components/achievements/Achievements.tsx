@@ -6,6 +6,7 @@ import { Badge } from '../ui/badge';
 import { LuFlame, LuLock, LuSparkles, LuTarget, LuTrophy } from 'react-icons/lu';
 import { supabase } from '../../../lib/supabase';
 import { calculateUserLevel } from '../../../lib/gamificationUtils';
+import { fetchProfileForAuthUser } from '../../lib/profileAccess';
 
 export default function Achievements() {
   const [userProfile, setUserProfile] = useState<any>(null);
@@ -16,11 +17,7 @@ export default function Achievements() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
+      const profile = await fetchProfileForAuthUser(user as any);
 
       if (profile) {
         setUserProfile(profile);

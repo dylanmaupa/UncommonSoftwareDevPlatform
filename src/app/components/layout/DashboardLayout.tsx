@@ -2,6 +2,7 @@ import { useEffect, useState, ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { supabase } from '../../../lib/supabase';
 import { loadPyodideEnvironment } from '../../../lib/pyodide';
+import { fetchProfileForAuthUser } from '../../lib/profileAccess';
 import {
   LuBookOpen,
   LuFolderKanban,
@@ -59,13 +60,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         return;
       }
 
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .maybeSingle();
-
-      const profileRow = (profile as Record<string, unknown> | null) ?? null;
+      const profileRow = await fetchProfileForAuthUser(user as any);
       const metadata = (user.user_metadata as Record<string, unknown> | undefined) ?? undefined;
 
       const gender = readString(profileRow?.['gender'] ?? metadata?.['gender']).toLowerCase();

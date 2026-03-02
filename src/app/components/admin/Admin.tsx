@@ -19,6 +19,7 @@ import {
 } from 'react-icons/lu';
 import { useNavigate } from 'react-router';
 import { supabase } from '../../../lib/supabase';
+import { fetchProfileForAuthUser } from '../../lib/profileAccess';
 
 const instructorSections = [
   {
@@ -257,20 +258,21 @@ export default function Admin() {
           return;
         }
 
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
-
-        if (profileError || !profileData) {
-          console.error("Failed to load profile", profileError);
-          return;
-        }
+        const profileRow = await fetchProfileForAuthUser(user as any);
+        const metadata = (user.user_metadata as Record<string, unknown> | undefined) ?? undefined;
+        const profileData = (profileRow ?? {
+          id: user.id,
+          email: user.email ?? '',
+          role: String(metadata?.['role'] ?? metadata?.['user_role'] ?? 'student'),
+          hub_location: String(metadata?.['hub_location'] ?? ''),
+          full_name: String(metadata?.['full_name'] ?? user.email?.split('@')[0] ?? 'Instructor'),
+        }) as UserProfile;
 
         setProfile(profileData);
 
-        if (profileData.role === 'instructor') {
+        const hasRoleColumn = profileRow ? Object.prototype.hasOwnProperty.call(profileRow, 'role') : false;
+
+        if (profileData.role === 'instructor' && profileData.hub_location && hasRoleColumn) {
           const { data: studentData, error: studentError } = await supabase
             .from('profiles')
             .select('*')

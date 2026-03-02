@@ -22,6 +22,7 @@ import {
 } from 'react-icons/lu';
 import { supabase } from '../../../lib/supabase';
 import { loadPyodideEnvironment } from '../../../lib/pyodide';
+import { fetchProfileForAuthUser, updateProfileForAuthUser } from '../../lib/profileAccess';
 
 export default function LessonView() {
   const { courseId, moduleId, lessonId } = useParams();
@@ -51,11 +52,7 @@ export default function LessonView() {
         if (!currentUser) return navigate('/');
         setUser(currentUser);
 
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', currentUser.id)
-          .single();
+        const profileData = await fetchProfileForAuthUser(currentUser as any);
 
         if (profileData) {
           setUserProfile(profileData);
@@ -377,10 +374,7 @@ sys.stderr = io.StringIO()
                 const updatedAchievements = [...currentAchievements, ...newlyUnlocked];
 
                 // Update DB
-                await supabase
-                  .from('profiles')
-                  .update({ achievements: updatedAchievements })
-                  .eq('id', user.id);
+                await updateProfileForAuthUser(user as any, { achievements: updatedAchievements });
 
                 // Update Local State
                 setUserProfile({ ...userProfile, achievements: updatedAchievements });

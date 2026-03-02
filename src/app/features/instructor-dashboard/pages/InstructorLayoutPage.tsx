@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Outlet, useNavigate } from 'react-router';
 import DashboardLayout from '../../../components/layout/DashboardLayout';
 import { supabase } from '../../../../lib/supabase';
+import { fetchProfileForAuthUser } from '../../../lib/profileAccess';
 import InstructorSidebar from '../components/navigation/InstructorSidebar';
 
 export default function InstructorLayoutPage() {
@@ -26,15 +27,9 @@ export default function InstructorLayoutPage() {
         return;
       }
 
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .maybeSingle();
+      const profileRow = await fetchProfileForAuthUser(user as any);
 
       if (!isMounted) return;
-
-      const profileRow = (profile as Record<string, unknown> | null) ?? null;
       const metadata = (user.user_metadata as Record<string, unknown> | undefined) ?? undefined;
       const role = String(
         profileRow?.['role'] ??

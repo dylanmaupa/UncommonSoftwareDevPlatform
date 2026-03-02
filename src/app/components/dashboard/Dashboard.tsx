@@ -21,6 +21,7 @@ import {
 import { useEffect, useState } from 'react';
 import { calculateUserLevel } from '../../../lib/gamificationUtils';
 import { supabase } from '../../../lib/supabase';
+import { fetchProfileForAuthUser } from '../../lib/profileAccess';
 
 interface UserProfile {
   id: string;
@@ -367,21 +368,24 @@ export default function Dashboard() {
           return;
         }
 
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
+        const profileRow = await fetchProfileForAuthUser(user as any);
+        const metadata = (user.user_metadata as Record<string, unknown> | undefined) ?? undefined;
 
-        if (profileError || !profileData) {
-          console.error("Failed to load profile", profileError);
-          // Optional: handle user with no profile gracefully
-          return;
-        }
+        const profileData = (profileRow ?? {
+          id: user.id,
+          email: user.email ?? '',
+          full_name: String(metadata?.['full_name'] ?? user.email?.split('@')[0] ?? 'Learner'),
+          role: String(metadata?.['role'] ?? metadata?.['user_role'] ?? 'student'),
+          hub_location: String(metadata?.['hub_location'] ?? ''),
+          xp: Number(metadata?.['xp'] ?? 0),
+          streak: Number(metadata?.['streak'] ?? 0),
+        }) as UserProfile;
 
         setProfile(profileData);
 
-        if (profileData.role === 'instructor') {
+        const hasRoleColumn = profileRow ? Object.prototype.hasOwnProperty.call(profileRow, 'role') : false;
+
+        if (hasRoleColumn && profileData.role === 'instructor' && profileData.hub_location) {
           const { data: studentData, error: studentError } = await supabase
             .from('profiles')
             .select('*')
@@ -389,20 +393,22 @@ export default function Dashboard() {
             .eq('hub_location', profileData.hub_location);
 
           if (!studentError && studentData) {
-            setStudents(studentData);
+            setStudents(studentData as UserProfile[]);
           }
         }
 
-        // Load instructors for the hub location (relevant for both students and instructors viewing peers)
-        const { data: instructorData, error: instructorError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('role', 'instructor')
-          .eq('hub_location', profileData.hub_location)
-          .neq('id', profileData.id); // don't show self in the sidebar list
+        if (hasRoleColumn && profileData.hub_location) {
+          // Load instructors for the hub location (relevant for both students and instructors viewing peers)
+          const { data: instructorData, error: instructorError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('role', 'instructor')
+            .eq('hub_location', profileData.hub_location)
+            .neq('id', profileData.id); // don't show self in the sidebar list
 
-        if (!instructorError && instructorData) {
-          setInstructors(instructorData);
+          if (!instructorError && instructorData) {
+            setInstructors(instructorData as UserProfile[]);
+          }
         }
 
         // Load courses
