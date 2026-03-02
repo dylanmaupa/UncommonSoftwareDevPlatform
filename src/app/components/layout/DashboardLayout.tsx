@@ -11,6 +11,7 @@ import {
   LuTerminal,
   LuTrophy,
   LuUser,
+  LuUsers,
 } from 'react-icons/lu';
 import { toast } from 'sonner';
 import { Button } from '../ui/button';
@@ -80,6 +81,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { icon: LuBookOpen, label: 'Courses', path: '/courses' },
     { icon: LuFolderKanban, label: 'Projects', path: '/projects' },
     { icon: LuTrophy, label: 'Achievements', path: '/achievements' },
+    { icon: LuUsers, label: 'Instructor', path: '/instructor' },
     { icon: LuUser, label: 'Profile', path: '/profile' },
   ];
   const mobileNavItems = [...overviewItems, { icon: LuSettings, label: 'Settings', path: '/settings' }];
@@ -213,6 +215,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     </div>
   );
 }
+
 
 
 

@@ -1,0 +1,50 @@
+[
+  {
+    "id": "achv-lesson-streak-7",
+    "title": "7-Day Learner",
+    "description": "Completed lessons for seven consecutive days",
+    "category": "Consistency",
+    "tier": "silver",
+    "points": 120
+  },
+  {
+    "id": "achv-project-first",
+    "title": "Project Starter",
+    "description": "Submitted first project successfully",
+    "category": "Projects",
+    "tier": "bronze",
+    "points": 80
+  },
+  {
+    "id": "achv-project-master",
+    "title": "Project Master",
+    "description": "Completed all milestone projects",
+    "category": "Projects",
+    "tier": "gold",
+    "points": 200
+  },
+  {
+    "id": "achv-peer-helper",
+    "title": "Peer Helper",
+    "description": "Helped classmates in learning channels",
+    "category": "Community",
+    "tier": "silver",
+    "points": 100
+  },
+  {
+    "id": "achv-lesson-50",
+    "title": "Lesson Finisher",
+    "description": "Completed 50 lessons",
+    "category": "Learning",
+    "tier": "gold",
+    "points": 240
+  },
+  {
+    "id": "achv-xp-elite",
+    "title": "XP Elite",
+    "description": "Reached top XP bracket in cohort",
+    "category": "Learning",
+    "tier": "platinum",
+    "points": 300
+  }
+]

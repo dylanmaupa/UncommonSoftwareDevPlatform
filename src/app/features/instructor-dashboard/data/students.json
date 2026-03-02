@@ -1,0 +1,155 @@
+[
+  {
+    "id": "stu-001",
+    "fullName": "Tafadzwa Nyoni",
+    "email": "tafadzwa.nyoni@example.com",
+    "avatarUrl": "https://i.pravatar.cc/150?img=12",
+    "hubId": "hub-hre-1",
+    "cohort": "SE-2026-Q1",
+    "riskLevel": "on-track",
+    "progress": {
+      "completedLessons": 41,
+      "totalLessons": 52,
+      "completedProjects": 4,
+      "totalProjects": 5,
+      "xp": 2140
+    },
+    "achievementIds": ["achv-lesson-streak-7", "achv-project-first", "achv-lesson-50"]
+  },
+  {
+    "id": "stu-002",
+    "fullName": "Tariro Moyo",
+    "email": "tariro.moyo@example.com",
+    "avatarUrl": "https://i.pravatar.cc/150?img=32",
+    "hubId": "hub-hre-1",
+    "cohort": "SE-2026-Q1",
+    "riskLevel": "needs-attention",
+    "progress": {
+      "completedLessons": 26,
+      "totalLessons": 52,
+      "completedProjects": 2,
+      "totalProjects": 5,
+      "xp": 1180
+    },
+    "achievementIds": ["achv-project-first"]
+  },
+  {
+    "id": "stu-003",
+    "fullName": "Nyasha Chikore",
+    "email": "nyasha.chikore@example.com",
+    "avatarUrl": "https://i.pravatar.cc/150?img=23",
+    "hubId": "hub-hre-1",
+    "cohort": "SE-2026-Q1",
+    "riskLevel": "on-track",
+    "progress": {
+      "completedLessons": 48,
+      "totalLessons": 52,
+      "completedProjects": 5,
+      "totalProjects": 5,
+      "xp": 2510
+    },
+    "achievementIds": ["achv-project-first", "achv-project-master", "achv-xp-elite"]
+  },
+  {
+    "id": "stu-004",
+    "fullName": "Blessing Ncube",
+    "email": "blessing.ncube@example.com",
+    "avatarUrl": "https://i.pravatar.cc/150?img=29",
+    "hubId": "hub-hre-2",
+    "cohort": "SE-2026-Q1",
+    "riskLevel": "at-risk",
+    "progress": {
+      "completedLessons": 14,
+      "totalLessons": 52,
+      "completedProjects": 1,
+      "totalProjects": 5,
+      "xp": 640
+    },
+    "achievementIds": []
+  },
+  {
+    "id": "stu-005",
+    "fullName": "Ruvimbo Dube",
+    "email": "ruvimbo.dube@example.com",
+    "avatarUrl": "https://i.pravatar.cc/150?img=45",
+    "hubId": "hub-hre-2",
+    "cohort": "SE-2026-Q1",
+    "riskLevel": "needs-attention",
+    "progress": {
+      "completedLessons": 23,
+      "totalLessons": 52,
+      "completedProjects": 2,
+      "totalProjects": 5,
+      "xp": 1020
+    },
+    "achievementIds": ["achv-project-first"]
+  },
+  {
+    "id": "stu-006",
+    "fullName": "Tinotenda Mlambo",
+    "email": "tinotenda.mlambo@example.com",
+    "avatarUrl": "https://i.pravatar.cc/150?img=8",
+    "hubId": "hub-hre-2",
+    "cohort": "SE-2026-Q1",
+    "riskLevel": "on-track",
+    "progress": {
+      "completedLessons": 38,
+      "totalLessons": 52,
+      "completedProjects": 4,
+      "totalProjects": 5,
+      "xp": 1950
+    },
+    "achievementIds": ["achv-project-first", "achv-peer-helper"]
+  },
+  {
+    "id": "stu-007",
+    "fullName": "Nomsa Sibanda",
+    "email": "nomsa.sibanda@example.com",
+    "avatarUrl": "https://i.pravatar.cc/150?img=47",
+    "hubId": "hub-byo-1",
+    "cohort": "SE-2026-Q1",
+    "riskLevel": "on-track",
+    "progress": {
+      "completedLessons": 44,
+      "totalLessons": 52,
+      "completedProjects": 4,
+      "totalProjects": 5,
+      "xp": 2250
+    },
+    "achievementIds": ["achv-lesson-streak-7", "achv-project-first", "achv-peer-helper"]
+  },
+  {
+    "id": "stu-008",
+    "fullName": "Peter Moyo",
+    "email": "peter.moyo@example.com",
+    "avatarUrl": "https://i.pravatar.cc/150?img=56",
+    "hubId": "hub-byo-1",
+    "cohort": "SE-2026-Q1",
+    "riskLevel": "needs-attention",
+    "progress": {
+      "completedLessons": 27,
+      "totalLessons": 52,
+      "completedProjects": 3,
+      "totalProjects": 5,
+      "xp": 1290
+    },
+    "achievementIds": ["achv-project-first"]
+  },
+  {
+    "id": "stu-009",
+    "fullName": "Anesu Ndlovu",
+    "email": "anesu.ndlovu@example.com",
+    "avatarUrl": "https://i.pravatar.cc/150?img=5",
+    "hubId": "hub-byo-1",
+    "cohort": "SE-2026-Q1",
+    "riskLevel": "at-risk",
+    "progress": {
+      "completedLessons": 12,
+      "totalLessons": 52,
+      "completedProjects": 1,
+      "totalProjects": 5,
+      "xp": 520
+    },
+    "achievementIds": []
+  }
+]

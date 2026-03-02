@@ -1,0 +1,26 @@
+[
+  {
+    "id": "hub-hre-1",
+    "name": "Harare Central Hub",
+    "city": "Harare",
+    "cohort": "SE-2026-Q1",
+    "capacity": 80,
+    "instructorIds": ["inst-001"]
+  },
+  {
+    "id": "hub-hre-2",
+    "name": "Mbare Growth Hub",
+    "city": "Harare",
+    "cohort": "SE-2026-Q1",
+    "capacity": 60,
+    "instructorIds": ["inst-001"]
+  },
+  {
+    "id": "hub-byo-1",
+    "name": "Bulawayo Innovation Hub",
+    "city": "Bulawayo",
+    "cohort": "SE-2026-Q1",
+    "capacity": 50,
+    "instructorIds": ["inst-001"]
+  }
+]
