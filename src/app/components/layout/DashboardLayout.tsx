@@ -5,6 +5,7 @@ import { loadPyodideEnvironment } from '../../../lib/pyodide';
 import { fetchProfileForAuthUser } from '../../lib/profileAccess';
 import {
   LuBookOpen,
+  LuBuilding2,
   LuFolderKanban,
   LuLayoutDashboard,
   LuLogOut,
@@ -21,6 +22,14 @@ interface DashboardLayoutProps {
   children: ReactNode;
 }
 
+type NavItem = {
+  icon: typeof LuLayoutDashboard;
+  label: string;
+  path: string;
+};
+
+const INSTRUCTOR_BLOCKED_PATHS = ['/dashboard', '/sandbox', '/courses', '/projects', '/achievements'];
+
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -31,7 +40,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const readString = (value: unknown) => (typeof value === 'string' ? value.trim() : '');
 
   useEffect(() => {
-    // Preload Python environment in the background silently
+    // Preload Python environment in the background silently.
     loadPyodideEnvironment().catch(console.error);
   }, []);
 
@@ -78,8 +87,14 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         return;
       }
 
-      if (role === 'instructor' && location.pathname === '/dashboard') {
-        navigate('/instructor', { replace: true });
+      if (role === 'instructor') {
+        const isBlockedPath = INSTRUCTOR_BLOCKED_PATHS.some((path) => {
+          return location.pathname === path || location.pathname.startsWith(`${path}/`);
+        });
+
+        if (isBlockedPath) {
+          navigate('/instructor', { replace: true });
+        }
       }
     };
 
@@ -96,16 +111,35 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     return null;
   }
 
-  const overviewItems = [
+  const isInstructor = profileRole === 'instructor';
+
+  const instructorNavItems: NavItem[] = [
+    { icon: LuLayoutDashboard, label: 'Instructor Home', path: '/instructor' },
+    { icon: LuBuilding2, label: 'Hubs', path: '/instructor/hubs' },
+    { icon: LuUsers, label: 'Students', path: '/instructor/students' },
+    { icon: LuUser, label: 'Profile', path: '/profile' },
+  ];
+
+  const learnerNavItems: NavItem[] = [
     { icon: LuLayoutDashboard, label: 'Dashboard', path: '/dashboard' },
     { icon: LuTerminal, label: 'Sandbox', path: '/sandbox' },
     { icon: LuBookOpen, label: 'Courses', path: '/courses' },
     { icon: LuFolderKanban, label: 'Projects', path: '/projects' },
     { icon: LuTrophy, label: 'Achievements', path: '/achievements' },
-    ...(profileRole === 'instructor' ? [{ icon: LuUsers, label: 'Instructor', path: '/instructor' }] : []),
     { icon: LuUser, label: 'Profile', path: '/profile' },
   ];
+
+  const overviewItems = isInstructor ? instructorNavItems : learnerNavItems;
   const mobileNavItems = [...overviewItems, { icon: LuSettings, label: 'Settings', path: '/settings' }];
+  const homePath = isInstructor ? '/instructor' : '/dashboard';
+
+  const isNavItemActive = (path: string) => {
+    if (path === '/instructor') {
+      return location.pathname === '/instructor';
+    }
+
+    return location.pathname === path || location.pathname.startsWith(`${path}/`);
+  };
 
   const handleLogout = () => {
     supabase.auth.signOut();
@@ -118,7 +152,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       <div className="mx-auto flex min-h-screen max-w-[1280px] flex-col border-x border-border bg-card shadow-sm lg:h-screen lg:flex-row lg:overflow-hidden lg:border">
         <header className="sticky top-0 z-20 border-b border-border bg-card/95 backdrop-blur lg:hidden">
           <div className="flex items-center justify-between gap-3 px-4 py-3">
-            <Link to="/dashboard" className="flex items-center gap-2">
+            <Link to={homePath} className="flex items-center gap-2">
               <div className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-full bg-primary/10">
                 <img
                   src="https://uncommon.org/images/hd-logo.svg"
@@ -155,7 +189,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             <div className="flex w-max items-center gap-1">
               {mobileNavItems.map((item) => {
                 const Icon = item.icon;
-                const isActive = location.pathname === item.path;
+                const isActive = isNavItemActive(item.path);
 
                 return (
                   <Link
@@ -177,7 +211,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </header>
 
         <aside className="hidden w-56 shrink-0 flex-col overflow-y-auto border-r border-border bg-card px-3 py-6 lg:flex">
-          <Link to="/dashboard" className="mb-8 flex items-center gap-2 px-2">
+          <Link to={homePath} className="mb-8 flex items-center gap-2 px-2">
             <div className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-full bg-primary/10">
               <img
                 src="https://uncommon.org/images/hd-logo.svg"
@@ -195,7 +229,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             <nav className="space-y-1">
               {overviewItems.map((item) => {
                 const Icon = item.icon;
-                const isActive = location.pathname === item.path;
+                const isActive = isNavItemActive(item.path);
 
                 return (
                   <Link
