@@ -31,10 +31,14 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   }, []);
 
   useEffect(() => {
-    if (!user) {
+    if (!isAuthLoading && !user) {
       navigate('/');
     }
-  }, [user, navigate]);
+  }, [user, isAuthLoading, navigate]);
+
+  if (isAuthLoading) {
+    return null;
+  }
 
   if (!user) {
     return null;
@@ -179,6 +183,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     </div>
   );
 }
+
 
 
 
