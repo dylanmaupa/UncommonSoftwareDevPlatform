@@ -1,6 +1,6 @@
-import { useEffect, ReactNode } from 'react';
+import { useEffect, useState, ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
-import { authService } from '../../services/mockData';
+import { supabase } from '../../../lib/supabase';
 import { loadPyodideEnvironment } from '../../../lib/pyodide';
 import {
   LuBookOpen,
@@ -22,15 +22,21 @@ interface DashboardLayoutProps {
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
-  const user = authService.getCurrentUser();
+  const [user, setUser] = useState<any>(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
 
   useEffect(() => {
     // Preload Python environment in the background silently
     loadPyodideEnvironment().catch(console.error);
   }, []);
 
+  useEffect(() => {
+    if (!user) {
+      navigate('/');
+    }
+  }, [user, navigate]);
+
   if (!user) {
-    navigate('/');
     return null;
   }
 
@@ -45,7 +51,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const mobileNavItems = [...overviewItems, { icon: LuSettings, label: 'Settings', path: '/settings' }];
 
   const handleLogout = () => {
-    authService.logout();
+    supabase.auth.signOut();
     toast.success('Logged out successfully');
     navigate('/');
   };
@@ -173,6 +179,15 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
 
 
 
