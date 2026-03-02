@@ -25,6 +25,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [profileRole, setProfileRole] = useState<string | null>(null);
+
+  const readString = (value: unknown) => (typeof value === 'string' ? value.trim() : '');
 
   useEffect(() => {
     // Preload Python environment in the background silently
@@ -33,7 +36,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   useEffect(() => {
     const loadUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       setUser(user);
       setIsAuthLoading(false);
     };
@@ -48,22 +53,43 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   }, [user, isAuthLoading, navigate]);
 
   useEffect(() => {
-    const ensureGender = async () => {
-      if (!user) return;
+    const syncProfileAccess = async () => {
+      if (!user) {
+        setProfileRole(null);
+        return;
+      }
 
-      const { data: profile, error } = await supabase
+      const { data: profile } = await supabase
         .from('profiles')
-        .select('gender')
+        .select('*')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (!error && !profile?.gender && location.pathname !== '/profile') {
+      const profileRow = (profile as Record<string, unknown> | null) ?? null;
+      const metadata = (user.user_metadata as Record<string, unknown> | undefined) ?? undefined;
+
+      const gender = readString(profileRow?.['gender'] ?? metadata?.['gender']).toLowerCase();
+      const role = readString(
+        profileRow?.['role'] ??
+          profileRow?.['user_role'] ??
+          metadata?.['role'] ??
+          metadata?.['user_role']
+      ).toLowerCase();
+
+      setProfileRole(role || null);
+
+      if (!gender && location.pathname !== '/profile') {
         navigate('/profile?setup=gender', { replace: true });
+        return;
+      }
+
+      if (role === 'instructor' && location.pathname === '/dashboard') {
+        navigate('/instructor', { replace: true });
       }
     };
 
     if (!isAuthLoading && user) {
-      ensureGender();
+      syncProfileAccess();
     }
   }, [isAuthLoading, user, location.pathname, navigate]);
 
@@ -81,7 +107,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { icon: LuBookOpen, label: 'Courses', path: '/courses' },
     { icon: LuFolderKanban, label: 'Projects', path: '/projects' },
     { icon: LuTrophy, label: 'Achievements', path: '/achievements' },
-    { icon: LuUsers, label: 'Instructor', path: '/instructor' },
+    ...(profileRole === 'instructor' ? [{ icon: LuUsers, label: 'Instructor', path: '/instructor' }] : []),
     { icon: LuUser, label: 'Profile', path: '/profile' },
   ];
   const mobileNavItems = [...overviewItems, { icon: LuSettings, label: 'Settings', path: '/settings' }];
@@ -110,10 +136,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             <div className="flex items-center gap-2">
               <Link
                 to="/settings"
-                className={`flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-foreground ${location.pathname === '/settings'
-                  ? 'bg-secondary text-foreground'
-                  : 'bg-card hover:bg-secondary hover:text-foreground'
-                  }`}
+                className={`flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-foreground ${
+                  location.pathname === '/settings'
+                    ? 'bg-secondary text-foreground'
+                    : 'bg-card hover:bg-secondary hover:text-foreground'
+                }`}
                 aria-label="Settings"
               >
                 <LuSettings className="h-4 w-4" />
@@ -139,10 +166,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   <Link
                     key={`${item.label}-${item.path}-mobile`}
                     to={item.path}
-                    className={`flex items-center gap-2 whitespace-nowrap rounded-full px-3 py-2 text-sm transition-colors ${isActive
-                      ? 'bg-secondary text-foreground'
-                      : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
-                      }`}
+                    className={`flex items-center gap-2 whitespace-nowrap rounded-full px-3 py-2 text-sm transition-colors ${
+                      isActive
+                        ? 'bg-secondary text-foreground'
+                        : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                    }`}
                   >
                     <Icon className="h-4 w-4" />
                     <span>{item.label}</span>
@@ -166,7 +194,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           </Link>
 
           <div>
-            <p className="px-2 pb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">Overview</p>
+            <p className="px-2 pb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+              Overview
+            </p>
             <nav className="space-y-1">
               {overviewItems.map((item) => {
                 const Icon = item.icon;
@@ -176,8 +206,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   <Link
                     key={`${item.label}-${item.path}`}
                     to={item.path}
-                    className={`flex items-center gap-2 rounded-lg px-2 py-2 text-sm transition-colors ${isActive ? 'text-foreground' : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
-                      }`}
+                    className={`flex items-center gap-2 rounded-lg px-2 py-2 text-sm transition-colors ${
+                      isActive ? 'text-foreground' : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                    }`}
                   >
                     <Icon className="h-4 w-4" />
                     <span>{item.label}</span>
@@ -188,13 +219,16 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
 
           <div className="mt-auto space-y-1 pt-8">
-            <p className="px-2 pb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">Settings</p>
+            <p className="px-2 pb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+              Settings
+            </p>
             <Link
               to="/settings"
-              className={`flex items-center gap-2 rounded-lg px-2 py-2 text-sm transition-colors ${location.pathname === '/settings'
-                ? 'text-foreground'
-                : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
-                }`}
+              className={`flex items-center gap-2 rounded-lg px-2 py-2 text-sm transition-colors ${
+                location.pathname === '/settings'
+                  ? 'text-foreground'
+                  : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+              }`}
             >
               <LuSettings className="h-4 w-4" />
               <span>Settings</span>
@@ -215,23 +249,3 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

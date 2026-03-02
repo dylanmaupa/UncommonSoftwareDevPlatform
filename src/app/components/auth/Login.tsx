@@ -1,11 +1,10 @@
-import { Link } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { toast } from 'sonner';
 import { useState } from 'react';
-import { useNavigate } from 'react-router';
-import { LuCode, LuSparkles } from 'react-icons/lu';
+import { LuCode } from 'react-icons/lu';
 import { supabase } from '../../../lib/supabase';
 
 export default function Login() {
@@ -23,21 +22,43 @@ export default function Login() {
         email,
         password,
       });
+
       if (error) {
         toast.error(error.message);
-      } else if (data.session) {
+        return;
+      }
+
+      if (data.session) {
         toast.success('Welcome back!');
         const userId = data.user?.id ?? data.session.user?.id;
 
         if (userId) {
-          const { data: profile, error: profileError } = await supabase
+          const { data: profile } = await supabase
             .from('profiles')
-            .select('gender')
+            .select('*')
             .eq('id', userId)
-            .single();
+            .maybeSingle();
 
-          if (!profileError && !profile?.gender) {
+          const profileRow = (profile as Record<string, unknown> | null) ?? null;
+          const metadata = (data.user?.user_metadata as Record<string, unknown> | undefined) ??
+            (data.session.user?.user_metadata as Record<string, unknown> | undefined);
+
+          const gender = String(profileRow?.['gender'] ?? metadata?.['gender'] ?? '').toLowerCase();
+          if (!gender) {
             navigate('/profile?setup=gender');
+            return;
+          }
+
+          const role = String(
+            profileRow?.['role'] ??
+              profileRow?.['user_role'] ??
+              metadata?.['role'] ??
+              metadata?.['user_role'] ??
+              ''
+          ).toLowerCase();
+
+          if (role === 'instructor') {
+            navigate('/instructor');
             return;
           }
         }
@@ -121,9 +142,3 @@ export default function Login() {
     </div>
   );
 }
-
-
-
-
-
-
