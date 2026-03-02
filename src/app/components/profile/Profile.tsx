@@ -172,7 +172,7 @@ export default function Profile() {
           <p className="text-muted-foreground">Track your progress and achievements</p>
         </div>
 
-        <Card className={`rounded-2xl border-border ${needsGender ? 'bg-secondary/60 ring-1 ring-primary/20' : 'bg-secondary/40'}`}>
+        <Card className={`rounded-2xl border-border mb-4 ${needsGender ? 'bg-secondary/60 ring-1 ring-primary/20' : 'bg-secondary/40'}`}>
           <CardContent className="p-4 flex flex-col gap-4">
             <div className="flex items-start justify-between gap-4">
               <div>
@@ -409,6 +409,7 @@ export default function Profile() {
     </DashboardLayout>
   );
 }
+
 
 
 
