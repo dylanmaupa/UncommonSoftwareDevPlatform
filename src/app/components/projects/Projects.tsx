@@ -1,4 +1,4 @@
-﻿import { Link } from 'react-router';
+import { Link } from 'react-router';
 import DashboardLayout from '../layout/DashboardLayout';
 import { projectsData, progressService } from '../../services/mockData';
 import { Card, CardContent } from '../ui/card';
@@ -8,6 +8,9 @@ import { LuArrowRight, LuCircleCheck, LuRocket, LuZap } from 'react-icons/lu';
 export default function Projects() {
   const getProjectImage = (title: string) => {
     const normalized = title.toLowerCase();
+    if (normalized.includes('weather')) {
+      return 'https://images.unsplash.com/photo-1534088568595-a066f410bcda?auto=format&fit=crop&w=1000&q=80';
+    }
     if (normalized.includes('portfolio')) {
       return 'https://images.unsplash.com/photo-1467232004584-a241de8bcf5d?auto=format&fit=crop&w=1000&q=80';
     }
@@ -108,3 +111,4 @@ export default function Projects() {
     </DashboardLayout>
   );
 }
+
