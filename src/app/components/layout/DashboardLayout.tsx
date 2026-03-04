@@ -124,7 +124,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { icon: LuBell, label: 'Announcements', path: '/instructor/announcements' },
     { icon: LuTarget, label: 'Live Activity', path: '/instructor/live-activity' },
     { icon: LuBuilding2, label: 'Hub Controls', path: '/instructor/hub-controls' },
-    { icon: LuBuilding2, label: 'Hubs', path: '/instructor/hubs' },
+    { icon: LuBuilding2, label: 'My Hub', path: '/instructor/hub' },
     { icon: LuUser, label: 'Profile', path: '/profile' },
   ];
 
@@ -286,3 +286,4 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     </div>
   );
 }
+

@@ -123,7 +123,7 @@ export default function InstructorDashboardPage() {
       description: 'Manage class groups, onboarding, invites, attendance, and resource library.',
       path: '/instructor/hub-controls',
       cta: 'Open Controls',
-      metric: `${metrics.totalHubs} hubs managed`,
+      metric: instructorHub ? `Hub: ${instructorHub.name}` : 'No hub assigned',
       icon: LuBell,
     },
   ];
@@ -227,5 +227,4 @@ export default function InstructorDashboardPage() {
     </div>
   );
 }
-
 

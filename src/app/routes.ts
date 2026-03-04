@@ -48,6 +48,7 @@ export const router = createBrowserRouter([
         Component: InstructorLayoutPage,
         children: [
           { index: true, Component: InstructorDashboardPage },
+          { path: 'hub', Component: HubsPage },
           { path: 'hubs', Component: HubsPage },
           { path: 'students', Component: StudentsPage },
           { path: 'exercises', Component: InstructorExercisesPage },
@@ -62,6 +63,4 @@ export const router = createBrowserRouter([
     ],
   },
 ]);
-
-
 

@@ -3,7 +3,7 @@ import { LuBuilding2, LuLayoutDashboard, LuUsers } from 'react-icons/lu';
 
 const navItems = [
   { label: 'Dashboard', path: '/instructor', icon: LuLayoutDashboard },
-  { label: 'Hubs', path: '/instructor/hubs', icon: LuBuilding2 },
+  { label: 'My Hub', path: '/instructor/hub', icon: LuBuilding2 },
   { label: 'Students', path: '/instructor/students', icon: LuUsers },
 ];
 
