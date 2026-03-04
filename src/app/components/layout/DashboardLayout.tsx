@@ -120,12 +120,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { icon: LuLayoutDashboard, label: 'Instructor Home', path: '/instructor' },
     { icon: LuUsers, label: 'Students', path: '/instructor/students' },
     { icon: LuBookOpen, label: 'Curriculum', path: '/instructor/curriculum' },
-    { icon: LuBookOpenCheck, label: 'Exercises', path: '/instructor/exercises' },
+    { icon: LuBookOpenCheck, label: 'Assessments', path: '/instructor/assessments' },
     { icon: LuFolderKanban, label: 'Projects', path: '/instructor/projects' },
-    { icon: LuBell, label: 'Announcements', path: '/instructor/announcements' },
-    { icon: LuTarget, label: 'Live Activity', path: '/instructor/live-activity' },
-    { icon: LuBuilding2, label: 'Hub Controls', path: '/instructor/hub-controls' },
-    { icon: LuBuilding2, label: 'My Hub', path: '/instructor/hub' },
+    { icon: LuBell, label: 'Communication', path: '/instructor/communication' },
+    { icon: LuTarget, label: 'Live Ops', path: '/instructor/live' },
+    { icon: LuBuilding2, label: 'Hub Operations', path: '/instructor/hub-operations' },
+
     { icon: LuUser, label: 'Profile', path: '/profile' },
   ];
 
@@ -287,5 +287,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     </div>
   );
 }
+
+
+
+
 
 

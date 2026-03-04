@@ -1,11 +1,13 @@
 import { Link, useLocation } from 'react-router';
-import { LuBookOpen, LuBuilding2, LuLayoutDashboard, LuUsers } from 'react-icons/lu';
+import { LuBookOpen, LuBookOpenCheck, LuBuilding2, LuLayoutDashboard, LuTarget, LuUsers } from 'react-icons/lu';
 
 const navItems = [
-  { label: 'Dashboard', path: '/instructor', icon: LuLayoutDashboard },
-  { label: 'My Hub', path: '/instructor/hub', icon: LuBuilding2 },
+  { label: 'Home', path: '/instructor', icon: LuLayoutDashboard },
   { label: 'Students', path: '/instructor/students', icon: LuUsers },
   { label: 'Curriculum', path: '/instructor/curriculum', icon: LuBookOpen },
+  { label: 'Assessments', path: '/instructor/assessments', icon: LuBookOpenCheck },
+  { label: 'Live Ops', path: '/instructor/live', icon: LuTarget },
+  { label: 'Hub Ops', path: '/instructor/hub-operations', icon: LuBuilding2 },
 ];
 
 export default function InstructorSidebar() {
@@ -43,5 +45,3 @@ export default function InstructorSidebar() {
     </aside>
   );
 }
-
-

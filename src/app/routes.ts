@@ -14,16 +14,15 @@ import Achievements from './components/achievements/Achievements';
 import Profile from './components/profile/Profile';
 import Settings from './components/settings/Settings';
 import InstructorLayoutPage from './features/instructor-dashboard/pages/InstructorLayoutPage';
-import InstructorDashboardPage from './features/instructor-dashboard/pages/InstructorDashboardPage';
-import HubsPage from './features/instructor-dashboard/pages/HubsPage';
-import StudentsPage from './features/instructor-dashboard/pages/StudentsPage';
-import InstructorExercisesPage from './features/instructor-dashboard/pages/InstructorExercisesPage';
-import InstructorAnnouncementsPage from './features/instructor-dashboard/pages/InstructorAnnouncementsPage';
-import InstructorProjectsPage from './features/instructor-dashboard/pages/InstructorProjectsPage';
-import InstructorLiveActivityPage from './features/instructor-dashboard/pages/InstructorLiveActivityPage';
-import InstructorHubControlsPage from './features/instructor-dashboard/pages/InstructorHubControlsPage';
-import StudentProfilePage from './features/instructor-dashboard/pages/StudentProfilePage';
-import InstructorCurriculumPage from './features/instructor-dashboard/pages/InstructorCurriculumPage';
+import InstructorHomePage from './features/instructor-dashboard/pages/InstructorHomePage';
+import InstructorLearnersPage from './features/instructor-dashboard/pages/InstructorLearnersPage';
+import InstructorLearnerProfilePage from './features/instructor-dashboard/pages/InstructorLearnerProfilePage';
+import InstructorCurriculumInsightsPage from './features/instructor-dashboard/pages/InstructorCurriculumInsightsPage';
+import InstructorAssessmentsPage from './features/instructor-dashboard/pages/InstructorAssessmentsPage';
+import InstructorProjectsInsightsPage from './features/instructor-dashboard/pages/InstructorProjectsInsightsPage';
+import InstructorCommunicationPage from './features/instructor-dashboard/pages/InstructorCommunicationPage';
+import InstructorLiveOpsPage from './features/instructor-dashboard/pages/InstructorLiveOpsPage';
+import InstructorHubOperationsPage from './features/instructor-dashboard/pages/InstructorHubOperationsPage';
 import NotFound from './components/NotFound';
 
 export const router = createBrowserRouter([
@@ -48,22 +47,18 @@ export const router = createBrowserRouter([
         path: 'instructor',
         Component: InstructorLayoutPage,
         children: [
-          { index: true, Component: InstructorDashboardPage },
-          { path: 'hub', Component: HubsPage },
-          { path: 'hubs', Component: HubsPage },
-          { path: 'students', Component: StudentsPage },
-          { path: 'curriculum', Component: InstructorCurriculumPage },
-          { path: 'exercises', Component: InstructorExercisesPage },
-          { path: 'announcements', Component: InstructorAnnouncementsPage },
-          { path: 'projects', Component: InstructorProjectsPage },
-          { path: 'live-activity', Component: InstructorLiveActivityPage },
-          { path: 'hub-controls', Component: InstructorHubControlsPage },
-          { path: 'students/:studentId', Component: StudentProfilePage },
+          { index: true, Component: InstructorHomePage },
+          { path: 'students', Component: InstructorLearnersPage },
+          { path: 'students/:studentId', Component: InstructorLearnerProfilePage },
+          { path: 'curriculum', Component: InstructorCurriculumInsightsPage },
+          { path: 'assessments', Component: InstructorAssessmentsPage },
+          { path: 'projects', Component: InstructorProjectsInsightsPage },
+          { path: 'communication', Component: InstructorCommunicationPage },
+          { path: 'live', Component: InstructorLiveOpsPage },
+          { path: 'hub-operations', Component: InstructorHubOperationsPage },
         ],
       },
       { path: '*', Component: NotFound },
     ],
   },
 ]);
-
-

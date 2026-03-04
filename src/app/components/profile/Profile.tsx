@@ -401,7 +401,7 @@ export default function Profile() {
                         <LuTarget className="h-4 w-4" />
                       </Button>
                     </Link>
-                    <Link to="/instructor/announcements">
+                    <Link to="/instructor/communication">
                       <Button variant="ghost" className="h-10 w-full justify-between rounded-xl border border-border bg-sidebar text-sm">
                         Communication Center
                         <LuTrophy className="h-4 w-4" />
@@ -550,6 +550,7 @@ export default function Profile() {
     </DashboardLayout>
   );
 }
+
 
 
 
