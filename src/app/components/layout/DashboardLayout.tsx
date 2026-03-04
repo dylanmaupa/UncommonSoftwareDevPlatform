@@ -119,6 +119,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const instructorNavItems: NavItem[] = [
     { icon: LuLayoutDashboard, label: 'Instructor Home', path: '/instructor' },
     { icon: LuUsers, label: 'Students', path: '/instructor/students' },
+    { icon: LuBookOpen, label: 'Curriculum', path: '/instructor/curriculum' },
     { icon: LuBookOpenCheck, label: 'Exercises', path: '/instructor/exercises' },
     { icon: LuFolderKanban, label: 'Projects', path: '/instructor/projects' },
     { icon: LuBell, label: 'Announcements', path: '/instructor/announcements' },
@@ -286,4 +287,5 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     </div>
   );
 }
+
 

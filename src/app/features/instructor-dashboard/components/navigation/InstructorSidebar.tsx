@@ -1,10 +1,11 @@
 import { Link, useLocation } from 'react-router';
-import { LuBuilding2, LuLayoutDashboard, LuUsers } from 'react-icons/lu';
+import { LuBookOpen, LuBuilding2, LuLayoutDashboard, LuUsers } from 'react-icons/lu';
 
 const navItems = [
   { label: 'Dashboard', path: '/instructor', icon: LuLayoutDashboard },
   { label: 'My Hub', path: '/instructor/hub', icon: LuBuilding2 },
   { label: 'Students', path: '/instructor/students', icon: LuUsers },
+  { label: 'Curriculum', path: '/instructor/curriculum', icon: LuBookOpen },
 ];
 
 export default function InstructorSidebar() {
@@ -42,4 +43,5 @@ export default function InstructorSidebar() {
     </aside>
   );
 }
+
 
