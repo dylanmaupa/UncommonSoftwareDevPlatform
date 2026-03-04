@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router';
-import { LuArrowRight, LuBell, LuBookOpen, LuBookOpenCheck, LuClock3, LuFolderKanban, LuTarget, LuTriangleAlert, LuUsers } from 'react-icons/lu';
+import { LuArrowRight, LuBell, LuBookOpenCheck, LuTriangleAlert, LuUsers } from 'react-icons/lu';
 import { Badge } from '../../../components/ui/badge';
 import { Button } from '../../../components/ui/button';
 import { Card, CardContent } from '../../../components/ui/card';
@@ -72,14 +72,6 @@ export default function InstructorHomePage() {
     },
   ];
 
-  const quickLinks = [
-    { label: 'Students', href: '/instructor/students', icon: LuUsers },
-    { label: 'Curriculum', href: '/instructor/curriculum', icon: LuBookOpen },
-    { label: 'Assessments', href: '/instructor/assessments', icon: LuBookOpenCheck },
-    { label: 'Projects', href: '/instructor/projects', icon: LuFolderKanban },
-    { label: 'Live Ops', href: '/instructor/live', icon: LuTarget },
-  ];
-
   return (
     <div className="space-y-4">
       <Card className="overflow-hidden rounded-2xl border-border bg-primary text-white">
@@ -139,50 +131,28 @@ export default function InstructorHomePage() {
         })}
       </div>
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <Card className="rounded-2xl border-border">
-          <CardContent className="p-0">
-            <div className="flex items-center justify-between border-b border-border px-4 py-3">
-              <div>
-                <h2 className="heading-font text-lg text-foreground">Intervention Alerts</h2>
-                <p className="text-xs text-muted-foreground">Issues that should be handled today</p>
-              </div>
-              <LuTriangleAlert className="h-4 w-4 text-muted-foreground" />
+      <Card className="rounded-2xl border-border">
+        <CardContent className="p-0">
+          <div className="flex items-center justify-between border-b border-border px-4 py-3">
+            <div>
+              <h2 className="heading-font text-lg text-foreground">Intervention Alerts</h2>
+              <p className="text-xs text-muted-foreground">Issues that should be handled today</p>
             </div>
-            <div className="space-y-2 p-3 text-sm">
-              <div className="rounded-xl border border-border bg-sidebar p-3 text-foreground">
-                {atRisk} students are currently in the at-risk segment.
-              </div>
-              <div className="rounded-xl border border-border bg-sidebar p-3 text-foreground">
-                {overdue} submissions are overdue across exercises and projects.
-              </div>
-              <div className="rounded-xl border border-border bg-sidebar p-3 text-foreground">
-                {Math.max(1, Math.round(activeNow * 0.3))} students have repeated runtime error patterns.
-              </div>
+            <LuTriangleAlert className="h-4 w-4 text-muted-foreground" />
+          </div>
+          <div className="space-y-2 p-3 text-sm">
+            <div className="rounded-xl border border-border bg-sidebar p-3 text-foreground">
+              {atRisk} students are currently in the at-risk segment.
             </div>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-2xl border-border">
-          <CardContent className="p-0">
-            <div className="border-b border-border px-4 py-3">
-              <h2 className="heading-font text-lg text-foreground">Quick Access</h2>
-              <p className="text-xs text-muted-foreground">Jump to specialized instructor pages</p>
+            <div className="rounded-xl border border-border bg-sidebar p-3 text-foreground">
+              {overdue} submissions are overdue across exercises and projects.
             </div>
-            <div className="space-y-2 p-3">
-              {quickLinks.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <Link key={item.label} to={item.href} className="flex items-center justify-between rounded-xl border border-border bg-sidebar p-3">
-                    <span className="text-sm text-foreground">{item.label}</span>
-                    <Icon className="h-4 w-4 text-muted-foreground" />
-                  </Link>
-                );
-              })}
+            <div className="rounded-xl border border-border bg-sidebar p-3 text-foreground">
+              {Math.max(1, Math.round(activeNow * 0.3))} students have repeated runtime error patterns.
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card className="rounded-2xl border-border bg-sidebar">
         <CardContent className="flex flex-wrap items-center justify-between gap-2 p-4 text-xs text-muted-foreground">
@@ -194,4 +164,3 @@ export default function InstructorHomePage() {
     </div>
   );
 }
-
