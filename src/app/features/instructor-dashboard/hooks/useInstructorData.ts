@@ -11,23 +11,32 @@ import {
 import type { Achievement, HubSummary, Student } from '../types/instructor.types';
 
 export function useInstructorData() {
-  const instructorHubs = useMemo(() => {
-    return hubs.filter((hub) => instructor.hubIds.includes(hub.id));
+  const instructorHubId = useMemo(() => {
+    return instructor.hubId || instructor.hubIds?.[0] || '';
   }, []);
 
+  const instructorHub = useMemo(() => {
+    return hubs.find((hub) => hub.id === instructorHubId) ?? null;
+  }, [instructorHubId]);
+
+  const instructorHubs = useMemo(() => {
+    return instructorHub ? [instructorHub] : [];
+  }, [instructorHub]);
+
   const instructorStudents = useMemo(() => {
-    const hubIdSet = new Set(instructorHubs.map((hub) => hub.id));
-    return students.filter((student) => hubIdSet.has(student.hubId));
-  }, [instructorHubs]);
+    if (!instructorHubId) return [];
+    return students.filter((student) => student.hubId === instructorHubId);
+  }, [instructorHubId]);
 
   const achievementMap = useMemo(() => getAchievementMap(achievements), []);
 
   const hubSummaries = useMemo<HubSummary[]>(() => {
-    return instructorHubs.map((hub) => {
-      const studentsForHub = getStudentsForHub(instructorStudents, hub.id);
-      return calculateHubSummary(hub, studentsForHub);
-    });
-  }, [instructorHubs, instructorStudents]);
+    if (!instructorHub) return [];
+    const studentsForHub = getStudentsForHub(instructorStudents, instructorHub.id);
+    return [calculateHubSummary(instructorHub, studentsForHub)];
+  }, [instructorHub, instructorStudents]);
+
+  const hubSummary = hubSummaries[0] ?? null;
 
   const metrics = useMemo(() => {
     return buildDashboardMetrics(instructorHubs, instructorStudents);
@@ -55,9 +64,12 @@ export function useInstructorData() {
 
   return {
     instructor,
+    instructorHub,
+    instructorHubId,
     instructorHubs,
     instructorStudents,
     hubSummaries,
+    hubSummary,
     metrics,
     topStudents,
     chartData,
@@ -65,4 +77,3 @@ export function useInstructorData() {
     getStudentAchievements,
   };
 }
-

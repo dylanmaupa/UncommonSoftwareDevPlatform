@@ -2,7 +2,8 @@ export interface Instructor {
   id: string;
   fullName: string;
   email: string;
-  hubIds: string[];
+  hubId: string;
+  hubIds?: string[];
 }
 
 export interface Hub {

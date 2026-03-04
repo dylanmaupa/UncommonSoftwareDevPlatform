@@ -29,7 +29,7 @@ type HubRouteCard = {
 };
 
 export default function InstructorDashboardPage() {
-  const { instructor, instructorStudents, metrics } = useInstructorData();
+  const { instructor, instructorStudents, metrics, instructorHub } = useInstructorData();
 
   const activeStudents = useMemo(() => {
     return instructorStudents.filter((student) => {
@@ -137,7 +137,7 @@ export default function InstructorDashboardPage() {
               <p className="text-xs uppercase tracking-[0.2em] text-white/75">Instructor Hub</p>
               <h1 className="heading-font mt-2 text-2xl sm:text-3xl">Instructor Home</h1>
               <p className="mt-2 max-w-2xl text-sm text-white/80">
-                The dashboard is now split into focused pages so each workflow has dedicated space.
+                Your workspace is now focused on your assigned hub with dedicated pages for each instructor workflow.
               </p>
             </div>
 
@@ -227,4 +227,5 @@ export default function InstructorDashboardPage() {
     </div>
   );
 }
+
 

@@ -2,5 +2,5 @@
   "id": "inst-001",
   "fullName": "Rumbidzai Moyo",
   "email": "rumbidzai.moyo@uncommon.org",
-  "hubIds": ["hub-hre-1", "hub-hre-2", "hub-byo-1"]
+  "hubId": "hub-hre-1"
 }
