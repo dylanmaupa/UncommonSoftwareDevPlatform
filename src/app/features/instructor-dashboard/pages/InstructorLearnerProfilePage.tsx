@@ -38,7 +38,7 @@ export default function InstructorLearnerProfilePage() {
         : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700';
 
   return (
-    <div className="space-y-4 p-3 sm:p-4 lg:p-6">
+    <div className="space-y-4">
       <Link to="/instructor/students" className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline">
         <LuArrowLeft className="h-4 w-4" />
         Back to students
@@ -135,3 +135,4 @@ export default function InstructorLearnerProfilePage() {
     </div>
   );
 }
+

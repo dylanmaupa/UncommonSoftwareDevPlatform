@@ -81,8 +81,8 @@ export default function InstructorHomePage() {
   ];
 
   return (
-    <div className="space-y-4 p-3 sm:p-4 lg:p-6">
-      <Card className="overflow-hidden rounded-3xl border-0 bg-gradient-to-br from-primary via-[#0b5bbf] to-[#1098c9] text-white">
+    <div className="space-y-4">
+      <Card className="overflow-hidden rounded-2xl border-border bg-primary text-white">
         <CardContent className="space-y-3 p-4 sm:p-6">
           <p className="text-xs uppercase tracking-[0.2em] text-white/75">Instructor Home</p>
           <h1 className="heading-font text-2xl sm:text-3xl">{instructorHub?.name ?? 'Assigned Hub'} Overview</h1>
@@ -194,3 +194,4 @@ export default function InstructorHomePage() {
     </div>
   );
 }
+
