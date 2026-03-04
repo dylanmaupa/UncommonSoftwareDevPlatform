@@ -89,10 +89,10 @@ export default function InstructorExercisesPage() {
   ];
 
   const scheduledExercises = [
-    { id: 'exercise-1', type: 'Coding Challenge', title: 'Async Bug Hunt', due: 'Mar 6, 10:00', audience: 'All hubs' },
+    { id: 'exercise-1', type: 'Coding Challenge', title: 'Async Bug Hunt', due: 'Mar 6, 10:00', audience: 'Current hub' },
     { id: 'exercise-2', type: 'Quiz', title: 'Database Joins Quick Quiz', due: 'Mar 6, 15:30', audience: 'Needs Support tag' },
-    { id: 'exercise-3', type: 'Written Assignment', title: 'API Reflection Log', due: 'Mar 7, 16:00', audience: 'Hub Harare North' },
-    { id: 'exercise-4', type: 'Group Project', title: 'Mini API Build Sprint', due: 'Mar 8, 09:00', audience: 'Mixed cohorts' },
+    { id: 'exercise-3', type: 'Written Assignment', title: 'API Reflection Log', due: 'Mar 7, 16:00', audience: 'Current hub cohort' },
+    { id: 'exercise-4', type: 'Group Project', title: 'Mini API Build Sprint', due: 'Mar 8, 09:00', audience: 'Current hub pods' },
   ];
 
   return (
@@ -184,3 +184,4 @@ export default function InstructorExercisesPage() {
     </div>
   );
 }
+

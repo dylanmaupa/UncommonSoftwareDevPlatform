@@ -13,8 +13,9 @@ function clamp(value: number, min: number, max: number) {
 }
 
 export default function InstructorProjectsPage() {
-  const { instructorStudents } = useInstructorData();
+  const { instructorStudents, instructorHub } = useInstructorData();
 
+  const hubName = instructorHub?.name ?? 'Assigned Hub';
   const projectNames = ['Portfolio API', 'Inventory Dashboard', 'Peer Review Engine', 'Task Automation CLI', 'Hub Attendance Tracker'];
   const steps = ['Scoping', 'API Integration', 'State Management', 'Testing', 'Deployment'];
   const concepts = ['Async Patterns', 'Relational Joins', 'Error Handling', 'Type Safety', 'State Sync'];
@@ -32,7 +33,7 @@ export default function InstructorProjectsPage() {
       return {
         id: student.id,
         studentName: student.fullName,
-        hubId: student.hubId,
+        hubName,
         projectName: projectNames[index % projectNames.length],
         completion,
         quality,
@@ -43,7 +44,7 @@ export default function InstructorProjectsPage() {
         avgDays,
       };
     });
-  }, [instructorStudents]);
+  }, [hubName, instructorStudents]);
 
   const challengingStepData = useMemo(() => {
     return steps.map((step) => ({
@@ -63,18 +64,18 @@ export default function InstructorProjectsPage() {
 
   const successByHub = useMemo(() => {
     const grouped = projectRows.reduce<Record<string, { quality: number; completion: number; count: number }>>((acc, row) => {
-      if (!acc[row.hubId]) {
-        acc[row.hubId] = { quality: 0, completion: 0, count: 0 };
+      if (!acc[row.hubName]) {
+        acc[row.hubName] = { quality: 0, completion: 0, count: 0 };
       }
 
-      acc[row.hubId].quality += row.quality;
-      acc[row.hubId].completion += row.completion;
-      acc[row.hubId].count += 1;
+      acc[row.hubName].quality += row.quality;
+      acc[row.hubName].completion += row.completion;
+      acc[row.hubName].count += 1;
       return acc;
     }, {});
 
-    return Object.entries(grouped).map(([hubId, value]) => ({
-      hubId,
+    return Object.entries(grouped).map(([name, value]) => ({
+      hubName: name,
       quality: Math.round(value.quality / value.count),
       completion: Math.round(value.completion / value.count),
     }));
@@ -116,9 +117,9 @@ export default function InstructorProjectsPage() {
       <Card className="overflow-hidden rounded-3xl border-0 bg-gradient-to-br from-primary via-[#0b5bbf] to-[#1098c9] text-white">
         <CardContent className="space-y-3 p-4 sm:p-6">
           <p className="text-xs uppercase tracking-[0.2em] text-white/75">Project Insights</p>
-          <h1 className="heading-font text-2xl sm:text-3xl">Student Project Dashboard</h1>
+          <h1 className="heading-font text-2xl sm:text-3xl">{hubName} Project Dashboard</h1>
           <p className="max-w-2xl text-sm text-white/80">
-            Track project completion, quality, peer review status, and identify concept-level friction across your hubs.
+            Track project completion, quality, peer review status, and identify concept-level friction for your assigned hub.
           </p>
           <div className="grid grid-cols-3 gap-2 text-xs">
             <div className="rounded-xl bg-white/15 p-2.5"><p className="text-white/70">Projects</p><p className="mt-1 text-base text-white">{projectRows.length}</p></div>
@@ -147,7 +148,7 @@ export default function InstructorProjectsPage() {
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
                     <p className="text-sm text-foreground">{project.projectName}</p>
-                    <p className="text-xs text-muted-foreground">{project.studentName} • {project.hubId}</p>
+                    <p className="text-xs text-muted-foreground">{project.studentName} • {project.hubName}</p>
                   </div>
                   <Badge className="border border-border bg-card text-[11px] text-muted-foreground">{project.peer}</Badge>
                 </div>
@@ -206,13 +207,13 @@ export default function InstructorProjectsPage() {
         <Card className="rounded-2xl border-border xl:col-span-1">
           <CardContent className="p-0">
             <div className="border-b border-border px-4 py-3">
-              <h3 className="heading-font text-base text-foreground">Success by Hub</h3>
+              <h3 className="heading-font text-base text-foreground">Success in Your Hub</h3>
             </div>
             <div className="h-64 p-3">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={successByHub} margin={{ top: 8, right: 8, left: -16, bottom: 6 }}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                  <XAxis dataKey="hubId" tickLine={false} axisLine={false} className="fill-muted-foreground text-[10px]" />
+                  <XAxis dataKey="hubName" tickLine={false} axisLine={false} className="fill-muted-foreground text-[10px]" />
                   <YAxis domain={[0, 100]} tickLine={false} axisLine={false} className="fill-muted-foreground text-xs" />
                   <Tooltip contentStyle={{ borderRadius: '12px', border: '1px solid hsl(var(--border))', background: 'hsl(var(--card))' }} />
                   <Line type="monotone" dataKey="quality" stroke="#2563eb" strokeWidth={2} dot={{ r: 2 }} />
