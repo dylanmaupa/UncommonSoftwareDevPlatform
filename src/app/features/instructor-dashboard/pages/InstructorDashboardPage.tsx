@@ -1,230 +1,253 @@
-import { useMemo, type ComponentType } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import {
   LuArrowRight,
-  LuBell,
   LuBookOpen,
+  LuChevronUp,
   LuClock3,
-  LuFolderKanban,
-  LuMessageSquare,
-  LuTarget,
+  LuPlus,
   LuTrendingUp,
   LuUsers,
 } from 'react-icons/lu';
-import { Avatar, AvatarFallback, AvatarImage } from '../../../components/ui/avatar';
-import { Badge } from '../../../components/ui/badge';
 import { Button } from '../../../components/ui/button';
 import { Card, CardContent } from '../../../components/ui/card';
-import { calculateProgressPercentage, calculateProjectPercentage } from '../data/selectors';
+import { calculateProgressPercentage } from '../data/selectors';
 import { useInstructorData } from '../hooks/useInstructorData';
 
-type HubRouteCard = {
-  id: string;
-  title: string;
-  description: string;
-  path: string;
-  cta: string;
-  metric: string;
-  icon: ComponentType<{ className?: string }>;
-};
+type TimelineFilter = 'active' | 'closed';
 
 export default function InstructorDashboardPage() {
-  const { instructor, instructorStudents, metrics, instructorHub } = useInstructorData();
+  const { instructorHub, instructorStudents } = useInstructorData();
+  const [timelineFilter, setTimelineFilter] = useState<TimelineFilter>('active');
 
-  const activeStudents = useMemo(() => {
+  const activeClassesCount = instructorHub ? 1 : 0;
+  const totalExamsCount = 0;
+  const recentSubmissionsCount = 0;
+
+  const averageProgress = useMemo(() => {
+    if (instructorStudents.length === 0) return 0;
+    const total = instructorStudents.reduce((sum, student) => sum + calculateProgressPercentage(student.progress), 0);
+    return Math.round(total / instructorStudents.length);
+  }, [instructorStudents]);
+
+  const activeStudentsCount = useMemo(() => {
     return instructorStudents.filter((student) => {
       const progress = calculateProgressPercentage(student.progress);
       return progress >= 50 && student.riskLevel !== 'at-risk';
     }).length;
   }, [instructorStudents]);
 
-  const weeklyProgressRate = useMemo(() => {
-    if (instructorStudents.length === 0) return 0;
-
-    const averageProgress =
-      instructorStudents.reduce((sum, student) => sum + calculateProgressPercentage(student.progress), 0) /
-      instructorStudents.length;
-
-    return Math.round((averageProgress / 100) * 76 + 10);
-  }, [instructorStudents]);
-
-  const averageCompletionHours = useMemo(() => {
-    if (instructorStudents.length === 0) return 0;
-
-    const total = instructorStudents.reduce((sum, student) => {
-      const progress = calculateProgressPercentage(student.progress);
-      const effort = 5 + (100 - progress) / 20 + (student.riskLevel === 'at-risk' ? 2.5 : 0.8);
-      return sum + effort;
-    }, 0);
-
-    return Number((total / instructorStudents.length).toFixed(1));
-  }, [instructorStudents]);
-
-  const projectsThisWeek = useMemo(() => {
-    return instructorStudents.reduce((sum, student) => {
-      const completion = calculateProjectPercentage(student.progress);
-      return sum + Math.max(0, Math.round(completion / 40) - (student.riskLevel === 'at-risk' ? 1 : 0));
-    }, 0);
-  }, [instructorStudents]);
-
-  const seenCount = Math.max(1, Math.round(metrics.totalStudents * 0.82));
-  const unseenCount = Math.max(0, metrics.totalStudents - seenCount);
-  const announcementEngagement = metrics.totalStudents > 0 ? Math.round((seenCount / metrics.totalStudents) * 100) : 0;
-
-  const routeCards: HubRouteCard[] = [
-    {
-      id: 'students',
-      title: 'Student Tracker',
-      description: 'Heat maps, mastery bars, risk flags, and intervention actions.',
-      path: '/instructor/students',
-      cta: 'Open Students',
-      metric: `${activeStudents} active now`,
-      icon: LuUsers,
-    },
-    {
-      id: 'exercises',
-      title: 'Exercise Manager',
-      description: 'Create tasks and use AI-style suggestions from weak skills and incomplete modules.',
-      path: '/instructor/exercises',
-      cta: 'Open Exercises',
-      metric: `${averageCompletionHours}h avg completion`,
-      icon: LuBookOpen,
-    },
-    {
-      id: 'projects',
-      title: 'Project Insights',
-      description: 'Track quality, peer review status, completion speed, and concept struggles.',
-      path: '/instructor/projects',
-      cta: 'Open Projects',
-      metric: `${projectsThisWeek} completed this week`,
-      icon: LuFolderKanban,
-    },
-    {
-      id: 'announcements',
-      title: 'Announcements Center',
-      description: 'Publish text/image/video updates, polls, and monitor engagement stats.',
-      path: '/instructor/announcements',
-      cta: 'Open Announcements',
-      metric: `${announcementEngagement}% seen`,
-      icon: LuMessageSquare,
-    },
-    {
-      id: 'live',
-      title: 'Live Activity Monitor',
-      description: 'See who is online, coding, stuck, and what error happened last.',
-      path: '/instructor/live-activity',
-      cta: 'Open Live Monitor',
-      metric: `${Math.max(1, Math.round(activeStudents * 0.65))} coding now`,
-      icon: LuTarget,
-    },
-    {
-      id: 'controls',
-      title: 'Hub Controls',
-      description: 'Manage class groups, onboarding, invites, attendance, and resource library.',
-      path: '/instructor/hub-controls',
-      cta: 'Open Controls',
-      metric: instructorHub ? `Hub: ${instructorHub.name}` : 'No hub assigned',
-      icon: LuBell,
-    },
-  ];
+  const timelineItems: Array<{ id: string; title: string; path: string }> = [];
 
   return (
-    <div className="space-y-4 p-3 sm:p-4 lg:p-6">
-      <Card className="overflow-hidden rounded-3xl border-0 bg-gradient-to-br from-primary via-[#0b5bbf] to-[#1098c9] text-white">
-        <CardContent className="space-y-4 p-4 sm:p-6">
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="min-w-0 flex-1">
-              <p className="text-xs uppercase tracking-[0.2em] text-white/75">Instructor Hub</p>
-              <h1 className="heading-font mt-2 text-2xl sm:text-3xl">Instructor Home</h1>
-              <p className="mt-2 max-w-2xl text-sm text-white/80">
-                Your workspace is now focused on your assigned hub with dedicated pages for each instructor workflow.
-              </p>
-            </div>
-
-            <div className="ml-auto flex items-center gap-2 rounded-full border border-white/35 bg-white/15 px-2 py-1.5">
-              <Avatar className="h-9 w-9 border border-white/50">
-                <AvatarImage src={instructorStudents[0]?.avatarUrl ?? ''} alt={instructor.fullName} />
-                <AvatarFallback>{instructor.fullName?.[0] ?? 'I'}</AvatarFallback>
-              </Avatar>
-              <div className="pr-2">
-                <p className="text-sm text-white">{instructor.fullName}</p>
-                <p className="text-[11px] text-white/75">Instructor</p>
+    <div className="relative space-y-4 p-3 sm:p-4 lg:p-6">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+        <Link to="/instructor/hub" className="block">
+          <Card className="h-full rounded-3xl border-border bg-card shadow-sm">
+            <CardContent className="space-y-5 p-5">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                <LuUsers className="h-6 w-6" />
               </div>
-            </div>
-          </div>
+              <div>
+                <p className="text-4xl font-semibold leading-none text-foreground">{activeClassesCount}</p>
+                <p className="mt-3 flex items-center gap-1 text-lg text-muted-foreground">
+                  Active Classes
+                  <LuArrowRight className="h-4 w-4 text-primary" />
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
 
-          <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
-            <div className="rounded-xl bg-white/15 p-2.5 text-xs">
-              <p className="text-white/70">Active Students</p>
-              <p className="mt-1 text-base text-white">{activeStudents}</p>
-            </div>
-            <div className="rounded-xl bg-white/15 p-2.5 text-xs">
-              <p className="text-white/70">Weekly Progress</p>
-              <p className="mt-1 text-base text-white">{weeklyProgressRate}%</p>
-            </div>
-            <div className="rounded-xl bg-white/15 p-2.5 text-xs">
-              <p className="text-white/70">Avg Completion</p>
-              <p className="mt-1 text-base text-white">{averageCompletionHours}h</p>
-            </div>
-            <div className="rounded-xl bg-white/15 p-2.5 text-xs">
-              <p className="text-white/70">Announcements</p>
-              <p className="mt-1 text-base text-white">{seenCount}/{metrics.totalStudents} seen</p>
-            </div>
-            <div className="rounded-xl bg-white/15 p-2.5 text-xs">
-              <p className="text-white/70">Projects This Week</p>
-              <p className="mt-1 text-base text-white">{projectsThisWeek}</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+        <Link to="/instructor/exercises" className="block">
+          <Card className="h-full rounded-3xl border-border bg-card shadow-sm">
+            <CardContent className="space-y-5 p-5">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-violet-500/10 text-violet-600">
+                <LuBookOpen className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-4xl font-semibold leading-none text-foreground">{totalExamsCount}</p>
+                <p className="mt-3 flex items-center gap-1 text-lg text-muted-foreground">
+                  Total Exams
+                  <LuArrowRight className="h-4 w-4 text-violet-600" />
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        {routeCards.map((card) => {
-          const Icon = card.icon;
-
-          return (
-            <Card key={card.id} className="rounded-2xl border-border">
-              <CardContent className="space-y-3 p-4">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <h2 className="heading-font text-lg text-foreground">{card.title}</h2>
-                    <p className="mt-1 text-xs text-muted-foreground">{card.description}</p>
-                  </div>
-                  <div className="rounded-xl border border-border bg-sidebar p-2 text-muted-foreground">
-                    <Icon className="h-4 w-4" />
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-primary">{card.metric}</span>
-                  <Badge className="border border-border bg-sidebar text-[11px] text-muted-foreground">Focused page</Badge>
-                </div>
-
-                <Link to={card.path}>
-                  <Button className="h-9 w-full justify-between rounded-xl">
-                    {card.cta}
-                    <LuArrowRight className="h-4 w-4" />
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-          );
-        })}
+        <Link to="/instructor/projects" className="block">
+          <Card className="h-full rounded-3xl border-border bg-card shadow-sm">
+            <CardContent className="space-y-5 p-5">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600">
+                <LuTrendingUp className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-4xl font-semibold leading-none text-foreground">{recentSubmissionsCount}</p>
+                <p className="mt-3 flex items-center gap-1 text-lg text-muted-foreground">
+                  Recent Submissions (24h)
+                  <LuArrowRight className="h-4 w-4 text-emerald-600" />
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
       </div>
 
-      <Card className="rounded-2xl border-border bg-sidebar">
-        <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4 text-sm text-muted-foreground">
-          <p>
-            Announcement engagement: <span className="text-foreground">{announcementEngagement}% seen</span>.
-            Unseen learners: <span className="text-foreground">{unseenCount}</span>.
-          </p>
-          <div className="inline-flex items-center gap-2 text-primary">
-            <LuTrendingUp className="h-4 w-4" />
-            <span>Workflow split complete: use the cards above</span>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
+        <Card className="rounded-3xl border-border">
+          <CardContent className="p-0">
+            <div className="flex items-center justify-between border-b border-border px-5 py-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <LuUsers className="h-5 w-5" />
+                </div>
+                <h2 className="heading-font text-3xl text-foreground">Your Classes</h2>
+              </div>
+
+              <Link to="/instructor/hub-controls">
+                <Button className="h-10 rounded-xl px-4">
+                  <LuPlus className="h-4 w-4" />
+                  Create
+                </Button>
+              </Link>
+            </div>
+
+            <div className="p-5">
+              {instructorHub ? (
+                <div className="space-y-4 rounded-2xl border border-dashed border-border bg-sidebar p-4">
+                  <div className="space-y-1">
+                    <p className="text-lg text-foreground">{instructorHub.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {instructorHub.city} · {instructorHub.cohort}
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="rounded-xl bg-card p-3">
+                      <p className="text-xs text-muted-foreground">Students</p>
+                      <p className="mt-1 text-base text-foreground">{instructorStudents.length}</p>
+                    </div>
+                    <div className="rounded-xl bg-card p-3">
+                      <p className="text-xs text-muted-foreground">Active</p>
+                      <p className="mt-1 text-base text-foreground">{activeStudentsCount}</p>
+                    </div>
+                    <div className="rounded-xl bg-card p-3">
+                      <p className="text-xs text-muted-foreground">Avg Progress</p>
+                      <p className="mt-1 text-base text-foreground">{averageProgress}%</p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    <Link to="/instructor/hub">
+                      <Button variant="ghost" className="h-9 rounded-xl border border-border bg-card">
+                        Open Hub
+                      </Button>
+                    </Link>
+                    <Link to="/instructor/students">
+                      <Button variant="ghost" className="h-9 rounded-xl border border-border bg-card">
+                        View Students
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              ) : (
+                <div className="rounded-2xl border border-dashed border-border bg-sidebar px-6 py-12 text-center">
+                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-card text-muted-foreground">
+                    <LuUsers className="h-6 w-6" />
+                  </div>
+                  <p className="mt-4 text-3xl text-foreground">No classes yet</p>
+                  <p className="mt-2 text-lg text-muted-foreground">Create your first class to get started.</p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-3xl border-border">
+          <CardContent className="p-0">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <LuClock3 className="h-5 w-5" />
+                </div>
+                <h2 className="heading-font text-3xl text-foreground">Timeline</h2>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="inline-flex rounded-xl bg-sidebar p-1">
+                  <button
+                    type="button"
+                    onClick={() => setTimelineFilter('active')}
+                    className={`rounded-lg px-4 py-1.5 text-sm ${
+                      timelineFilter === 'active' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'
+                    }`}
+                  >
+                    Active
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTimelineFilter('closed')}
+                    className={`rounded-lg px-4 py-1.5 text-sm ${
+                      timelineFilter === 'closed' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'
+                    }`}
+                  >
+                    Closed
+                  </button>
+                </div>
+
+                <Link to="/instructor/exercises">
+                  <Button variant="secondary" className="h-10 rounded-xl">
+                    <LuPlus className="h-4 w-4" />
+                    New
+                  </Button>
+                </Link>
+              </div>
+            </div>
+
+            <div className="p-5">
+              {timelineItems.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-border bg-sidebar px-6 py-12 text-center">
+                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-card text-muted-foreground">
+                    <LuClock3 className="h-6 w-6" />
+                  </div>
+                  <p className="mt-4 text-3xl text-foreground">
+                    No {timelineFilter === 'active' ? 'active' : 'closed'} items
+                  </p>
+                  <p className="mt-2 text-lg text-muted-foreground">
+                    {timelineFilter === 'active'
+                      ? "You don't have any active exams or assignments."
+                      : "You don't have any closed exams or assignments."}
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {timelineItems.map((item) => (
+                    <Link
+                      key={item.id}
+                      to={item.path}
+                      className="flex items-center justify-between rounded-xl border border-border bg-sidebar p-3"
+                    >
+                      <p className="text-sm text-foreground">{item.title}</p>
+                      <LuArrowRight className="h-4 w-4 text-muted-foreground" />
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Link
+        to="/instructor/live-activity"
+        className="fixed bottom-4 right-4 z-20 inline-flex items-center gap-3 rounded-full border border-border bg-card px-4 py-3 shadow-sm"
+      >
+        <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+        <span className="text-3xl text-foreground">Live Activity</span>
+        <span className="rounded-full bg-sidebar px-2 py-0.5 text-sm text-foreground">{activeStudentsCount}</span>
+        <LuChevronUp className="h-4 w-4 text-muted-foreground" />
+      </Link>
     </div>
   );
 }
-
