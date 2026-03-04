@@ -17,6 +17,11 @@ import InstructorLayoutPage from './features/instructor-dashboard/pages/Instruct
 import InstructorDashboardPage from './features/instructor-dashboard/pages/InstructorDashboardPage';
 import HubsPage from './features/instructor-dashboard/pages/HubsPage';
 import StudentsPage from './features/instructor-dashboard/pages/StudentsPage';
+import InstructorExercisesPage from './features/instructor-dashboard/pages/InstructorExercisesPage';
+import InstructorAnnouncementsPage from './features/instructor-dashboard/pages/InstructorAnnouncementsPage';
+import InstructorProjectsPage from './features/instructor-dashboard/pages/InstructorProjectsPage';
+import InstructorLiveActivityPage from './features/instructor-dashboard/pages/InstructorLiveActivityPage';
+import InstructorHubControlsPage from './features/instructor-dashboard/pages/InstructorHubControlsPage';
 import StudentProfilePage from './features/instructor-dashboard/pages/StudentProfilePage';
 import NotFound from './components/NotFound';
 
@@ -45,6 +50,11 @@ export const router = createBrowserRouter([
           { index: true, Component: InstructorDashboardPage },
           { path: 'hubs', Component: HubsPage },
           { path: 'students', Component: StudentsPage },
+          { path: 'exercises', Component: InstructorExercisesPage },
+          { path: 'announcements', Component: InstructorAnnouncementsPage },
+          { path: 'projects', Component: InstructorProjectsPage },
+          { path: 'live-activity', Component: InstructorLiveActivityPage },
+          { path: 'hub-controls', Component: InstructorHubControlsPage },
           { path: 'students/:studentId', Component: StudentProfilePage },
         ],
       },
@@ -52,5 +62,6 @@ export const router = createBrowserRouter([
     ],
   },
 ]);
+
 
 

@@ -1,15 +1,13 @@
-import { useEffect, useState, ReactNode } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router';
-import { supabase } from '../../../lib/supabase';
-import { loadPyodideEnvironment } from '../../../lib/pyodide';
-import { fetchProfileForAuthUser } from '../../lib/profileAccess';
 import {
+  LuBell,
   LuBookOpen,
+  LuBookOpenCheck,
   LuBuilding2,
   LuFolderKanban,
   LuLayoutDashboard,
   LuLogOut,
   LuSettings,
+  LuTarget,
   LuTerminal,
   LuTrophy,
   LuUser,
@@ -113,10 +111,15 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const isInstructor = profileRole === 'instructor';
 
-  const instructorNavItems: NavItem[] = [
+    const instructorNavItems: NavItem[] = [
     { icon: LuLayoutDashboard, label: 'Instructor Home', path: '/instructor' },
-    { icon: LuBuilding2, label: 'Hubs', path: '/instructor/hubs' },
     { icon: LuUsers, label: 'Students', path: '/instructor/students' },
+    { icon: LuBookOpenCheck, label: 'Exercises', path: '/instructor/exercises' },
+    { icon: LuFolderKanban, label: 'Projects', path: '/instructor/projects' },
+    { icon: LuBell, label: 'Announcements', path: '/instructor/announcements' },
+    { icon: LuTarget, label: 'Live Activity', path: '/instructor/live-activity' },
+    { icon: LuBuilding2, label: 'Hub Controls', path: '/instructor/hub-controls' },
+    { icon: LuBuilding2, label: 'Hubs', path: '/instructor/hubs' },
     { icon: LuUser, label: 'Profile', path: '/profile' },
   ];
 
@@ -278,3 +281,4 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     </div>
   );
 }
+
