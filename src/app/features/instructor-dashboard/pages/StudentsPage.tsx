@@ -6,7 +6,6 @@ import { Badge } from '../../../components/ui/badge';
 import { Button } from '../../../components/ui/button';
 import { Card, CardContent } from '../../../components/ui/card';
 import { Progress } from '../../../components/ui/progress';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select';
 import { cn } from '../../../components/ui/utils';
 import { calculateProgressPercentage, calculateProjectPercentage } from '../data/selectors';
 import { useInstructorData } from '../hooks/useInstructorData';
@@ -43,7 +42,6 @@ type TrackerStudent = {
   fullName: string;
   email: string;
   avatarUrl: string;
-  hubId: string;
   progress: number;
   projectProgress: number;
   riskLevel: StudentRiskLevel;
@@ -87,8 +85,7 @@ function ProgressRing({ value }: { value: number }) {
 }
 
 export default function StudentsPage() {
-  const { instructorStudents, instructorHubs } = useInstructorData();
-  const [selectedHubId, setSelectedHubId] = useState<string>('all');
+  const { instructorStudents, instructorHub } = useInstructorData();
   const [tags, setTags] = useState<Record<string, StudentTag>>({});
 
   const trackerStudents = useMemo<TrackerStudent[]>(() => {
@@ -129,7 +126,6 @@ export default function StudentsPage() {
         fullName: student.fullName,
         email: student.email,
         avatarUrl: student.avatarUrl,
-        hubId: student.hubId,
         progress,
         projectProgress,
         riskLevel: student.riskLevel,
@@ -157,42 +153,15 @@ export default function StudentsPage() {
     });
   }, [trackerStudents]);
 
-  const visibleStudents = useMemo(() => {
-    if (selectedHubId === 'all') return trackerStudents;
-    return trackerStudents.filter((student) => student.hubId === selectedHubId);
-  }, [selectedHubId, trackerStudents]);
-
-  const hubNameById = useMemo(() => {
-    return instructorHubs.reduce<Record<string, string>>((acc, hub) => {
-      acc[hub.id] = hub.name;
-      return acc;
-    }, {});
-  }, [instructorHubs]);
-
   return (
     <div className="space-y-4 p-3 sm:p-4 lg:p-6">
       <Card className="overflow-hidden rounded-3xl border-0 bg-gradient-to-br from-primary via-[#0b5bbf] to-[#1098c9] text-white">
         <CardContent className="space-y-3 p-4 sm:p-6">
           <p className="text-xs uppercase tracking-[0.2em] text-white/75">Student Tracker</p>
-          <h1 className="heading-font text-2xl sm:text-3xl">Progress Heat Map + Skill Mastery</h1>
+          <h1 className="heading-font text-2xl sm:text-3xl">{instructorHub?.name ?? 'My Hub'} Learner Progress</h1>
           <p className="max-w-2xl text-sm text-white/80">
-            Monitor student performance in detail and trigger interventions without leaving this page.
+            Monitor student performance for your hub with heat maps, mastery bars, and intervention actions.
           </p>
-          <div className="max-w-sm">
-            <Select value={selectedHubId} onValueChange={setSelectedHubId}>
-              <SelectTrigger className="h-10 rounded-xl border-white/30 bg-white/15 text-white [&_svg]:text-white">
-                <SelectValue placeholder="Filter by hub" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All hubs</SelectItem>
-                {instructorHubs.map((hub) => (
-                  <SelectItem key={hub.id} value={hub.id}>
-                    {hub.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
         </CardContent>
       </Card>
 
@@ -207,7 +176,7 @@ export default function StudentsPage() {
       </div>
 
       <div className="space-y-3">
-        {visibleStudents.map((student) => (
+        {trackerStudents.map((student) => (
           <Card key={student.id} className="rounded-2xl border-border">
             <CardContent className="p-3">
               <div className="flex flex-col gap-3 xl:flex-row xl:items-start">
@@ -220,7 +189,7 @@ export default function StudentsPage() {
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm text-foreground">{student.fullName}</p>
                     <p className="truncate text-xs text-muted-foreground">{student.email}</p>
-                    <p className="mt-1 text-[11px] text-muted-foreground">{hubNameById[student.hubId] ?? student.hubId}</p>
+                    <p className="mt-1 text-[11px] text-muted-foreground">{instructorHub?.name ?? 'Assigned Hub'}</p>
                   </div>
 
                   <ProgressRing value={student.progress} />
