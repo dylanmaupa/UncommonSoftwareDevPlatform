@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, type ComponentType } from 'react';
 import { Link } from 'react-router';
 import {
   LuArrowRight,
@@ -25,7 +25,7 @@ type HubRouteCard = {
   path: string;
   cta: string;
   metric: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: ComponentType<{ className?: string }>;
 };
 
 export default function InstructorDashboardPage() {
@@ -227,3 +227,4 @@ export default function InstructorDashboardPage() {
     </div>
   );
 }
+

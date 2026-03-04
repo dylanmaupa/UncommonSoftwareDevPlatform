@@ -1,3 +1,8 @@
+import { useEffect, useState, ReactNode } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router';
+import { supabase } from '../../../lib/supabase';
+import { loadPyodideEnvironment } from '../../../lib/pyodide';
+import { fetchProfileForAuthUser } from '../../lib/profileAccess';
 import {
   LuBell,
   LuBookOpen,
@@ -111,7 +116,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const isInstructor = profileRole === 'instructor';
 
-    const instructorNavItems: NavItem[] = [
+  const instructorNavItems: NavItem[] = [
     { icon: LuLayoutDashboard, label: 'Instructor Home', path: '/instructor' },
     { icon: LuUsers, label: 'Students', path: '/instructor/students' },
     { icon: LuBookOpenCheck, label: 'Exercises', path: '/instructor/exercises' },
@@ -281,4 +286,3 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     </div>
   );
 }
-
