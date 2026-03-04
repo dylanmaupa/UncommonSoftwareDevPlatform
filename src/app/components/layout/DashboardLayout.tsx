@@ -4,7 +4,6 @@ import { supabase } from '../../../lib/supabase';
 import { loadPyodideEnvironment } from '../../../lib/pyodide';
 import { fetchProfileForAuthUser } from '../../lib/profileAccess';
 import {
-  LuBell,
   LuBookOpen,
   LuBookOpenCheck,
   LuBuilding2,
@@ -122,7 +121,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { icon: LuBookOpen, label: 'Curriculum', path: '/instructor/curriculum' },
     { icon: LuBookOpenCheck, label: 'Assessments', path: '/instructor/assessments' },
     { icon: LuFolderKanban, label: 'Projects', path: '/instructor/projects' },
-    { icon: LuBell, label: 'Communication', path: '/instructor/communication' },
     { icon: LuTarget, label: 'Live Ops', path: '/instructor/live' },
     { icon: LuBuilding2, label: 'Hub Operations', path: '/instructor/hub-operations' },
 
@@ -287,6 +285,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     </div>
   );
 }
+
+
 
 
 

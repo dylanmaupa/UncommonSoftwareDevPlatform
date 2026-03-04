@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, Outlet, useNavigate } from 'react-router';
 import {
-  LuBell,
   LuChevronRight,
   LuEllipsis,
   LuSearch,
@@ -101,8 +100,8 @@ export default function InstructorLayoutPage() {
 
               <div className="order-2 flex items-center gap-2">
                 <Button asChild variant="ghost" size="icon" className="h-10 w-10 rounded-full border border-border bg-card text-muted-foreground">
-                  <Link to="/instructor/communication" aria-label="Communication">
-                    <LuBell className="h-4 w-4" />
+                  <Link to="/instructor/live" aria-label="Live Ops">
+                    <LuTarget className="h-4 w-4" />
                   </Link>
                 </Button>
                 <Button asChild variant="ghost" size="icon" className="h-10 w-10 rounded-full border border-border bg-card text-muted-foreground">
@@ -178,7 +177,6 @@ export default function InstructorLayoutPage() {
                   ['Curriculum', '/instructor/curriculum'],
                   ['Assessments', '/instructor/assessments'],
                   ['Projects', '/instructor/projects'],
-                  ['Communication', '/instructor/communication'],
                   ['Live Ops', '/instructor/live'],
                   ['Hub Ops', '/instructor/hub-operations'],
                 ].map(([label, href]) => (
@@ -195,3 +193,5 @@ export default function InstructorLayoutPage() {
     </DashboardLayout>
   );
 }
+
+

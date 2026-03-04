@@ -1,5 +1,5 @@
 import { Link, useParams } from 'react-router';
-import { LuArrowLeft, LuMessageSquare, LuSend } from 'react-icons/lu';
+import { LuArrowLeft, LuSend } from 'react-icons/lu';
 import { Badge } from '../../../components/ui/badge';
 import { Button } from '../../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card';
@@ -117,12 +117,7 @@ export default function InstructorLearnerProfilePage() {
         <Card className="rounded-2xl border-border bg-card">
           <CardHeader className="pb-2"><CardTitle className="text-base">Actions</CardTitle></CardHeader>
           <CardContent className="flex flex-wrap gap-2">
-            <Button asChild size="sm" variant="ghost" className="h-8 rounded-lg border border-border bg-sidebar text-xs">
-              <Link to="/instructor/communication">
-                <LuMessageSquare className="h-3.5 w-3.5" />
-                Message learner
-              </Link>
-            </Button>
+
             <Button asChild size="sm" variant="ghost" className="h-8 rounded-lg border border-border bg-sidebar text-xs">
               <Link to="/instructor/assessments">
                 <LuSend className="h-3.5 w-3.5" />
@@ -135,4 +130,5 @@ export default function InstructorLearnerProfilePage() {
     </div>
   );
 }
+
 

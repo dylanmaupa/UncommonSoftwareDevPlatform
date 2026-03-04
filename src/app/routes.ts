@@ -20,7 +20,6 @@ import InstructorLearnerProfilePage from './features/instructor-dashboard/pages/
 import InstructorCurriculumInsightsPage from './features/instructor-dashboard/pages/InstructorCurriculumInsightsPage';
 import InstructorAssessmentsPage from './features/instructor-dashboard/pages/InstructorAssessmentsPage';
 import InstructorProjectsInsightsPage from './features/instructor-dashboard/pages/InstructorProjectsInsightsPage';
-import InstructorCommunicationPage from './features/instructor-dashboard/pages/InstructorCommunicationPage';
 import InstructorLiveOpsPage from './features/instructor-dashboard/pages/InstructorLiveOpsPage';
 import InstructorHubOperationsPage from './features/instructor-dashboard/pages/InstructorHubOperationsPage';
 import NotFound from './components/NotFound';
@@ -53,7 +52,6 @@ export const router = createBrowserRouter([
           { path: 'curriculum', Component: InstructorCurriculumInsightsPage },
           { path: 'assessments', Component: InstructorAssessmentsPage },
           { path: 'projects', Component: InstructorProjectsInsightsPage },
-          { path: 'communication', Component: InstructorCommunicationPage },
           { path: 'live', Component: InstructorLiveOpsPage },
           { path: 'hub-operations', Component: InstructorHubOperationsPage },
         ],
@@ -62,3 +60,5 @@ export const router = createBrowserRouter([
     ],
   },
 ]);
+
+

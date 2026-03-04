@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router';
-import { LuBookOpenCheck, LuMessageSquare, LuTriangleAlert } from 'react-icons/lu';
+import { LuBookOpenCheck, LuTriangleAlert } from 'react-icons/lu';
 import { Avatar, AvatarFallback, AvatarImage } from '../../../components/ui/avatar';
 import { Badge } from '../../../components/ui/badge';
 import { Button } from '../../../components/ui/button';
@@ -122,12 +122,7 @@ export default function InstructorLearnersPage() {
                     View profile
                   </Link>
                 </Button>
-                <Button asChild size="sm" variant="ghost" className="h-8 rounded-lg border border-border bg-card text-xs">
-                  <Link to="/instructor/communication">
-                    <LuMessageSquare className="h-3.5 w-3.5" />
-                    Message
-                  </Link>
-                </Button>
+
                 <Button asChild size="sm" variant="ghost" className="h-8 rounded-lg border border-border bg-card text-xs">
                   <Link to="/instructor/assessments">
                     <LuBookOpenCheck className="h-3.5 w-3.5" />
@@ -142,4 +137,5 @@ export default function InstructorLearnersPage() {
     </div>
   );
 }
+
 

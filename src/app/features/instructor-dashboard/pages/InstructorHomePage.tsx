@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router';
-import { LuArrowRight, LuBell, LuBookOpenCheck, LuTriangleAlert, LuUsers } from 'react-icons/lu';
+import { LuArrowRight, LuBookOpenCheck, LuTriangleAlert, LuUsers } from 'react-icons/lu';
 import { Badge } from '../../../components/ui/badge';
 import { Button } from '../../../components/ui/button';
 import { Card, CardContent } from '../../../components/ui/card';
@@ -63,12 +63,12 @@ export default function InstructorHomePage() {
       icon: LuBookOpenCheck,
     },
     {
-      id: 'communication',
-      title: 'Unread communication',
-      value: `${Math.max(1, Math.round(instructorStudents.length * 0.35))}`,
-      detail: 'Students awaiting responses in active threads',
-      href: '/instructor/communication',
-      icon: LuBell,
+      id: 'live',
+      title: 'Live blockers',
+      value: `${Math.max(1, Math.round(activeNow * 0.3))}`,
+      detail: 'Learners currently blocked on active tasks',
+      href: '/instructor/live',
+      icon: LuTriangleAlert,
     },
   ];
 
