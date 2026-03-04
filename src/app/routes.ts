@@ -23,6 +23,7 @@ import InstructorProjectsPage from './features/instructor-dashboard/pages/Instru
 import InstructorLiveActivityPage from './features/instructor-dashboard/pages/InstructorLiveActivityPage';
 import InstructorHubControlsPage from './features/instructor-dashboard/pages/InstructorHubControlsPage';
 import StudentProfilePage from './features/instructor-dashboard/pages/StudentProfilePage';
+import InstructorCurriculumPage from './features/instructor-dashboard/pages/InstructorCurriculumPage';
 import NotFound from './components/NotFound';
 
 export const router = createBrowserRouter([
@@ -51,6 +52,7 @@ export const router = createBrowserRouter([
           { path: 'hub', Component: HubsPage },
           { path: 'hubs', Component: HubsPage },
           { path: 'students', Component: StudentsPage },
+          { path: 'curriculum', Component: InstructorCurriculumPage },
           { path: 'exercises', Component: InstructorExercisesPage },
           { path: 'announcements', Component: InstructorAnnouncementsPage },
           { path: 'projects', Component: InstructorProjectsPage },
@@ -63,4 +65,5 @@ export const router = createBrowserRouter([
     ],
   },
 ]);
+
 
