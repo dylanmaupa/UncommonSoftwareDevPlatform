@@ -1,4 +1,4 @@
-﻿import { Link } from 'react-router';
+import { Link } from 'react-router';
 import DashboardLayout from '../layout/DashboardLayout';
 import { Card, CardContent } from '../ui/card';
 import { Progress } from '../ui/progress';
@@ -102,51 +102,77 @@ export default function Courses() {
               Advanced: 'bg-destructive/10 text-destructive border-destructive/20',
             }[course.difficulty] || '';
 
+            const searchText = `${course.id || ''} ${course.title || ''} ${course.description || ''}`.toLowerCase();
+            const isJavaScriptCourse = searchText.includes('javascript') || searchText.includes('node');
+
+            const courseCard = (
+              <Card
+                className={`h-full rounded-2xl border-border transition-all group ${isJavaScriptCourse ? 'overflow-hidden' : 'hover:border-primary hover:shadow-md'}`}
+              >
+                <CardContent className={`space-y-3 p-3 ${isJavaScriptCourse ? 'blur-[2px] pointer-events-none select-none' : ''}`}>
+                  <img
+                    src={getCourseImage(course.title)}
+                    alt={course.title}
+                    className="h-32 w-full rounded-xl object-cover"
+                    loading="lazy"
+                  />
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="line-clamp-2 text-base text-foreground">{course.title}</p>
+                      <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{course.description}</p>
+                    </div>
+                    <Badge className={`${difficultyColor} border flex-shrink-0`}>{course.difficulty}</Badge>
+                  </div>
+                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <LuBookOpen className="w-4 h-4" />
+                      <span>{course.total_lessons} lessons</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <LuClock className="w-4 h-4" />
+                      <span>{course.estimated_hours}h</span>
+                    </div>
+                  </div>
+                  {isJavaScriptCourse ? (
+                    <div className="flex items-center justify-between text-sm text-muted-foreground font-medium">
+                      <span>Coming soon</span>
+                    </div>
+                  ) : isStarted ? (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">Progress</span>
+                        <span className="font-semibold text-primary">
+                          {progress}%
+                        </span>
+                      </div>
+                      <Progress value={progress} className="h-1.5" />
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between text-sm text-primary font-medium group-hover:gap-2 transition-all">
+                      <span>Start Course</span>
+                      <LuArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+
+            if (isJavaScriptCourse) {
+              return (
+                <div key={course.id} className="relative">
+                  {courseCard}
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/35 backdrop-blur-sm">
+                    <span className="rounded-full border border-white/30 bg-black/60 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.15em] text-white">
+                      JavaScript Coming Soon
+                    </span>
+                  </div>
+                </div>
+              );
+            }
+
             return (
               <Link key={course.id} to={`/courses/${course.id}`}>
-                <Card className="h-full rounded-2xl border-border hover:border-primary hover:shadow-md transition-all group">
-                  <CardContent className="space-y-3 p-3">
-                    <img
-                      src={getCourseImage(course.title)}
-                      alt={course.title}
-                      className="h-32 w-full rounded-xl object-cover"
-                      loading="lazy"
-                    />
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <p className="line-clamp-2 text-base text-foreground">{course.title}</p>
-                        <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{course.description}</p>
-                      </div>
-                      <Badge className={`${difficultyColor} border flex-shrink-0`}>{course.difficulty}</Badge>
-                    </div>
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <LuBookOpen className="w-4 h-4" />
-                        <span>{course.total_lessons} lessons</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <LuClock className="w-4 h-4" />
-                        <span>{course.estimated_hours}h</span>
-                      </div>
-                    </div>
-                    {isStarted ? (
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="text-muted-foreground">Progress</span>
-                          <span className="font-semibold text-primary">
-                            {progress}%
-                          </span>
-                        </div>
-                        <Progress value={progress} className="h-1.5" />
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-between text-sm text-primary font-medium group-hover:gap-2 transition-all">
-                        <span>Start Course</span>
-                        <LuArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+                {courseCard}
               </Link>
             );
           })}
@@ -169,3 +195,4 @@ export default function Courses() {
     </DashboardLayout>
   );
 }
+

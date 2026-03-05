@@ -113,6 +113,11 @@ export default function CourseDetail() {
     Advanced: 'bg-destructive text-destructive-foreground',
   }[course.difficulty] || '';
 
+  const isJavaScriptLesson = (item: any) => String(item?.language || '').toLowerCase() === 'javascript';
+  const isJavaScriptCourse =
+    `${course.id || ''} ${course.title || ''} ${course.description || ''}`.toLowerCase().includes('javascript') ||
+    course.modules.some((m: any) => (m.lessons || []).some((l: any) => isJavaScriptLesson(l)));
+
   return (
     <DashboardLayout>
       <div className="p-8 max-w-5xl mx-auto">
@@ -170,6 +175,12 @@ export default function CourseDetail() {
             </div>
           </div>
         </div>
+
+        {isJavaScriptCourse && (
+          <div className="mb-6 rounded-xl border border-amber-300/40 bg-amber-100/60 px-4 py-3 text-sm text-amber-900">
+            JavaScript lessons are coming soon and are temporarily locked.
+          </div>
+        )}
 
         {/* Modules and Lessons */}
         <Card className="border-border shadow-sm">
@@ -255,3 +266,5 @@ export default function CourseDetail() {
     </DashboardLayout>
   );
 }
+
+
