@@ -1,9 +1,8 @@
-import { createBrowserRouter } from 'react-router';
+import { createBrowserRouter, redirect } from 'react-router';
 import Root from './components/Root';
 import Login from './components/auth/Login';
 import Signup from './components/auth/Signup';
 import Dashboard from './components/dashboard/Dashboard';
-import Admin from './components/admin/Admin';
 import Courses from './components/courses/Courses';
 import CourseDetail from './components/courses/CourseDetail';
 import LessonView from './components/courses/LessonView';
@@ -23,7 +22,7 @@ export const router = createBrowserRouter([
       { index: true, Component: Login },
       { path: 'signup', Component: Signup },
       { path: 'dashboard', Component: Dashboard },
-      { path: 'admin', Component: Admin },
+      { path: 'admin', loader: () => redirect('/dashboard') },
       { path: 'sandbox', Component: Sandbox },
       { path: 'courses', Component: Courses },
       { path: 'courses/:courseId', Component: CourseDetail },
@@ -37,4 +36,5 @@ export const router = createBrowserRouter([
     ],
   },
 ]);
+
 

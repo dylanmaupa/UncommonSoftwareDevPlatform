@@ -1,4 +1,4 @@
-﻿import { Link, useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import DashboardLayout from '../layout/DashboardLayout';
 import StreakWidget from './StreakWidget';
 // @ts-ignore
@@ -467,3 +467,5 @@ export default function Dashboard() {
     </DashboardLayout>
   );
 }
+
+

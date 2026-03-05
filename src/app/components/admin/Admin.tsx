@@ -159,23 +159,6 @@ const instructorSections = [
   },
 ] as const;
 
-const phaseRoadmap = [
-  {
-    phase: 'MVP',
-    focus: 'Teaching efficiency and reliable review workflow',
-    modules: ['Dashboard', 'Courses', 'Lessons', 'Assignments', 'Submissions', 'Settings'],
-  },
-  {
-    phase: 'Intermediate',
-    focus: 'Better visibility and communication',
-    modules: ['Students', 'Analytics', 'Announcements'],
-  },
-  {
-    phase: 'Advanced',
-    focus: 'Consistency and operational intelligence',
-    modules: ['Rubrics & Grading', 'Versioning & Draft History', 'AI Assistance'],
-  },
-] as const;
 
 const submissionQueue = [
   {
@@ -599,47 +582,6 @@ export default function Admin() {
                   ))}
                 </CardContent>
               </Card>
-
-              <Card className="rounded-2xl border-border">
-                <CardHeader>
-                  <CardTitle className="heading-font text-base text-foreground">MVP to Advanced Roadmap</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {phaseRoadmap.map((phase) => (
-                    <div key={phase.phase} className="rounded-xl bg-sidebar p-3">
-                      <div className="mb-2 flex items-center justify-between gap-2">
-                        <p className="text-sm text-foreground">{phase.phase}</p>
-                        <Badge variant={stageBadgeVariant[phase.phase]}>{phase.phase}</Badge>
-                      </div>
-                      <p className="text-xs text-muted-foreground">{phase.focus}</p>
-                      <p className="mt-2 text-xs text-foreground">{phase.modules.join(' • ')}</p>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-
-              <Card className="rounded-2xl border-border bg-destructive/5">
-                <CardHeader>
-                  <CardTitle className="heading-font text-base text-foreground">What Not To Add Early</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2 text-sm text-foreground">
-                  <p className="rounded-xl bg-card p-3">Complex grading formulas</p>
-                  <p className="rounded-xl bg-card p-3">Over-detailed analytics</p>
-                  <p className="rounded-xl bg-card p-3">Realtime chat systems</p>
-                  <p className="rounded-xl bg-card p-3">Too many role types</p>
-                </CardContent>
-              </Card>
-
-              <Card className="rounded-2xl border-border bg-gradient-to-br from-primary/5 to-accent/5">
-                <CardHeader>
-                  <CardTitle className="heading-font text-base text-foreground">Instructor Dashboard = Teaching Tool</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2 text-sm text-muted-foreground">
-                  <p>Each dashboard metric maps to an aggregated backend query.</p>
-                  <p>Every workflow button maps to a state transition in your data model.</p>
-                  <p>Each list view maps to filtered relational queries students can inspect and learn from.</p>
-                </CardContent>
-              </Card>
             </div>
           </div>
         </div>
@@ -647,3 +589,4 @@ export default function Admin() {
     </DashboardLayout>
   );
 }
+

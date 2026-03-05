@@ -1,4 +1,4 @@
-﻿import { Link } from 'react-router';
+import { Link } from 'react-router';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -27,7 +27,7 @@ export default function Login() {
       if (error) {
         toast.error(error.message);
       } else if (data.session) {
-        toast.success(`Welcome back!`);
+        toast.success('Welcome back!');
         navigate('/dashboard');
       }
     } catch (err: any) {
@@ -107,4 +107,7 @@ export default function Login() {
     </div>
   );
 }
+
+
+
 
