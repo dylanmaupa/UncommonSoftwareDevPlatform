@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import Editor from '@monaco-editor/react';
 import ReactMarkdown from 'react-markdown';
@@ -730,16 +730,8 @@ sys.stderr = io.StringIO()
           </div>
         </div>
       </div>
-    </DashboardLayout >
+    </DashboardLayout>
   );
 }
 
-
-
-
-
-
-}
-
-export default LessonView;
 
