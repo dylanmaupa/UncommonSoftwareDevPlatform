@@ -271,7 +271,7 @@ function DashboardMain({
             </Card>
           )}
 
-          <Card className=\"rounded-2xl border-border\">
+          <Card className="rounded-2xl border-border">
             <CardContent className="p-0">
               <div className="flex items-center justify-between border-b border-border px-4 py-3">
                 <h3 className="text-lg text-foreground heading-font">
@@ -590,6 +590,7 @@ export default function Dashboard() {
     </DashboardLayout>
   );
 }
+
 
 
 
