@@ -29,8 +29,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     loadPyodideEnvironment().catch(console.error);
   }, []);
 
+
+  useEffect(() => {
+    if (!user) {
+      navigate('/');
+    }
+  }, [navigate, user]);
   if (!user) {
-    navigate('/');
     return null;
   }
 
