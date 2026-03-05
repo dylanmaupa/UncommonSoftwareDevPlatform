@@ -4,6 +4,7 @@ import StreakWidget from './StreakWidget';
 // @ts-ignore
 import dashboardAvatar from '../../../assets/avatar2.png';
 import { Card, CardContent } from '../ui/card';
+import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import {
@@ -34,6 +35,20 @@ interface UserProfile {
   xp?: number;
 }
 
+interface InstructorExercise {
+  id: string;
+  instructor_id: string;
+  student_id: string;
+  title: string;
+  instructions: string;
+  language: 'python' | 'javascript';
+  status: 'assigned' | 'submitted' | 'reviewed';
+  due_date: string | null;
+  created_at: string;
+  submitted_at: string | null;
+  instructor_name: string;
+}
+
 interface DashboardMainProps {
   profile: UserProfile;
   students: UserProfile[];
@@ -45,6 +60,7 @@ interface DashboardMainProps {
   completedLessons: number;
   nextCourse: any;
   inProgressCourses: any[];
+  assignedExercises: InstructorExercise[];
 }
 
 function DashboardMain({
@@ -58,6 +74,7 @@ function DashboardMain({
   completedLessons,
   nextCourse,
   inProgressCourses,
+  assignedExercises,
 }: DashboardMainProps) {
   const navigate = useNavigate();
   const getCourseImage = (title: string) => {
@@ -202,7 +219,59 @@ function DashboardMain({
             </div>
           )}
 
-          <Card className="rounded-2xl border-border">
+          {profile.role === 'student' && (
+            <Card className="rounded-2xl border-border">
+              <CardContent className="p-0">
+                <div className="flex items-center justify-between border-b border-border px-4 py-3">
+                  <h3 className="text-lg text-foreground heading-font">Instructor Exercises</h3>
+                  <Link to="/sandbox" className="text-xs text-muted-foreground hover:text-foreground">Open sandbox</Link>
+                </div>
+
+                <div className="space-y-2 p-3">
+                  {assignedExercises.length > 0 ? assignedExercises.map((exercise) => {
+                    const statusTone =
+                      exercise.status === 'submitted'
+                        ? 'bg-amber-100 text-amber-800 border-amber-200'
+                        : exercise.status === 'reviewed'
+                          ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                          : 'bg-blue-100 text-blue-800 border-blue-200';
+
+                    return (
+                      <div key={exercise.id} className="rounded-xl border border-border bg-sidebar p-3">
+                        <div className="flex flex-wrap items-start justify-between gap-2">
+                          <div>
+                            <p className="text-sm text-foreground">{exercise.title}</p>
+                            <p className="mt-1 text-xs text-muted-foreground">From {exercise.instructor_name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {exercise.due_date ? `Due ${new Date(exercise.due_date).toLocaleDateString()}` : 'No due date'}
+                            </p>
+                          </div>
+                          <Badge className={`border ${statusTone}`}>{exercise.status}</Badge>
+                        </div>
+
+                        <div className="mt-3 flex items-center justify-between gap-2">
+                          <p className="line-clamp-2 text-xs text-muted-foreground">{exercise.instructions || 'Open the sandbox to view full instructions.'}</p>
+                          <Button
+                            size="sm"
+                            className="h-8 rounded-full bg-primary px-3 text-primary-foreground hover:bg-primary/90"
+                            onClick={() => navigate(`/sandbox?exerciseId=${exercise.id}`)}
+                          >
+                            {exercise.status === 'assigned' ? 'Start' : 'Open'}
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  }) : (
+                    <div className="rounded-xl border border-dashed border-border bg-sidebar p-4 text-sm text-muted-foreground">
+                      No assigned exercises yet. Your instructor will send one soon.
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          <Card className=\"rounded-2xl border-border\">
             <CardContent className="p-0">
               <div className="flex items-center justify-between border-b border-border px-4 py-3">
                 <h3 className="text-lg text-foreground heading-font">
@@ -354,6 +423,7 @@ export default function Dashboard() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [students, setStudents] = useState<UserProfile[]>([]);
   const [instructors, setInstructors] = useState<UserProfile[]>([]);
+  const [assignedExercises, setAssignedExercises] = useState<InstructorExercise[]>([]);
   const [courses, setCourses] = useState<any[]>([]);
   const [userProgress, setUserProgress] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -409,6 +479,53 @@ export default function Dashboard() {
           if (!instructorError && instructorData) {
             setInstructors(instructorData as UserProfile[]);
           }
+        }
+
+        const normalizedRole = String(profileData.role || '').toLowerCase();
+        if (normalizedRole === 'student') {
+          const { data: exerciseRows, error: exerciseError } = await supabase
+            .from('instructor_exercises')
+            .select('*')
+            .eq('student_id', user.id)
+            .order('created_at', { ascending: false });
+
+          if (!exerciseError && exerciseRows) {
+            const instructorIds = Array.from(new Set(exerciseRows.map((row: any) => String(row.instructor_id)).filter(Boolean)));
+
+            const instructorNameMap = new Map<string, string>();
+            if (instructorIds.length > 0) {
+              const { data: instructorRows, error: instructorRowsError } = await supabase
+                .from('profiles')
+                .select('id, full_name, email')
+                .in('id', instructorIds);
+
+              if (!instructorRowsError && instructorRows) {
+                instructorRows.forEach((row: any) => {
+                  instructorNameMap.set(String(row.id), String(row.full_name || row.email || 'Instructor'));
+                });
+              }
+            }
+
+            setAssignedExercises(
+              exerciseRows.map((row: any) => ({
+                id: String(row.id),
+                instructor_id: String(row.instructor_id),
+                student_id: String(row.student_id),
+                title: String(row.title || 'Untitled Exercise'),
+                instructions: String(row.instructions || ''),
+                language: row.language === 'javascript' ? 'javascript' : 'python',
+                status: row.status === 'submitted' || row.status === 'reviewed' ? row.status : 'assigned',
+                due_date: row.due_date ? String(row.due_date) : null,
+                created_at: String(row.created_at || ''),
+                submitted_at: row.submitted_at ? String(row.submitted_at) : null,
+                instructor_name: instructorNameMap.get(String(row.instructor_id)) || 'Instructor',
+              }))
+            );
+          } else if (exerciseError?.code !== '42P01') {
+            console.error('Failed to load assigned exercises', exerciseError);
+          }
+        } else {
+          setAssignedExercises([]);
         }
 
         // Load courses
@@ -468,9 +585,12 @@ export default function Dashboard() {
         completedLessons={totalLessons}
         nextCourse={nextCourse}
         inProgressCourses={inProgressCourses}
+        assignedExercises={assignedExercises}
       />
     </DashboardLayout>
   );
 }
+
+
 
 
