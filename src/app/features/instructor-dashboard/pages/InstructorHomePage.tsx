@@ -79,7 +79,7 @@ export default function InstructorHomePage() {
           <p className="text-xs uppercase tracking-[0.2em] text-white/75">Instructor Home</p>
           <h1 className="heading-font text-2xl sm:text-3xl">{instructorHub?.name ?? 'Assigned Hub'} Overview</h1>
           <p className="max-w-2xl text-sm text-white/80">
-            Welcome {instructor.fullName}. This page tracks class health and routes you to focused instructor workflows.
+            Welcome {instructor.fullName}. Monitor class health for Mufakose Hub and jump into focused instructor workflows.
           </p>
 
           <div className="grid grid-cols-2 gap-2 text-xs md:grid-cols-5">
