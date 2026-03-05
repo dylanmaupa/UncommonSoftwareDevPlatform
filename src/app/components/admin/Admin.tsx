@@ -312,7 +312,7 @@ export default function Admin() {
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3 sm:mb-6">
           <div>
             <Badge variant="secondary" className="rounded-full px-3 py-1 text-[11px] uppercase tracking-wider">
-              Instructor Workspace: {profile.hub_location}
+              Hub: {profile.hub_location}
             </Badge>
             <h1 className="heading-font mt-2 text-2xl text-foreground sm:text-3xl">Instructor Dashboard</h1>
             <p className="mt-1 text-sm text-muted-foreground">
@@ -589,4 +589,5 @@ export default function Admin() {
     </DashboardLayout>
   );
 }
+
 
