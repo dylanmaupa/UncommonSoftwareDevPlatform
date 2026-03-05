@@ -131,9 +131,10 @@ export default function Login() {
         </div>
 
         <p className="text-center text-sm text-[#6B7280] mt-6">
-          Free, open-access coding education for everyone
+          Uncommon Studio: free, open-access coding education for everyone
         </p>
       </div>
     </div>
   );
 }
+

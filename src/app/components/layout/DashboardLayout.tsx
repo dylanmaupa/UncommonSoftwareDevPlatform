@@ -163,11 +163,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <div className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-full bg-primary/10">
                 <img
                   src="https://uncommon.org/images/hd-logo.svg"
-                  alt="Uncommon logo"
+                  alt="Uncommon Studio logo"
                   className="h-5 w-5 object-contain"
                 />
               </div>
-              <span className="heading-font text-base normal-case text-foreground">Coursue</span>
+              <span className="heading-font text-base normal-case text-foreground">Uncommon Studio</span>
             </Link>
             <div className="flex items-center gap-2">
               <Link
@@ -222,11 +222,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             <div className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-full bg-primary/10">
               <img
                 src="https://uncommon.org/images/hd-logo.svg"
-                alt="Uncommon logo"
+                alt="Uncommon Studio logo"
                 className="h-5 w-5 object-contain"
               />
             </div>
-            <span className="heading-font text-base normal-case text-foreground">Coursue</span>
+            <span className="heading-font text-base normal-case text-foreground">Uncommon Studio</span>
           </Link>
 
           <div>
@@ -285,6 +285,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     </div>
   );
 }
+
 
 
 
