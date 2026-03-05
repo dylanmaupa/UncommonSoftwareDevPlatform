@@ -2,15 +2,20 @@ import { useEffect, useState, ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { supabase } from '../../../lib/supabase';
 import { loadPyodideEnvironment } from '../../../lib/pyodide';
+import { fetchProfileForAuthUser } from '../../lib/profileAccess';
 import {
   LuBookOpen,
+  LuBookOpenCheck,
+  LuBuilding2,
   LuFolderKanban,
   LuLayoutDashboard,
   LuLogOut,
   LuSettings,
+  LuTarget,
   LuTerminal,
   LuTrophy,
   LuUser,
+  LuUsers,
 } from 'react-icons/lu';
 import { toast } from 'sonner';
 import { Button } from '../ui/button';
@@ -19,55 +24,110 @@ interface DashboardLayoutProps {
   children: ReactNode;
 }
 
+type NavItem = {
+  icon: typeof LuLayoutDashboard;
+  label: string;
+  path: string;
+};
+
+const INSTRUCTOR_BLOCKED_PATHS = ['/dashboard', '/sandbox', '/courses', '/projects', '/achievements'];
+
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [user, setUser] = useState<any>(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [profileRole, setProfileRole] = useState<string | null>(null);
+
+  const readString = (value: unknown) => (typeof value === 'string' ? value.trim() : '');
 
   useEffect(() => {
-    // Preload Python environment in the background silently
+    // Preload Python environment in the background silently.
     loadPyodideEnvironment().catch(console.error);
   }, []);
 
   useEffect(() => {
-    let isMounted = true;
+    const loadUser = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      setUser(user);
+      setIsAuthLoading(false);
+    };
 
-    async function syncAuthState() {
-      const { data: { user }, error } = await supabase.auth.getUser();
+    loadUser();
+  }, []);
 
-      if (!isMounted) return;
+  useEffect(() => {
+    if (!isAuthLoading && !user) {
+      navigate('/');
+    }
+  }, [user, isAuthLoading, navigate]);
 
-      if (error || !user) {
-        setIsAuthenticated(false);
-        navigate('/');
+  useEffect(() => {
+    const syncProfileAccess = async () => {
+      if (!user) {
+        setProfileRole(null);
         return;
       }
 
-      setIsAuthenticated(true);
-    }
+      const profileRow = await fetchProfileForAuthUser(user as any);
+      const metadata = (user.user_metadata as Record<string, unknown> | undefined) ?? undefined;
 
-    syncAuthState();
+      const gender = readString(profileRow?.['gender'] ?? metadata?.['gender']).toLowerCase();
+      const role = readString(
+        profileRow?.['role'] ??
+          profileRow?.['user_role'] ??
+          metadata?.['role'] ??
+          metadata?.['user_role']
+      ).toLowerCase();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      const signedIn = !!session?.user;
-      setIsAuthenticated(signedIn);
+      setProfileRole(role || null);
 
-      if (!signedIn) {
-        navigate('/');
+      if (!gender && location.pathname !== '/profile') {
+        navigate('/profile?setup=gender', { replace: true });
+        return;
       }
-    });
 
-    return () => {
-      isMounted = false;
-      subscription.unsubscribe();
+      if (role === 'instructor') {
+        const isBlockedPath = INSTRUCTOR_BLOCKED_PATHS.some((path) => {
+          return location.pathname === path || location.pathname.startsWith(`${path}/`);
+        });
+
+        if (isBlockedPath) {
+          navigate('/instructor', { replace: true });
+        }
+      }
     };
-  }, [navigate]);
 
-  if (isAuthenticated !== true) {
+    if (!isAuthLoading && user) {
+      syncProfileAccess();
+    }
+  }, [isAuthLoading, user, location.pathname, navigate]);
+
+  if (isAuthLoading) {
     return null;
   }
 
-  const overviewItems = [
+  if (!user) {
+    return null;
+  }
+
+  const isInstructor = profileRole === 'instructor';
+
+  const instructorNavItems: NavItem[] = [
+    { icon: LuLayoutDashboard, label: 'Instructor Home', path: '/instructor' },
+    { icon: LuUsers, label: 'Students', path: '/instructor/students' },
+    { icon: LuBookOpen, label: 'Curriculum', path: '/instructor/curriculum' },
+    { icon: LuBookOpenCheck, label: 'Assessments', path: '/instructor/assessments' },
+    { icon: LuFolderKanban, label: 'Projects', path: '/instructor/projects' },
+    { icon: LuTarget, label: 'Live Ops', path: '/instructor/live' },
+    { icon: LuBuilding2, label: 'Hub Operations', path: '/instructor/hub-operations' },
+
+    { icon: LuUser, label: 'Profile', path: '/profile' },
+  ];
+
+  const learnerNavItems: NavItem[] = [
     { icon: LuLayoutDashboard, label: 'Dashboard', path: '/dashboard' },
     { icon: LuTerminal, label: 'Sandbox', path: '/sandbox' },
     { icon: LuBookOpen, label: 'Courses', path: '/courses' },
@@ -75,16 +135,21 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { icon: LuTrophy, label: 'Achievements', path: '/achievements' },
     { icon: LuUser, label: 'Profile', path: '/profile' },
   ];
+
+  const overviewItems = isInstructor ? instructorNavItems : learnerNavItems;
   const mobileNavItems = [...overviewItems, { icon: LuSettings, label: 'Settings', path: '/settings' }];
+  const homePath = isInstructor ? '/instructor' : '/dashboard';
 
-  const handleLogout = async () => {
-    const { error } = await supabase.auth.signOut();
-
-    if (error) {
-      toast.error(error.message || 'Logout failed');
-      return;
+  const isNavItemActive = (path: string) => {
+    if (path === '/instructor') {
+      return location.pathname === '/instructor';
     }
 
+    return location.pathname === path || location.pathname.startsWith(`${path}/`);
+  };
+
+  const handleLogout = () => {
+    supabase.auth.signOut();
     toast.success('Logged out successfully');
     navigate('/');
   };
@@ -94,7 +159,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       <div className="mx-auto flex min-h-screen max-w-[1280px] flex-col border-x border-border bg-card shadow-sm lg:h-screen lg:flex-row lg:overflow-hidden lg:border">
         <header className="sticky top-0 z-20 border-b border-border bg-card/95 backdrop-blur lg:hidden">
           <div className="flex items-center justify-between gap-3 px-4 py-3">
-            <Link to="/dashboard" className="flex items-center gap-2">
+            <Link to={homePath} className="flex items-center gap-2">
               <div className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-full bg-primary/10">
                 <img
                   src="https://uncommon.org/images/hd-logo.svg"
@@ -107,10 +172,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             <div className="flex items-center gap-2">
               <Link
                 to="/settings"
-                className={`flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-foreground ${location.pathname === '/settings'
-                  ? 'bg-secondary text-foreground'
-                  : 'bg-card hover:bg-secondary hover:text-foreground'
-                  }`}
+                className={`flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-foreground ${
+                  location.pathname === '/settings'
+                    ? 'bg-secondary text-foreground'
+                    : 'bg-card hover:bg-secondary hover:text-foreground'
+                }`}
                 aria-label="Settings"
               >
                 <LuSettings className="h-4 w-4" />
@@ -119,7 +185,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 variant="ghost"
                 size="icon"
                 onClick={handleLogout}
-                className="h-9 w-9 rounded-full border border-border bg-card text-accent hover:bg-secondary hover:text-accent"
+                className="h-9 w-9 rounded-full border border-border bg-card text-[#FF6B35] hover:bg-secondary hover:text-[#FF6B35]"
               >
                 <LuLogOut className="h-4 w-4" />
                 <span className="sr-only">Logout</span>
@@ -130,16 +196,17 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             <div className="flex w-max items-center gap-1">
               {mobileNavItems.map((item) => {
                 const Icon = item.icon;
-                const isActive = location.pathname === item.path;
+                const isActive = isNavItemActive(item.path);
 
                 return (
                   <Link
                     key={`${item.label}-${item.path}-mobile`}
                     to={item.path}
-                    className={`flex items-center gap-2 whitespace-nowrap rounded-full px-3 py-2 text-sm transition-colors ${isActive
-                      ? 'bg-secondary text-foreground'
-                      : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
-                      }`}
+                    className={`flex items-center gap-2 whitespace-nowrap rounded-full px-3 py-2 text-sm transition-colors ${
+                      isActive
+                        ? 'bg-secondary text-foreground'
+                        : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                    }`}
                   >
                     <Icon className="h-4 w-4" />
                     <span>{item.label}</span>
@@ -151,7 +218,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </header>
 
         <aside className="hidden w-56 shrink-0 flex-col overflow-y-auto border-r border-border bg-card px-3 py-6 lg:flex">
-          <Link to="/dashboard" className="mb-8 flex items-center gap-2 px-2">
+          <Link to={homePath} className="mb-8 flex items-center gap-2 px-2">
             <div className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-full bg-primary/10">
               <img
                 src="https://uncommon.org/images/hd-logo.svg"
@@ -163,18 +230,21 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           </Link>
 
           <div>
-            <p className="px-2 pb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">Overview</p>
+            <p className="px-2 pb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+              Overview
+            </p>
             <nav className="space-y-1">
               {overviewItems.map((item) => {
                 const Icon = item.icon;
-                const isActive = location.pathname === item.path;
+                const isActive = isNavItemActive(item.path);
 
                 return (
                   <Link
                     key={`${item.label}-${item.path}`}
                     to={item.path}
-                    className={`flex items-center gap-2 rounded-lg px-2 py-2 text-sm transition-colors ${isActive ? 'text-foreground' : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
-                      }`}
+                    className={`flex items-center gap-2 rounded-lg px-2 py-2 text-sm transition-colors ${
+                      isActive ? 'text-foreground' : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                    }`}
                   >
                     <Icon className="h-4 w-4" />
                     <span>{item.label}</span>
@@ -185,13 +255,16 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
 
           <div className="mt-auto space-y-1 pt-8">
-            <p className="px-2 pb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">Settings</p>
+            <p className="px-2 pb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+              Settings
+            </p>
             <Link
               to="/settings"
-              className={`flex items-center gap-2 rounded-lg px-2 py-2 text-sm transition-colors ${location.pathname === '/settings'
-                ? 'text-foreground'
-                : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
-                }`}
+              className={`flex items-center gap-2 rounded-lg px-2 py-2 text-sm transition-colors ${
+                location.pathname === '/settings'
+                  ? 'text-foreground'
+                  : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+              }`}
             >
               <LuSettings className="h-4 w-4" />
               <span>Settings</span>
@@ -199,7 +272,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             <Button
               variant="ghost"
               onClick={handleLogout}
-              className="mt-1 w-full justify-start gap-2 rounded-lg px-2 py-2 text-sm text-accent hover:bg-secondary hover:text-accent"
+              className="mt-1 w-full justify-start gap-2 rounded-lg px-2 py-2 text-sm text-[#FF6B35] hover:bg-secondary hover:text-[#FF6B35]"
             >
               <LuLogOut className="h-4 w-4" />
               Logout
@@ -212,6 +285,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     </div>
   );
 }
+
+
+
+
+
 
 
 

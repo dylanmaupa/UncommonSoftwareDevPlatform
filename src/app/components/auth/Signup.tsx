@@ -4,7 +4,8 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { toast } from 'sonner';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { getAvatarsByGender, getRandomAvatar, type Gender } from '../../lib/avatars';
 import { LuRocket } from 'react-icons/lu';
 import { supabase } from '../../../lib/supabase';
 
@@ -35,12 +36,43 @@ export default function Signup() {
   const [role, setRole] = useState<'student' | 'instructor'>('student');
   const [hubLocation, setHubLocation] = useState('');
   const [specialization, setSpecialization] = useState('');
+  const [gender, setGender] = useState<Gender | ''>('');
+  const [selectedAvatar, setSelectedAvatar] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  const availableAvatars = gender ? getAvatarsByGender(gender) : [];
+
+  useEffect(() => {
+    if (!gender) {
+      setSelectedAvatar('');
+      return;
+    }
+
+    const pool = getAvatarsByGender(gender);
+    if (pool.length === 0) {
+      setSelectedAvatar('');
+      return;
+    }
+
+    if (selectedAvatar && !pool.includes(selectedAvatar)) {
+      setSelectedAvatar('');
+    }
+  }, [gender, selectedAvatar]);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!hubLocation) {
       toast.error('Please select a Hub Location');
+      return;
+    }
+
+    if (!gender) {
+      toast.error('Please select a Gender');
+      return;
+    }
+
+    if (availableAvatars.length > 0 && !selectedAvatar) {
+      toast.error('Please choose an avatar');
       return;
     }
 
@@ -52,7 +84,8 @@ export default function Signup() {
     setIsLoading(true);
 
     try {
-      // 1. Sign up the user (this creates the auth.users record)
+      const avatarUrl = selectedAvatar || getRandomAvatar(gender);
+
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
@@ -62,6 +95,8 @@ export default function Signup() {
             role: role,
             hub_location: hubLocation,
             specialization: role === 'instructor' ? specialization : null,
+            gender: gender,
+            avatar_url: avatarUrl,
           },
         },
       });
@@ -72,8 +107,6 @@ export default function Signup() {
       }
 
       if (authData.user) {
-        // We now rely on a Supabase Database Trigger to create the profile
-        // automatically using the metadata we passed in the options.data object.
         toast.success('Account created! Welcome to your coding journey!');
         navigate('/dashboard');
       }
@@ -85,7 +118,7 @@ export default function Signup() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0747a1]/5 via-white to-[#FF6B35]/5 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-[#0747a1]/5 via-white to-[#1D4ED8]/5 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-6">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-[#0747a1] to-[#8B5CF6] mb-4">
@@ -166,6 +199,73 @@ export default function Signup() {
               </Select>
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="gender">Gender</Label>
+              {gender ? (
+                <div className="flex items-center gap-3 rounded-xl bg-[#F5F5FA] p-3">
+                  <p className="flex-1 text-sm text-[#6B7280] capitalize">Selected: {gender}</p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="rounded-lg"
+                    onClick={() => setGender('')}
+                  >
+                    Change
+                  </Button>
+                </div>
+              ) : (
+                <Select value={gender} onValueChange={(value: Gender) => setGender(value)} required>
+                  <SelectTrigger className="w-full h-12 bg-[#F5F5FA] border-0 rounded-xl">
+                    <SelectValue placeholder="Select gender" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="female">Female</SelectItem>
+                    <SelectItem value="male">Male</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+
+            {gender && (
+              <div className="space-y-2">
+                <Label>Choose Avatar</Label>
+                {availableAvatars.length > 0 ? (
+                  selectedAvatar ? (
+                    <div className="flex items-center gap-3 rounded-xl bg-[#F5F5FA] p-3">
+                      <img src={selectedAvatar} alt="Selected avatar" className="h-16 w-16 rounded-xl object-cover" />
+                      <p className="flex-1 text-sm text-[#6B7280]">Selected avatar</p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="rounded-lg"
+                        onClick={() => setSelectedAvatar('')}
+                      >
+                        Change
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-4 gap-2 rounded-xl bg-[#F5F5FA] p-3">
+                      {availableAvatars.map((avatar, index) => (
+                        <button
+                          key={`${gender}-avatar-${index}`}
+                          type="button"
+                          onClick={() => setSelectedAvatar(avatar)}
+                          className="aspect-square overflow-hidden rounded-xl border border-transparent transition hover:border-[#0747a1]/40"
+                          aria-label={`Select avatar ${index + 1}`}
+                        >
+                          <img src={avatar} alt={`Avatar option ${index + 1}`} className="h-full w-full object-cover" />
+                        </button>
+                      ))}
+                    </div>
+                  )
+                ) : (
+                  <p className="text-sm text-[#6B7280]">No avatars found for this gender yet.</p>
+                )}
+              </div>
+            )}
+
             {role === 'instructor' && (
               <div className="space-y-2">
                 <Label htmlFor="specialization">Area of Specialization</Label>
@@ -181,7 +281,6 @@ export default function Signup() {
                 </Select>
               </div>
             )}
-
 
             <Button type="submit" disabled={isLoading} className="w-full h-12 rounded-xl text-base mt-2" style={{ backgroundColor: '#0747a1' }}>
               {isLoading ? 'Creating account...' : 'Create Account'}
@@ -199,6 +298,5 @@ export default function Signup() {
     </div>
   );
 }
-
 
 

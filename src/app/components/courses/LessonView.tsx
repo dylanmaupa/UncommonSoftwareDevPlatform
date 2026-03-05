@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import Editor from '@monaco-editor/react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { motion } from 'motion/react';
 import { toast } from 'sonner';
 import DashboardLayout from '../layout/DashboardLayout';
@@ -20,8 +22,9 @@ import {
 } from 'react-icons/lu';
 import { supabase } from '../../../lib/supabase';
 import { loadPyodideEnvironment } from '../../../lib/pyodide';
+import { fetchProfileForAuthUser, updateProfileForAuthUser } from '../../lib/profileAccess';
 
-function LessonView() {
+export default function LessonView() {
   const { courseId, moduleId, lessonId } = useParams();
   const navigate = useNavigate();
 
@@ -49,11 +52,7 @@ function LessonView() {
         if (!currentUser) return navigate('/');
         setUser(currentUser);
 
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', currentUser.id)
-          .single();
+        const profileData = await fetchProfileForAuthUser(currentUser as any);
 
         if (profileData) {
           setUserProfile(profileData);
@@ -143,7 +142,7 @@ function LessonView() {
     );
   }
 
-  const isCompleted = userProgress.some(p => p.item_id === lesson.id && p.item_type === 'lesson' && p.status === 'completed');
+  const isCompleted = userProgress.some((p: any) => p.item_id === lesson.id && p.item_type === 'lesson' && p.status === 'completed');
 
   let nextLesson: { courseId: string; moduleId: string; lessonId: string } | null = null;
   if (course && module && lesson) {
@@ -289,7 +288,7 @@ sys.stderr = io.StringIO()
             // Calculate and update module progress
             const updatedProgress = [...userProgress, lessonProgressEntry];
             const completedInModule = module.lessons.filter((l: any) =>
-              updatedProgress.some(p => p.item_id === l.id && p.item_type === 'lesson' && p.status === 'completed')
+              updatedProgress.some((p: any) => p.item_id === l.id && p.item_type === 'lesson' && p.status === 'completed')
             ).length;
             const moduleProgressObj = {
               user_id: user.id,
@@ -305,7 +304,7 @@ sys.stderr = io.StringIO()
             const totalLessons = course.modules.reduce((sum: number, m: any) => sum + (m.lessons?.length || 0), 0);
             const completedInCourse = course.modules.reduce((sum: number, m: any) => {
               return sum + m.lessons.filter((l: any) =>
-                updatedProgress.some(p => p.item_id === l.id && p.item_type === 'lesson' && p.status === 'completed')
+                updatedProgress.some((p: any) => p.item_id === l.id && p.item_type === 'lesson' && p.status === 'completed')
               ).length;
             }, 0);
             const courseProgressObj = {
@@ -375,53 +374,50 @@ sys.stderr = io.StringIO()
                 const updatedAchievements = [...currentAchievements, ...newlyUnlocked];
 
                 // Update DB
-                await supabase
-                  .from('profiles')
-                  .update({ achievements: updatedAchievements })
-                  .eq('id', user.id);
+                await updateProfileForAuthUser(user as any, { achievements: updatedAchievements });
 
                 // Update Local State
                 setUserProfile({ ...userProfile, achievements: updatedAchievements });
 
                 // Dispatch notification for each
                 newlyUnlocked.forEach(achId => {
-  // We can infer title from id or just show a general message since we lack the full dict here
-  const titles: Record<string, string> = {
-    first_blood: 'First Blood',
-    night_owl: 'Night Owl',
-    hint_abuser: 'Desperate Times',
-    on_fire: 'On Fire',
-    unstoppable: 'Unstoppable',
-    wealthy: 'Deep Pockets'
-  };
-  const achievementColors: Record<string, string> = {
-    first_blood: 'text-sky-400',
-    night_owl: 'text-blue-400',
-    hint_abuser: 'text-cyan-400',
-    on_fire: 'text-indigo-400',
-    unstoppable: 'text-blue-500',
-    wealthy: 'text-sky-500'
-  };
-  const colorClass = achievementColors[achId] || 'text-blue-400';
-  toast(
-    <div className="flex items-center gap-2">
-      <LuTrophy className={`w-5 h-5 ${colorClass}`} />
-      <div>
-        <p className={`font-bold ${colorClass}`}>Achievement Unlocked!</p>
-        <p className="text-sm">{titles[achId] || 'New Badge Earned'}</p>
-      </div>
-    </div>,
-    { duration: 5000 }
-  );
-});
+                  // We can infer title from id or just show a general message since we lack the full dict here
+                  const titles: Record<string, string> = {
+                    first_blood: 'First Blood',
+                    night_owl: 'Night Owl',
+                    hint_abuser: 'Desperate Times',
+                    on_fire: 'On Fire',
+                    unstoppable: 'Unstoppable',
+                    wealthy: 'Deep Pockets'
+                  };
+                  const achievementColors: Record<string, string> = {
+                    first_blood: 'text-sky-400',
+                    night_owl: 'text-blue-400',
+                    hint_abuser: 'text-cyan-400',
+                    on_fire: 'text-indigo-400',
+                    unstoppable: 'text-blue-500',
+                    wealthy: 'text-sky-500'
+                  };
+                  const colorClass = achievementColors[achId] || 'text-blue-400';
+                  toast(
+                    <div className="flex items-center gap-2">
+                      <LuTrophy className={`w-5 h-5 ${colorClass}`} />
+                      <div>
+                        <p className={`font-bold ${colorClass}`}>Achievement Unlocked!</p>
+                        <p className="text-sm text-blue-100/80">{titles[achId] || 'New Badge Earned'}</p>
+                      </div>
+                    </div>,
+                    { duration: 5000 }
+                  );
+                });
               }
             }
             // --- END CHECKS ---
 
             toast.success(
               <div>
-                <p className="font-semibold">{solutionUsed ? 'Lesson Finished' : 'Lesson Complete!'}</p>
-                <p className="text-sm">+{finalXp} XP earned {solutionUsed ? '(Solution used: 0 XP)' : hintUsed ? '(Hint used: -50%)' : ''}</p>
+                <p className="font-semibold text-sky-400">{solutionUsed ? 'Lesson Finished' : 'Lesson Complete!'}</p>
+                <p className="text-sm text-blue-200">+{finalXp} XP earned {solutionUsed ? '(Solution used: 0 XP)' : hintUsed ? '(Hint used: -50%)' : ''}</p>
               </div>
             );
 
@@ -431,8 +427,8 @@ sys.stderr = io.StringIO()
           } else {
             toast.success(
               <div>
-                <p className="font-semibold">Correct!</p>
-                <p className="text-sm">Code executed successfully.</p>
+                <p className="font-semibold text-blue-400">Correct!</p>
+                <p className="text-sm text-sky-200">Code executed successfully.</p>
               </div>
             );
           }
@@ -506,12 +502,14 @@ sys.stderr = io.StringIO()
         <div className="flex-1 flex overflow-hidden">
           <div className="w-1/2 overflow-y-auto bg-card p-8 border-r border-border">
             <div className="max-w-2xl mx-auto">
-              <div className="prose prose-slate max-w-none mb-8">
-                <div className="whitespace-pre-wrap text-foreground leading-relaxed">{lesson.content}</div>
+              <div className="mb-8 lesson-markdown">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {lesson.content || ''}
+                </ReactMarkdown>
               </div>
 
-              <Card className="mb-8 border-border overflow-hidden">
-                <div className="bg-foreground px-4 py-2 flex items-center justify-between">
+              <Card className="mb-8 border-border overflow-hidden bg-[#1e1e1e]">
+                <div className="bg-[#17181b] border-b border-[#24262b] px-4 py-2 flex items-center justify-between">
                   <span className="text-sm text-white/70">Example</span>
                   <Badge className="bg-white/10 text-white text-xs">{lesson.language || 'code'}</Badge>
                 </div>
@@ -639,80 +637,108 @@ sys.stderr = io.StringIO()
             </div>
           </div>
 
-          <div className="w-1/2 flex flex-col bg-[#1e1e1e]">
-            <div className="flex-1 overflow-hidden">
-              <Editor
-                height="100%"
-                language={lesson.language || 'javascript'}
-                value={code}
-                onChange={(value) => setCode(value || '')}
-                theme="vs-dark"
-                onMount={(editor, monaco) => {
-                  editor.onKeyDown((e: any) => {
-                    // Prevent Ctrl+V or Cmd+V
-                    if ((e.ctrlKey || e.metaKey) && e.keyCode === monaco.KeyCode.KeyV) {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      toast.warning("Pasting is disabled! Typing it out helps you learn.");
-                    }
-                  });
-                  // Prevent native right-click paste
-                  const domNode = editor.getDomNode();
-                  if (domNode) {
-                    domNode.addEventListener('paste', (e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      toast.warning("Pasting is disabled! Typing it out helps you learn.");
-                    }, true);
-                  }
-                }}
-                options={{
-                  minimap: { enabled: false },
-                  fontSize: 14,
-                  lineNumbers: 'on',
-                  scrollBeyondLastLine: false,
-                  automaticLayout: true,
-                  tabSize: 2,
-                }}
-              />
-            </div>
+          <div className="w-1/2 flex flex-col bg-white border-l border-black/10">
+            <div className="flex-1 p-0">
+              <div className="h-full rounded-2xl border border-white/10 bg-[#141518] shadow-[0_0_0_1px_rgba(255,255,255,0.04),0_30px_80px_-40px_rgba(0,0,0,0.9)] overflow-hidden flex flex-col">
+                <div className="px-4 py-3 bg-[#101114] border-b border-white/10 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-red-500/80" />
+                    <span className="h-2 w-2 rounded-full bg-yellow-500/80" />
+                    <span className="h-2 w-2 rounded-full bg-blue-500/80" />
+                  </div>
+                  <span className="text-xs text-white/50 font-mono tracking-wider">
+                    {lesson.language === 'python' ? 'main.py' : 'index.js'}
+                  </span>
+                  <span className="text-[10px] uppercase tracking-[0.2em] text-white/30">Practice</span>
+                </div>
 
-            <div className="bg-[#252525] px-6 py-4 border-t border-[#3e3e3e] flex items-center gap-3">
-              <Button
-                onClick={handleRun}
-                disabled={isRunning}
-                variant="outline"
-                className="bg-[#1e1e1e] text-white border-[#3e3e3e] hover:bg-[#2d2d2d]"
-              >
-                <LuPlay className="w-4 h-4 mr-2" />
-                Run Code
-              </Button>
-              <Button onClick={handleSubmit} disabled={isRunning} className="bg-primary text-primary-foreground hover:bg-primary/90">
-                <LuCircleCheck className="w-4 h-4 mr-2" />
-                {isCompleted ? 'Completed' : 'Submit'}
-              </Button>
-              {nextLesson && isCompleted && (
-                <Button
-                  onClick={() => navigate(`/courses/${nextLesson?.courseId}/modules/${nextLesson?.moduleId}/lessons/${nextLesson?.lessonId}`)}
-                  className="ml-auto bg-success text-success-foreground hover:bg-success/90"
-                >
-                  Next Lesson
-                  <LuChevronRight className="w-4 h-4 ml-2" />
-                </Button>
-              )}
-            </div>
+                <div className="flex-1 overflow-hidden bg-[#141518]">
+                  <Editor
+                    height="100%"
+                    language={lesson.language || 'javascript'}
+                    value={code}
+                    onChange={(value) => setCode(value || '')}
+                    theme="vs-dark"
+                    onMount={(editor, monaco) => {
+                      editor.onKeyDown((e: any) => {
+                        // Prevent Ctrl+V or Cmd+V
+                        if ((e.ctrlKey || e.metaKey) && e.keyCode === monaco.KeyCode.KeyV) {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          toast.warning("Pasting is disabled! Typing it out helps you learn.");
+                        }
+                      });
+                      // Prevent native right-click paste
+                      const domNode = editor.getDomNode();
+                      if (domNode) {
+                        domNode.addEventListener('paste', (e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          toast.warning("Pasting is disabled! Typing it out helps you learn.");
+                        }, true);
+                      }
+                    }}
+                    options={{
+                      minimap: { enabled: false },
+                      fontSize: 14,
+                      lineNumbers: 'on',
+                      scrollBeyondLastLine: false,
+                      automaticLayout: true,
+                      tabSize: 2,
+                    }}
+                  />
+                </div>
 
-            <div className="h-48 bg-[#1e1e1e] border-t border-[#3e3e3e] overflow-auto">
-              <div className="px-6 py-3 bg-[#252525] border-b border-[#3e3e3e]">
-                <span className="text-sm text-white/70">Console Output</span>
+                <div className="px-4 py-3 bg-[#111214] border-t border-white/10 flex items-center gap-3">
+                  <Button
+                    onClick={handleRun}
+                    disabled={isRunning}
+                    variant="outline"
+                    className="bg-[#141518] text-white border-white/10 hover:bg-[#1c1f24] hover:border-white/20"
+                  >
+                    <LuPlay className="w-4 h-4 mr-2" />
+                    Run Code
+                  </Button>
+                  <Button
+                    onClick={handleSubmit}
+                    disabled={isRunning}
+                    className="bg-blue-500 text-white hover:bg-blue-400 shadow-lg shadow-blue-500/20"
+                  >
+                    <LuCircleCheck className="w-4 h-4 mr-2" />
+                    {isCompleted ? 'Completed' : 'Submit'}
+                  </Button>
+                  {nextLesson && isCompleted && (
+                    <Button
+                      onClick={() => navigate(`/courses/${nextLesson?.courseId}/modules/${nextLesson?.moduleId}/lessons/${nextLesson?.lessonId}`)}
+                      className="ml-auto bg-[#1a2b22] text-emerald-200 hover:bg-[#203528] border border-emerald-500/20"
+                    >
+                      Next Lesson
+                      <LuChevronRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  )}
+                </div>
+
+                <div className="h-52 bg-[#0f1012] border-t border-white/10 overflow-auto">
+                  <div className="px-4 py-2 bg-[#121316] border-b border-white/10 flex items-center justify-between">
+                    <span className="text-xs uppercase tracking-[0.2em] text-white/40">Console</span>
+                    <span className="text-xs text-white/40">Output</span>
+                  </div>
+                  <pre className="p-5 text-sm text-white/90 font-mono">{output || '// Run your code to see output here'}</pre>
+                </div>
               </div>
-              <pre className="p-6 text-sm text-white/90 font-mono">{output || '// Run your code to see output here'}</pre>
             </div>
           </div>
         </div>
       </div>
-    </DashboardLayout>
+    </DashboardLayout >
   );
+}
+
+
+
+
+
+
 }
 
 export default LessonView;

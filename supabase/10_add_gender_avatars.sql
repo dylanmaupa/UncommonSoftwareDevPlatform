@@ -1,4 +1,9 @@
--- Create a function to handle new user signups
+-- Add gender and avatar_url to profiles
+alter table public.profiles
+  add column if not exists gender text check (gender in ('female','male')),
+  add column if not exists avatar_url text;
+
+-- Update handle_new_user to include gender/avatar
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
@@ -11,15 +16,10 @@ begin
     new.email,
     new.raw_user_meta_data->>'full_name',
     new.raw_user_meta_data->>'role',
-    new.raw_user_meta_data->>'hub_location'
+    new.raw_user_meta_data->>'hub_location',
+    new.raw_user_meta_data->>'gender',
+    new.raw_user_meta_data->>'avatar_url'
   );
   return new;
 end;
 $$;
-
--- Create a trigger that calls the function every time a user is created
-drop trigger if exists on_auth_user_created on auth.users;
-create trigger on_auth_user_created
-  after insert on auth.users
-  for each row execute procedure public.handle_new_user();
-

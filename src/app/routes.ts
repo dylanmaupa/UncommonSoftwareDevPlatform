@@ -12,6 +12,15 @@ import ProjectDetail from './components/projects/ProjectDetail';
 import Achievements from './components/achievements/Achievements';
 import Profile from './components/profile/Profile';
 import Settings from './components/settings/Settings';
+import InstructorLayoutPage from './features/instructor-dashboard/pages/InstructorLayoutPage';
+import InstructorHomePage from './features/instructor-dashboard/pages/InstructorHomePage';
+import InstructorLearnersPage from './features/instructor-dashboard/pages/InstructorLearnersPage';
+import InstructorLearnerProfilePage from './features/instructor-dashboard/pages/InstructorLearnerProfilePage';
+import InstructorCurriculumInsightsPage from './features/instructor-dashboard/pages/InstructorCurriculumInsightsPage';
+import InstructorAssessmentsPage from './features/instructor-dashboard/pages/InstructorAssessmentsPage';
+import InstructorProjectsInsightsPage from './features/instructor-dashboard/pages/InstructorProjectsInsightsPage';
+import InstructorLiveOpsPage from './features/instructor-dashboard/pages/InstructorLiveOpsPage';
+import InstructorHubOperationsPage from './features/instructor-dashboard/pages/InstructorHubOperationsPage';
 import NotFound from './components/NotFound';
 
 export const router = createBrowserRouter([
@@ -32,6 +41,20 @@ export const router = createBrowserRouter([
       { path: 'achievements', Component: Achievements },
       { path: 'profile', Component: Profile },
       { path: 'settings', Component: Settings },
+      {
+        path: 'instructor',
+        Component: InstructorLayoutPage,
+        children: [
+          { index: true, Component: InstructorHomePage },
+          { path: 'students', Component: InstructorLearnersPage },
+          { path: 'students/:studentId', Component: InstructorLearnerProfilePage },
+          { path: 'curriculum', Component: InstructorCurriculumInsightsPage },
+          { path: 'assessments', Component: InstructorAssessmentsPage },
+          { path: 'projects', Component: InstructorProjectsInsightsPage },
+          { path: 'live', Component: InstructorLiveOpsPage },
+          { path: 'hub-operations', Component: InstructorHubOperationsPage },
+        ],
+      },
       { path: '*', Component: NotFound },
     ],
   },
