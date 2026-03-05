@@ -712,4 +712,8 @@ sys.stderr = io.StringIO()
         </div>
       </div>
     </DashboardLayout>
-  );\n}\n\nexport default LessonView;\n
+  );
+}
+
+export default LessonView;
+
