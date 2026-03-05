@@ -1,6 +1,6 @@
-import { useEffect, ReactNode } from 'react';
+import { useEffect, useState, ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
-import { authService } from '../../services/mockData';
+import { supabase } from '../../../lib/supabase';
 import { loadPyodideEnvironment } from '../../../lib/pyodide';
 import {
   LuBookOpen,
@@ -22,20 +22,48 @@ interface DashboardLayoutProps {
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
-  const user = authService.getCurrentUser();
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   useEffect(() => {
     // Preload Python environment in the background silently
     loadPyodideEnvironment().catch(console.error);
   }, []);
 
-
   useEffect(() => {
-    if (!user) {
-      navigate('/');
+    let isMounted = true;
+
+    async function syncAuthState() {
+      const { data: { user }, error } = await supabase.auth.getUser();
+
+      if (!isMounted) return;
+
+      if (error || !user) {
+        setIsAuthenticated(false);
+        navigate('/');
+        return;
+      }
+
+      setIsAuthenticated(true);
     }
-  }, [navigate, user]);
-  if (!user) {
+
+    syncAuthState();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      const signedIn = !!session?.user;
+      setIsAuthenticated(signedIn);
+
+      if (!signedIn) {
+        navigate('/');
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, [navigate]);
+
+  if (isAuthenticated !== true) {
     return null;
   }
 
@@ -49,8 +77,14 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   ];
   const mobileNavItems = [...overviewItems, { icon: LuSettings, label: 'Settings', path: '/settings' }];
 
-  const handleLogout = () => {
-    authService.logout();
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut();
+
+    if (error) {
+      toast.error(error.message || 'Logout failed');
+      return;
+    }
+
     toast.success('Logged out successfully');
     navigate('/');
   };
@@ -178,5 +212,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     </div>
   );
 }
+
 
 
