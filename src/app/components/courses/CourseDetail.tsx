@@ -113,12 +113,14 @@ export default function CourseDetail() {
     Advanced: 'bg-destructive text-destructive-foreground',
   }[course.difficulty] || '';
 
+  const comingSoonCourseKeywords = ['javascript', 'node', 'data structures', 'data-structures', 'datastructures', 'react fundamentals', 'react-fundamentals'];
   const isJavaScriptLesson = (item: any) => String(item?.language || '').toLowerCase() === 'javascript';
-  const isJavaScriptCourse =
-    `${course.id || ''} ${course.title || ''} ${course.description || ''}`.toLowerCase().includes('javascript') ||
+  const courseSearchText = `${course.id || ''} ${course.title || ''} ${course.description || ''}`.toLowerCase();
+  const isComingSoonCourse =
+    comingSoonCourseKeywords.some((keyword) => courseSearchText.includes(keyword)) ||
     course.modules.some((m: any) => (m.lessons || []).some((l: any) => isJavaScriptLesson(l)));
 
-  if (isJavaScriptCourse) {
+  if (isComingSoonCourse) {
     return (
       <DashboardLayout>
         <div className="p-8 max-w-4xl mx-auto">
@@ -127,14 +129,14 @@ export default function CourseDetail() {
             Back to Courses
           </Button>
 
-          <Card className="relative overflow-hidden border-border">
+          <Card className="relative overflow-hidden rounded-2xl border-border">
             <CardContent className="p-12 text-center blur-[2px] pointer-events-none select-none">
               <h1 className="text-3xl heading-font text-foreground mb-2">{course.title}</h1>
-              <p className="text-muted-foreground">JavaScript course content is temporarily unavailable.</p>
+              <p className="text-muted-foreground">This course is temporarily unavailable.</p>
             </CardContent>
-            <div className="absolute inset-0 flex items-center justify-center bg-black/35 backdrop-blur-sm">
+            <div className="absolute inset-0 flex items-center justify-center rounded-2xl border border-white/15 bg-black/35 backdrop-blur-sm shadow-[inset_0_0_36px_rgba(255,255,255,0.12)]">
               <span className="rounded-full border border-white/30 bg-black/60 px-5 py-2 text-[11px] font-semibold uppercase tracking-[0.15em] text-white">
-                JavaScript Coming Soon
+                Coming Soon
               </span>
             </div>
           </Card>
@@ -251,7 +253,7 @@ export default function CourseDetail() {
                             return isJavaScriptLesson(lesson) ? (
                                 <div
                                   key={lesson.id}
-                                  className="relative flex items-center gap-3 p-3 rounded-lg border border-border/70 bg-secondary/20"
+                                  className="relative overflow-hidden flex items-center gap-3 rounded-lg border border-border/70 bg-secondary/20 p-3"
                                 >
                                   <div className="flex-shrink-0 blur-[2px]">
                                     {isCompleted ? (
@@ -269,6 +271,7 @@ export default function CourseDetail() {
                                     </p>
                                   </div>
                                   <Badge className="border border-amber-300/40 bg-amber-100 text-amber-900">Coming soon</Badge>
+                                  <div className="pointer-events-none absolute inset-0 rounded-lg border border-white/10 shadow-[inset_0_0_18px_rgba(255,255,255,0.12)]" />
                                 </div>
                               ) : (
                                 <Link
@@ -308,10 +311,4 @@ export default function CourseDetail() {
     </DashboardLayout>
   );
 }
-
-
-
-
-
-
 

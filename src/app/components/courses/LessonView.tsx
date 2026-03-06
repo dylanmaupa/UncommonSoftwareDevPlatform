@@ -142,9 +142,13 @@ export default function LessonView() {
     );
   }
 
+  const comingSoonCourseKeywords = ['javascript', 'node', 'data structures', 'data-structures', 'datastructures', 'react fundamentals', 'react-fundamentals'];
+  const courseSearchText = `${course.id || ''} ${course.title || ''} ${course.description || ''}`.toLowerCase();
   const isJavaScriptLesson = String(lesson.language || '').toLowerCase() === 'javascript';
+  const isComingSoonCourse = comingSoonCourseKeywords.some((keyword) => courseSearchText.includes(keyword));
+  const isComingSoonLesson = isJavaScriptLesson || isComingSoonCourse;
 
-  if (isJavaScriptLesson) {
+  if (isComingSoonLesson) {
     return (
       <DashboardLayout>
         <div className="p-8 max-w-3xl mx-auto">
@@ -153,14 +157,14 @@ export default function LessonView() {
             Back to Course
           </Button>
 
-          <Card className="mt-4 border-border overflow-hidden relative">
+          <Card className="relative mt-4 overflow-hidden rounded-2xl border-border">
             <CardContent className="p-10 text-center blur-[2px] pointer-events-none select-none">
               <h2 className="text-2xl heading-font text-foreground mb-2">{lesson.title}</h2>
-              <p className="text-muted-foreground">This JavaScript lesson is temporarily unavailable.</p>
+              <p className="text-muted-foreground">This lesson is temporarily unavailable.</p>
             </CardContent>
-            <div className="absolute inset-0 flex items-center justify-center bg-black/35 backdrop-blur-sm">
+            <div className="absolute inset-0 flex items-center justify-center rounded-2xl border border-white/15 bg-black/35 backdrop-blur-sm shadow-[inset_0_0_36px_rgba(255,255,255,0.12)]">
               <span className="rounded-full border border-white/30 bg-black/60 px-5 py-2 text-[11px] font-semibold uppercase tracking-[0.15em] text-white">
-                JavaScript Coming Soon
+                Coming Soon
               </span>
             </div>
           </Card>
@@ -760,7 +764,4 @@ sys.stderr = io.StringIO()
     </DashboardLayout>
   );
 }
-
-
-
 

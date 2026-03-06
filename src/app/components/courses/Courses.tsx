@@ -54,6 +54,8 @@ export default function Courses() {
     loadCourses();
   }, []);
 
+  const comingSoonCourseKeywords = ['javascript', 'node', 'data structures', 'data-structures', 'datastructures', 'react fundamentals', 'react-fundamentals'];
+
   const getCourseImage = (title: string) => {
     const normalized = title.toLowerCase();
 
@@ -86,7 +88,7 @@ export default function Courses() {
             All Courses
           </h1>
           <p className="text-muted-foreground">
-            All courses are free and unlocked. Start learning anytime!
+            Most courses are free and unlocked. Some are marked Coming Soon.
           </p>
         </div>
 
@@ -103,13 +105,13 @@ export default function Courses() {
             }[course.difficulty] || '';
 
             const searchText = `${course.id || ''} ${course.title || ''} ${course.description || ''}`.toLowerCase();
-            const isJavaScriptCourse = searchText.includes('javascript') || searchText.includes('node');
+            const isComingSoonCourse = comingSoonCourseKeywords.some((keyword) => searchText.includes(keyword));
 
             const courseCard = (
               <Card
-                className={`h-full rounded-2xl border-border transition-all group ${isJavaScriptCourse ? 'overflow-hidden' : 'hover:border-primary hover:shadow-md'}`}
+                className={`h-full rounded-2xl border-border transition-all group ${isComingSoonCourse ? 'overflow-hidden' : 'hover:border-primary hover:shadow-md'}`}
               >
-                <CardContent className={`space-y-3 p-3 ${isJavaScriptCourse ? 'blur-[2px] pointer-events-none select-none' : ''}`}>
+                <CardContent className={`space-y-3 p-3 ${isComingSoonCourse ? 'blur-[2px] pointer-events-none select-none' : ''}`}>
                   <img
                     src={getCourseImage(course.title)}
                     alt={course.title}
@@ -133,7 +135,7 @@ export default function Courses() {
                       <span>{course.estimated_hours}h</span>
                     </div>
                   </div>
-                  {isJavaScriptCourse ? (
+                  {isComingSoonCourse ? (
                     <div className="flex items-center justify-between text-sm text-muted-foreground font-medium">
                       <span>Coming soon</span>
                     </div>
@@ -157,13 +159,13 @@ export default function Courses() {
               </Card>
             );
 
-            if (isJavaScriptCourse) {
+            if (isComingSoonCourse) {
               return (
-                <div key={course.id} className="relative">
+                <div key={course.id} className="relative overflow-hidden rounded-2xl">
                   {courseCard}
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/35 backdrop-blur-sm">
+                  <div className="absolute inset-0 flex items-center justify-center rounded-2xl border border-white/15 bg-black/35 backdrop-blur-sm shadow-[inset_0_0_36px_rgba(255,255,255,0.12)]">
                     <span className="rounded-full border border-white/30 bg-black/60 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.15em] text-white">
-                      JavaScript Coming Soon
+                      Coming Soon
                     </span>
                   </div>
                 </div>

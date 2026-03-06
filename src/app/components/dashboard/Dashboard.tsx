@@ -265,7 +265,7 @@ function DashboardMain({
                         </div>
 
                         {exercise.language === 'javascript' && (
-                          <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/35 backdrop-blur-sm">
+                          <div className="absolute inset-0 flex items-center justify-center rounded-xl border border-white/15 bg-black/35 backdrop-blur-sm shadow-[inset_0_0_30px_rgba(255,255,255,0.12)]">
                             <span className="rounded-full border border-white/30 bg-black/60 px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-white">
                               JavaScript Coming Soon
                             </span>
@@ -603,9 +603,4 @@ export default function Dashboard() {
     </DashboardLayout>
   );
 }
-
-
-
-
-
 
