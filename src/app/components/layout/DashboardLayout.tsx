@@ -155,8 +155,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   };
 
   return (
-    <div className="min-h-screen bg-sidebar">
-      <div className="mx-auto flex min-h-screen max-w-[1280px] flex-col border-x border-border bg-card shadow-sm lg:h-screen lg:flex-row lg:overflow-hidden lg:border">
+    <div className="min-h-dvh w-full bg-sidebar">
+      <div className="flex min-h-dvh w-full flex-col bg-card lg:h-dvh lg:flex-row lg:overflow-hidden">
         <header className="sticky top-0 z-20 border-b border-border bg-card/95 backdrop-blur lg:hidden">
           <div className="flex items-center justify-between gap-3 px-4 py-3">
             <Link to={homePath} className="flex items-center gap-2">
@@ -280,11 +280,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
         </aside>
 
-        <main className="min-h-0 flex-1 lg:overflow-y-auto">{children}</main>
+        <main className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto">{children}</main>
       </div>
     </div>
   );
 }
+
+
 
 
 
