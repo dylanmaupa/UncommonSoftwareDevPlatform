@@ -238,28 +238,39 @@ function DashboardMain({
                           : 'bg-blue-100 text-blue-800 border-blue-200';
 
                     return (
-                      <div key={exercise.id} className="rounded-xl border border-border bg-sidebar p-3">
-                        <div className="flex flex-wrap items-start justify-between gap-2">
-                          <div>
-                            <p className="text-sm text-foreground">{exercise.title}</p>
-                            <p className="mt-1 text-xs text-muted-foreground">From {exercise.instructor_name}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {exercise.due_date ? `Due ${new Date(exercise.due_date).toLocaleDateString()}` : 'No due date'}
-                            </p>
+                      <div key={exercise.id} className="relative rounded-xl border border-border bg-sidebar p-3">
+                        <div className={exercise.language === 'javascript' ? 'blur-[2px] pointer-events-none select-none' : ''}>
+                          <div className="flex flex-wrap items-start justify-between gap-2">
+                            <div>
+                              <p className="text-sm text-foreground">{exercise.title}</p>
+                              <p className="mt-1 text-xs text-muted-foreground">From {exercise.instructor_name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {exercise.due_date ? `Due ${new Date(exercise.due_date).toLocaleDateString()}` : 'No due date'}
+                              </p>
+                            </div>
+                            <Badge className={`border ${statusTone}`}>{exercise.status}</Badge>
                           </div>
-                          <Badge className={`border ${statusTone}`}>{exercise.status}</Badge>
+
+                          <div className="mt-3 flex items-center justify-between gap-2">
+                            <p className="line-clamp-2 text-xs text-muted-foreground">{exercise.instructions || 'Open the sandbox to view full instructions.'}</p>
+                            <Button
+                              size="sm"
+                              disabled={exercise.language === 'javascript'}
+                              className="h-8 rounded-full bg-primary px-3 text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-70"
+                              onClick={() => navigate(`/sandbox?exerciseId=${exercise.id}`)}
+                            >
+                              {exercise.language === 'javascript' ? 'Coming soon' : exercise.status === 'assigned' ? 'Start' : 'Open'}
+                            </Button>
+                          </div>
                         </div>
 
-                        <div className="mt-3 flex items-center justify-between gap-2">
-                          <p className="line-clamp-2 text-xs text-muted-foreground">{exercise.instructions || 'Open the sandbox to view full instructions.'}</p>
-                          <Button
-                            size="sm"
-                            className="h-8 rounded-full bg-primary px-3 text-primary-foreground hover:bg-primary/90"
-                            onClick={() => navigate(`/sandbox?exerciseId=${exercise.id}`)}
-                          >
-                            {exercise.status === 'assigned' ? 'Start' : 'Open'}
-                          </Button>
-                        </div>
+                        {exercise.language === 'javascript' && (
+                          <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/35 backdrop-blur-sm">
+                            <span className="rounded-full border border-white/30 bg-black/60 px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-white">
+                              JavaScript Coming Soon
+                            </span>
+                          </div>
+                        )}
                       </div>
                     );
                   }) : (
@@ -592,6 +603,7 @@ export default function Dashboard() {
     </DashboardLayout>
   );
 }
+
 
 
 

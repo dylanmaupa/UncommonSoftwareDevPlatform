@@ -142,6 +142,33 @@ export default function LessonView() {
     );
   }
 
+  const isJavaScriptLesson = String(lesson.language || '').toLowerCase() === 'javascript';
+
+  if (isJavaScriptLesson) {
+    return (
+      <DashboardLayout>
+        <div className="p-8 max-w-3xl mx-auto">
+          <Button variant="ghost" size="sm" onClick={() => navigate(`/courses/${courseId}`)}>
+            <LuArrowLeft className="w-4 h-4 mr-2" />
+            Back to Course
+          </Button>
+
+          <Card className="mt-4 border-border overflow-hidden relative">
+            <CardContent className="p-10 text-center blur-[2px] pointer-events-none select-none">
+              <h2 className="text-2xl heading-font text-foreground mb-2">{lesson.title}</h2>
+              <p className="text-muted-foreground">This JavaScript lesson is temporarily unavailable.</p>
+            </CardContent>
+            <div className="absolute inset-0 flex items-center justify-center bg-black/35 backdrop-blur-sm">
+              <span className="rounded-full border border-white/30 bg-black/60 px-5 py-2 text-[11px] font-semibold uppercase tracking-[0.15em] text-white">
+                JavaScript Coming Soon
+              </span>
+            </div>
+          </Card>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   const isCompleted = userProgress.some((p: any) => p.item_id === lesson.id && p.item_type === 'lesson' && p.status === 'completed');
 
   let nextLesson: { courseId: string; moduleId: string; lessonId: string } | null = null;
@@ -733,5 +760,7 @@ sys.stderr = io.StringIO()
     </DashboardLayout>
   );
 }
+
+
 
 

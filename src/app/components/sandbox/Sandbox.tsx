@@ -212,6 +212,11 @@ sys.stderr = io.StringIO()
   };
 
   const handleRun = async () => {
+    if (language === 'javascript') {
+      toast.info('JavaScript sandbox is coming soon.');
+      return;
+    }
+
     try {
       setIsRunning(true);
       if (language === 'python' && !window.pyodideLocal) {
@@ -233,6 +238,10 @@ sys.stderr = io.StringIO()
   };
 
   const handleSubmitAssignment = async () => {
+    if (language === 'javascript') {
+      toast.info('JavaScript sandbox is coming soon.');
+      return;
+    }
     if (!assignment || !currentUserId) {
       toast.error('Assignment context is missing.');
       return;
@@ -313,6 +322,7 @@ sys.stderr = io.StringIO()
 
   const isAssignmentMode = Boolean(assignment || exerciseId);
   const isLanguageLocked = Boolean(assignment);
+  const isJavaScriptBlocked = language === 'javascript';
   const canSubmitAssignment = Boolean(
     assignment &&
     currentUserId &&
@@ -344,23 +354,26 @@ sys.stderr = io.StringIO()
               <select
                 className="bg-[#111214] border border-white/10 rounded-lg text-sm px-3 py-2 text-white/80 outline-none focus:ring-2 focus:ring-blue-500/30 disabled:opacity-60 disabled:cursor-not-allowed"
                 value={language}
-                disabled={isLanguageLocked}
+                disabled={isLanguageLocked || isJavaScriptBlocked}
                 onChange={(e) => {
                   const nextLanguage = normalizeLanguage(e.target.value);
+                  if (nextLanguage === 'javascript') {
+                    toast.info('JavaScript sandbox is coming soon.');
+                    return;
+                  }
+
                   setLanguage(nextLanguage);
-                  if (nextLanguage === 'javascript' && code.includes('def greet(name):')) {
-                    setCode(DEFAULT_JAVASCRIPT_CODE);
-                  } else if (nextLanguage === 'python' && code.includes('function greet(name)')) {
+                  if (nextLanguage === 'python' && code.includes('function greet(name)')) {
                     setCode(DEFAULT_PYTHON_CODE);
                   }
                 }}
               >
                 <option value="python">Python</option>
-                <option value="javascript">JavaScript</option>
+                <option value="javascript" disabled>JavaScript (Coming soon)</option>
               </select>
               <Button
                 onClick={handleRun}
-                disabled={isRunning}
+                disabled={isRunning || isJavaScriptBlocked}
                 className="bg-blue-500 text-white hover:bg-blue-400 rounded-full px-6 shadow-lg shadow-blue-500/20"
               >
                 <LuPlay className="w-4 h-4 mr-2" />
@@ -369,7 +382,7 @@ sys.stderr = io.StringIO()
               {isAssignmentMode && (
                 <Button
                   onClick={handleSubmitAssignment}
-                  disabled={isRunning || isSubmittingAssignment || !canSubmitAssignment}
+                  disabled={isRunning || isSubmittingAssignment || !canSubmitAssignment || isJavaScriptBlocked}
                   className="bg-emerald-500 text-white hover:bg-emerald-400 rounded-full px-6 shadow-lg shadow-emerald-500/20"
                 >
                   <LuSend className="w-4 h-4 mr-2" />
@@ -441,6 +454,7 @@ sys.stderr = io.StringIO()
                     scrollBeyondLastLine: false,
                     automaticLayout: true,
                     tabSize: language === 'python' ? 4 : 2,
+                    readOnly: isJavaScriptBlocked,
                     fontFamily: '"JetBrains Mono", "Fira Code", monospace',
                   }}
                   className="absolute inset-0"
@@ -477,7 +491,25 @@ sys.stderr = io.StringIO()
             </Card>
           </div>
         </div>
+
+        {isJavaScriptBlocked && (
+          <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/45 backdrop-blur-sm">
+            <div className="rounded-2xl border border-white/20 bg-black/70 px-6 py-4 text-center">
+              <p className="text-xs uppercase tracking-[0.2em] text-white/70">Coming soon</p>
+              <p className="mt-2 text-sm font-medium text-white">JavaScript sandbox is temporarily unavailable.</p>
+            </div>
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );
 }
+
+
+
+
+
+
+
+
+
