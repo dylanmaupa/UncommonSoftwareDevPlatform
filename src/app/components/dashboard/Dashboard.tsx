@@ -24,6 +24,7 @@ import { useEffect, useState } from 'react';
 import { calculateUserLevel } from '../../../lib/gamificationUtils';
 import { supabase } from '../../../lib/supabase';
 import { fetchProfileForAuthUser } from '../../lib/profileAccess';
+import { getGreeting } from '../../lib/timeUtils';
 
 interface UserProfile {
   id: string;
@@ -372,7 +373,7 @@ function DashboardMain({
                   <AvatarImage src={dashboardAvatar} alt={nickname} />
                   <AvatarFallback>{nickname ? nickname[0] : 'U'}</AvatarFallback>
                 </Avatar>
-                <p className="mt-3 text-base text-foreground">Good Morning {nickname}</p>
+                <p className="mt-3 text-base text-foreground">{getGreeting()} {nickname}</p>
                 <p className="text-xs text-muted-foreground">{profile.role === 'instructor' ? `Hub: ${profile.hub_location}` : 'Continue your journey to your target'}</p>
               </div>
               <div className="rounded-2xl bg-secondary p-3">
@@ -461,7 +462,7 @@ export default function Dashboard() {
           hub_location: String(metadata?.['hub_location'] ?? ''),
           xp: Number(metadata?.['xp'] ?? 0),
           streak: Number(metadata?.['streak'] ?? 0),
-        }) as UserProfile;
+        }) as unknown as UserProfile;
 
         setProfile(profileData);
 

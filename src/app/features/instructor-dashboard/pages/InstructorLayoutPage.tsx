@@ -15,6 +15,7 @@ import { supabase } from '../../../../lib/supabase';
 import { fetchProfileForAuthUser } from '../../../lib/profileAccess';
 import { calculateProgressPercentage } from '../data/selectors';
 import { InstructorContext, useComputeInstructorData } from '../hooks/useInstructorData';
+import { getGreeting } from '../../../lib/timeUtils';
 
 export default function InstructorLayoutPage() {
   const navigate = useNavigate();
@@ -61,17 +62,17 @@ export default function InstructorLayoutPage() {
       const metadata = (user.user_metadata as Record<string, unknown> | undefined) ?? undefined;
       const role = String(
         profileRow?.['role'] ??
-          profileRow?.['user_role'] ??
-          metadata?.['role'] ??
-          metadata?.['user_role'] ??
-          ''
+        profileRow?.['user_role'] ??
+        metadata?.['role'] ??
+        metadata?.['user_role'] ??
+        ''
       ).toLowerCase();
       const isInstructor = role === 'instructor';
 
       const hubLoc = profileRow?.['hub_location'] ?? metadata?.['hub_location'] ?? '';
       const fName = profileRow?.['full_name'] ?? metadata?.['full_name'] ?? '';
       const uEmail = user.email ?? profileRow?.['email'] ?? '';
-      
+
       setHubLocation(String(hubLoc));
       setUserFullName(String(fName));
       setUserEmail(String(uEmail));
@@ -152,7 +153,7 @@ export default function InstructorLayoutPage() {
                       <AvatarImage src={instructorStudents[0]?.avatarUrl ?? ''} alt={instructor.fullName} />
                       <AvatarFallback>{instructor.fullName?.[0] ?? 'I'}</AvatarFallback>
                     </Avatar>
-                    <p className="mt-3 text-base text-foreground">Good Morning {instructor.fullName}</p>
+                    <p className="mt-3 text-base text-foreground">{getGreeting()} {instructor.fullName}</p>
                     <p className="text-xs text-muted-foreground">Hub: {instructorHub?.name ?? 'Not assigned'}</p>
                   </div>
 
