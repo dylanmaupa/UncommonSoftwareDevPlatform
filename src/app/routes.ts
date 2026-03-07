@@ -26,6 +26,7 @@ import AdminLayoutPage from './features/admin-dashboard/pages/AdminLayoutPage';
 import AdminOverviewPage from './features/admin-dashboard/pages/AdminOverviewPage';
 import AdminHubDetailPage from './features/admin-dashboard/pages/AdminHubDetailPage';
 import AdminStudentsPage from './features/admin-dashboard/pages/AdminStudentsPage';
+import ZimnovatePricingPage from './pages/ZimnovatePricingPage';
 
 import NotFound from './components/NotFound';
 
@@ -47,6 +48,7 @@ export const router = createBrowserRouter([
           { path: 'students', Component: AdminStudentsPage },
         ],
       },
+      { path: 'zimnovate-pricing', Component: ZimnovatePricingPage },
       { path: 'sandbox', Component: Sandbox },
       { path: 'courses', Component: Courses },
       { path: 'courses/:courseId', Component: CourseDetail },
