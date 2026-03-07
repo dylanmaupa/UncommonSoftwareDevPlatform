@@ -1,81 +1,44 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent } from '../ui/card';
 import { LuFlame } from 'react-icons/lu';
-import { supabase } from '../../../lib/supabase';
 
 interface StreakWidgetProps {
     streak: number;
     userId: string;
+    lastActivityDate?: string;
 }
 
-const buildFallbackWeek = (streak: number) => {
-    const capped = Math.max(0, Math.min(streak, 7));
-    return Array.from({ length: 7 }, (_, index) => index >= 7 - capped);
+const buildStreakWeek = (streak: number, lastActivityDate?: string) => {
+    const days = [false, false, false, false, false, false, false];
+    if (!lastActivityDate || streak <= 0) return days;
+
+    // Use UTC dates for consistent math
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - (6 - i));
+        const dateStr = d.toISOString().split('T')[0];
+
+        const dTime = new Date(dateStr + 'T00:00:00Z').getTime();
+        const lastTime = new Date(lastActivityDate + 'T00:00:00Z').getTime();
+        const firstActiveTime = lastTime - ((streak - 1) * 86400000);
+
+        if (dTime <= lastTime && dTime >= firstActiveTime) {
+            days[i] = true;
+        }
+    }
+
+    return days;
 };
 
-export default function StreakWidget({ streak, userId }: StreakWidgetProps) {
-    const [activityDays, setActivityDays] = useState<boolean[]>(buildFallbackWeek(streak));
-    const [isActiveToday, setIsActiveToday] = useState(streak > 0);
+export default function StreakWidget({ streak, userId, lastActivityDate }: StreakWidgetProps) {
+    const [activityDays, setActivityDays] = useState<boolean[]>(buildStreakWeek(streak, lastActivityDate));
+    const [isActiveToday, setIsActiveToday] = useState(false);
 
     useEffect(() => {
-        const fetchActivity = async () => {
-            if (!userId) return;
-
-            const useActivityLogs = import.meta.env.VITE_ENABLE_ACTIVITY_LOGS === 'true';
-            if (!useActivityLogs) {
-                const fallback = buildFallbackWeek(streak);
-                setActivityDays(fallback);
-                setIsActiveToday(fallback[6]);
-                return;
-            }
-
-            // Fetch activity logs for the last 7 days
-            const today = new Date();
-            today.setHours(23, 59, 59, 999);
-
-            const sevenDaysAgo = new Date();
-            sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
-            sevenDaysAgo.setHours(0, 0, 0, 0);
-
-            const { data, error } = await supabase
-                .from('user_activity_logs')
-                .select('active_date')
-                .eq('user_id', userId)
-                .gte('active_date', sevenDaysAgo.toISOString().split('T')[0])
-                .lte('active_date', today.toISOString().split('T')[0]);
-
-            if (error) {
-                const fallback = buildFallbackWeek(streak);
-                setActivityDays(fallback);
-                setIsActiveToday(fallback[6]);
-                return;
-            }
-
-            if (data) {
-                const activeDates = new Set(data.map(log => log.active_date));
-                const days: boolean[] = [];
-                let activeToday = false;
-
-                // Map the last 7 days to boolean
-                for (let i = 6; i >= 0; i--) {
-                    const d = new Date();
-                    d.setDate(d.getDate() - i);
-                    const dateString = d.toISOString().split('T')[0];
-                    const isActive = activeDates.has(dateString);
-                    days.push(isActive);
-
-                    if (i === 0 && isActive) {
-                        activeToday = true;
-                    }
-                }
-
-                setActivityDays(days);
-                setIsActiveToday(activeToday);
-            }
-        };
-
-        fetchActivity();
-    }, [userId, streak]);
+        const days = buildStreakWeek(streak, lastActivityDate);
+        setActivityDays(days);
+        setIsActiveToday(days[6]);
+    }, [streak, lastActivityDate]);
 
     const weekDays = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
     // Adjust weekDays based on current day so 'Today' is always the right-most bubble

@@ -35,6 +35,7 @@ interface UserProfile {
   specialization?: string | null;
   streak?: number;
   xp?: number;
+  last_activity_date?: string;
 }
 
 interface InstructorExercise {
@@ -397,7 +398,11 @@ function DashboardMain({
                 <div className="rounded-xl bg-sidebar p-2 text-muted-foreground">Lessons: {completedLessons}</div>
               </div>
               <div className="mt-4">
-                <StreakWidget streak={streak || profile.streak || 0} userId={profile.id} />
+                <StreakWidget
+                  streak={profile.streak || 0}
+                  userId={profile.id}
+                  lastActivityDate={profile.last_activity_date}
+                />
               </div>
             </CardContent>
           </Card>
@@ -462,6 +467,7 @@ export default function Dashboard() {
           hub_location: String(metadata?.['hub_location'] ?? ''),
           xp: Number(metadata?.['xp'] ?? 0),
           streak: Number(metadata?.['streak'] ?? 0),
+          last_activity_date: String(metadata?.['last_activity_date'] ?? ''),
         }) as unknown as UserProfile;
 
         setProfile(profileData);
