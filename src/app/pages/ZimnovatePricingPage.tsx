@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
-import { 
-  LuCheck, 
-  LuChevronDown, 
-  LuChevronUp, 
-  LuRocket, 
-  LuZap, 
-  LuGlobe, 
-  LuMessageSquare, 
-  LuMail, 
-  LuPhone, 
+import {
+  LuCheck,
+  LuChevronDown,
+  LuChevronUp,
+  LuRocket,
+  LuZap,
+  LuGlobe,
+  LuMessageSquare,
+  LuMail,
+  LuPhone,
   LuMapPin,
   LuArrowRight,
   LuMinus
@@ -20,7 +20,6 @@ import { Badge } from '../components/ui/badge';
 const packages = [
   {
     name: "Starter Website",
-    price: "350",
     description: "Essential web presence for small businesses and personal brands.",
     timeline: "2 week delivery",
     features: [
@@ -36,7 +35,6 @@ const packages = [
   },
   {
     name: "Business Growth",
-    price: "700",
     description: "Advanced custom solution for established SMEs looking to scale.",
     timeline: "3–4 week delivery",
     features: [
@@ -52,7 +50,6 @@ const packages = [
   },
   {
     name: "Startup MVP",
-    price: "2,500",
     description: "Full functional product to validate your startup idea fast.",
     timeline: "4–6 week delivery",
     features: [
@@ -68,7 +65,6 @@ const packages = [
   },
   {
     name: "Enterprise",
-    price: "Custom",
     description: "Bespoke automation and digital transformation for NGOs and large teams.",
     timeline: "Timeline on request",
     features: [
@@ -100,8 +96,8 @@ const faqs = [
     a: "Our Starter packages typically take 2 weeks, while Business Growth sites take 3-4 weeks. Startup MVPs and Custom Enterprise solutions vary between 4-12 weeks depending on complexity."
   },
   {
-    q: "Do you offer payment plans?",
-    a: "Yes, we understand the local market. We typically require a 50% deposit to start, with the remaining balance due upon completion. For larger projects, we can arrange milestone-based monthly payments."
+    q: "How do we start working together?",
+    a: "We usually start with a free consultation to understand your needs. Once we agree on the scope, we require a deposit to secure your slot in our development sprint, with the balance due upon successful launch."
   },
   {
     q: "Can you redesign my existing website?",
@@ -132,7 +128,7 @@ export default function ZimnovatePricingPage() {
           <div className="absolute top-0 -left-1/4 w-1/2 h-1/2 bg-blue-50 rounded-full blur-[120px] opacity-60" />
           <div className="absolute bottom-0 -right-1/4 w-1/2 h-1/2 bg-indigo-50 rounded-full blur-[120px] opacity-60" />
         </div>
-        
+
         <div className="container relative z-10 mx-auto px-4 text-center">
           <Badge variant="outline" className="mb-6 bg-white/50 backdrop-blur-sm px-4 py-1 text-blue-600 border-blue-200">
             Digital Excellence in Harare
@@ -160,19 +156,18 @@ export default function ZimnovatePricingPage() {
       <section className="py-20 bg-white">
         <div className="container mx-auto px-4">
           <div className="mb-16 text-center">
-            <h2 className="mb-4 text-3xl font-bold text-slate-900">Simple, Transparent Pricing</h2>
-            <p className="text-slate-500 max-w-xl mx-auto">Choose the perfect plan for your business stage. No hidden fees, just high-quality delivery.</p>
+            <h2 className="mb-4 text-3xl font-bold text-slate-900">Service Packages</h2>
+            <p className="text-slate-500 max-w-xl mx-auto">Choose the perfect plan for your business stage. High-quality delivery guaranteed.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8">
             {packages.map((pkg, idx) => (
-              <Card 
-                key={idx} 
-                className={`flex flex-col rounded-3xl border transition-all duration-300 ${
-                  pkg.highlight 
-                    ? 'border-blue-600 shadow-2xl shadow-blue-100 ring-4 ring-blue-50 scale-105 z-10' 
+              <Card
+                key={idx}
+                className={`flex flex-col rounded-3xl border transition-all duration-300 ${pkg.highlight
+                    ? 'border-blue-600 shadow-2xl shadow-blue-100 ring-4 ring-blue-50 scale-105 z-10'
                     : 'border-slate-200 hover:border-blue-300 hover:shadow-xl'
-                }`}
+                  }`}
               >
                 <CardContent className="p-8 flex flex-col h-full">
                   <div className="mb-6">
@@ -183,18 +178,11 @@ export default function ZimnovatePricingPage() {
                     )}
                     <h3 className="text-xl font-bold text-slate-900 mb-2">{pkg.name}</h3>
                     <p className="text-sm text-slate-500 mb-6 min-h-[40px] leading-relaxed italic">{pkg.description}</p>
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-sm font-semibold text-slate-400">From</span>
-                      <span className="text-4xl font-extrabold text-slate-900">
-                        {pkg.price === "Custom" ? "" : "$"}
-                        {pkg.price}
-                      </span>
-                    </div>
                   </div>
 
                   <div className="mb-8 flex-grow">
                     <p className="text-xs font-bold uppercase tracking-wider text-blue-600 mb-4 flex items-center gap-2">
-                       {pkg.timeline}
+                      {pkg.timeline}
                     </p>
                     <ul className="space-y-4">
                       {pkg.features.map((feat, fidx) => (
@@ -206,13 +194,12 @@ export default function ZimnovatePricingPage() {
                     </ul>
                   </div>
 
-                  <Button 
-                    variant={pkg.highlight ? 'default' : 'outline'} 
-                    className={`w-full py-6 rounded-2xl font-bold text-base transition-all ${
-                      pkg.highlight 
-                        ? 'bg-blue-600 hover:bg-blue-700' 
+                  <Button
+                    variant={pkg.highlight ? 'default' : 'outline'}
+                    className={`w-full py-6 rounded-2xl font-bold text-base transition-all ${pkg.highlight
+                        ? 'bg-blue-600 hover:bg-blue-700'
                         : 'border-slate-200 hover:bg-slate-50 text-slate-900'
-                    }`}
+                      }`}
                   >
                     {pkg.cta}
                   </Button>
@@ -305,11 +292,11 @@ export default function ZimnovatePricingPage() {
 
           <div className="space-y-2">
             {faqs.map((faq, idx) => (
-              <div 
-                key={idx} 
+              <div
+                key={idx}
                 className="overflow-hidden rounded-2xl border border-slate-200 bg-white transition-all shadow-sm hover:shadow-md"
               >
-                <button 
+                <button
                   onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
                   className="flex w-full items-center justify-between p-6 text-left selection:bg-transparent"
                 >
@@ -328,7 +315,7 @@ export default function ZimnovatePricingPage() {
       {/* Final CTA */}
       <section className="py-24 relative overflow-hidden bg-slate-900 rounded-[3rem] mx-4 lg:mx-12 mb-12 shadow-2xl">
         <div className="absolute top-0 right-0 w-[40%] h-full bg-blue-600/10 blur-[100px]" />
-        
+
         <div className="container relative z-10 mx-auto px-4 text-center">
           <h2 className="mb-6 text-4xl lg:text-5xl font-bold text-white tracking-tight leading-tight">
             Ready to transform your <br className="hidden lg:block" />
@@ -337,13 +324,13 @@ export default function ZimnovatePricingPage() {
           <p className="mx-auto mb-10 max-w-xl text-lg text-slate-400 font-medium">
             Contact Zimnovate today and let's start building your world-class digital presence in Harare.
           </p>
-          
+
           <div className="flex flex-col items-center gap-8">
             <Button size="lg" className="h-16 px-12 rounded-full text-lg font-bold bg-blue-600 hover:bg-blue-700 shadow-xl shadow-blue-900/40 transition-all hover:scale-105">
               Start Your Project
               <LuArrowRight className="ml-2 h-5 w-5" />
             </Button>
-            
+
             <div className="grid sm:grid-cols-3 gap-8 py-8 border-t border-white/5 w-full max-w-3xl mt-4">
               <div className="flex flex-col items-center gap-2">
                 <div className="p-3 bg-white/5 rounded-xl border border-white/10 mb-1"><LuMail className="h-5 w-5 text-blue-400" /></div>
@@ -361,7 +348,7 @@ export default function ZimnovatePricingPage() {
                 <p className="text-sm font-medium text-white/80">Harare, Zimbabwe</p>
               </div>
             </div>
-            
+
             <p className="text-xs text-white/30 font-medium tracking-wide prose-sm">
               © 2026 Zimnovate Digital Agency. Build with Passion in Zimbabwe.
             </p>
