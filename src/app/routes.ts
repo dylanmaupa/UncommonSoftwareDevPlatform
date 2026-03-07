@@ -21,6 +21,7 @@ import InstructorAssessmentsPage from './features/instructor-dashboard/pages/Ins
 import InstructorProjectsInsightsPage from './features/instructor-dashboard/pages/InstructorProjectsInsightsPage';
 import InstructorLiveOpsPage from './features/instructor-dashboard/pages/InstructorLiveOpsPage';
 import InstructorHubOperationsPage from './features/instructor-dashboard/pages/InstructorHubOperationsPage';
+import InstructorSubmissionReviewPage from './features/instructor-dashboard/pages/InstructorSubmissionReviewPage';
 import NotFound from './components/NotFound';
 
 export const router = createBrowserRouter([
@@ -50,6 +51,7 @@ export const router = createBrowserRouter([
           { path: 'students/:studentId', Component: InstructorLearnerProfilePage },
           { path: 'curriculum', Component: InstructorCurriculumInsightsPage },
           { path: 'assessments', Component: InstructorAssessmentsPage },
+          { path: 'assessments/:exerciseId', Component: InstructorSubmissionReviewPage },
           { path: 'projects', Component: InstructorProjectsInsightsPage },
           { path: 'live', Component: InstructorLiveOpsPage },
           { path: 'hub-operations', Component: InstructorHubOperationsPage },

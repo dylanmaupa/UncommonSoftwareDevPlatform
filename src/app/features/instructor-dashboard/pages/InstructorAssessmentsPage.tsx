@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { Link } from 'react-router';
 import { toast } from 'sonner';
 import { LuBookOpenCheck, LuClock3, LuSend, LuTarget } from 'react-icons/lu';
 import { Badge } from '../../../components/ui/badge';
@@ -302,28 +303,63 @@ export default function InstructorAssessmentsPage() {
     }
   };
 
-  const handleMarkReviewed = async (exerciseId: string) => {
-    if (!instructorId) return;
-
-    const { error } = await supabase
-      .from('instructor_exercises')
-      .update({ status: 'reviewed' })
-      .eq('id', exerciseId)
-      .eq('instructor_id', instructorId);
-
-    if (error) {
-      console.error('Failed to mark exercise reviewed', error);
-      toast.error('Failed to mark submission as reviewed.');
+  const handleCreateDummySubmission = async () => {
+    if (!instructorId) {
+      toast.error('Unable to identify instructor account.');
       return;
     }
 
-    setExercises((prev) => prev.map((exercise) => (
-      exercise.id === exerciseId
-        ? { ...exercise, status: 'reviewed' }
-        : exercise
-    )));
+    if (!students.length) {
+      toast.error('No students available in this hub to assign a dummy submission.');
+      return;
+    }
 
-    toast.success('Submission marked as reviewed.');
+    // Pick a random student or the first one
+    const targetStudent = students[0];
+
+    try {
+      setIsSending(true);
+
+      const isEssay = Math.random() > 0.5;
+      
+      const payload = {
+        instructor_id: instructorId,
+        student_id: targetStudent.id,
+        title: isEssay ? 'System Architecture Essay' : 'Python Lists Challenge',
+        instructions: isEssay 
+          ? 'Write a 200-word essay explaining the benefits of microservices.'
+          : 'Write a python function to reverse a list.',
+        language: isEssay ? 'essay' : 'python',
+        starter_code: isEssay ? '' : 'def reverse_list(lst):\n    pass',
+        due_date: new Date().toISOString(),
+        status: 'submitted', // Mark as already submitted
+        submitted_at: new Date().toISOString(),
+        submission_code: isEssay 
+          ? 'Microservices offer strong modularity, independent deployment scales, and language-agnostic development. This allows distinct teams to handle specific services without stepping on each others toes. It is far superior to monolitic architecture for large scale applications.'
+          : 'def reverse_list(lst):\n    return lst[::-1]\n\n# Test\nprint(reverse_list([1, 2, 3]))',
+        submission_output: isEssay ? null : '[3, 2, 1]\n',
+      };
+
+      const { data, error } = await supabase
+        .from('instructor_exercises')
+        .insert(payload)
+        .select('*')
+        .single();
+
+      if (error) {
+        console.error('Failed to create dummy submission', error);
+        toast.error('Failed to create dummy submission.');
+        return;
+      }
+
+      if (data) {
+        setExercises((prev) => [normalizeExerciseRow(data), ...prev]);
+        toast.success('Dummy submission created for testing!');
+      }
+
+    } finally {
+      setIsSending(false);
+    }
   };
 
   if (isLoading) {
@@ -484,41 +520,48 @@ export default function InstructorAssessmentsPage() {
 
         <Card className="rounded-2xl border-border">
           <CardContent className="p-4">
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="heading-font text-lg text-foreground">Submission Queue</h2>
-              <Badge className="border border-border bg-card text-[11px] text-muted-foreground">{submissionQueue.length} pending review</Badge>
-            </div>
-
-            <div className="space-y-2">
-              {submissionQueue.length === 0 && (
-                <div className="rounded-xl border border-dashed border-border bg-sidebar p-4 text-sm text-muted-foreground">
-                  No submissions yet. Students will appear here after they submit from sandbox.
+              <div className="mb-3 flex items-center justify-between">
+                <div>
+                  <h2 className="heading-font text-lg text-foreground inline-block mr-3">Submission Queue</h2>
+                  <Badge className="border border-border bg-card text-[11px] text-muted-foreground">{submissionQueue.length} pending review</Badge>
                 </div>
-              )}
+                <Button variant="outline" size="sm" onClick={handleCreateDummySubmission} disabled={isSending || !students.length}>
+                  Create Dummy Submission
+                </Button>
+              </div>
 
-              {submissionQueue.map((exercise) => (
-                <div key={exercise.id} className="rounded-xl border border-border bg-sidebar p-3">
-                  <div className="flex flex-wrap items-start justify-between gap-2">
-                    <div>
-                      <p className="text-sm text-foreground">{exercise.title}</p>
-                      <p className="text-xs text-muted-foreground">Student: {studentNameMap.get(exercise.student_id) || 'Unknown student'}</p>
-                      <p className="text-xs text-muted-foreground">
-                        Submitted: {exercise.submitted_at ? new Date(exercise.submitted_at).toLocaleString() : 'Not submitted'}
-                      </p>
-                    </div>
-                    <Button size="sm" className="h-8" onClick={() => handleMarkReviewed(exercise.id)}>
-                      Mark reviewed
-                    </Button>
+              <div className="space-y-2">
+                {submissionQueue.length === 0 && (
+                  <div className="rounded-xl border border-dashed border-border bg-sidebar p-4 text-sm text-muted-foreground">
+                    No submissions yet. Click "Create Dummy Submission" to test the review flow.
                   </div>
+                )}
 
-                  {exercise.submission_output && (
-                    <pre className="mt-2 rounded-lg border border-border bg-card p-2 text-xs text-muted-foreground whitespace-pre-wrap font-mono max-h-28 overflow-auto">
-                      {exercise.submission_output}
-                    </pre>
-                  )}
-                </div>
-              ))}
-            </div>
+                {submissionQueue.map((exercise) => (
+                  <div key={exercise.id} className="rounded-xl border border-border bg-sidebar p-3">
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div>
+                        <p className="text-sm text-foreground">{exercise.title}</p>
+                        <p className="text-xs text-muted-foreground">Student: {studentNameMap.get(exercise.student_id) || 'Unknown student'}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Submitted: {exercise.submitted_at ? new Date(exercise.submitted_at).toLocaleString() : 'Not submitted'}
+                        </p>
+                      </div>
+                      <Button size="sm" className="h-8" asChild>
+                        <Link to={`/instructor/assessments/${exercise.id}`}>
+                          Review Submission
+                        </Link>
+                      </Button>
+                    </div>
+
+                    {exercise.submission_output && (
+                      <pre className="mt-2 rounded-lg border border-border bg-card p-2 text-xs text-muted-foreground whitespace-pre-wrap font-mono max-h-28 overflow-auto">
+                        {exercise.submission_output}
+                      </pre>
+                    )}
+                  </div>
+                ))}
+              </div>
           </CardContent>
         </Card>
       </div>
