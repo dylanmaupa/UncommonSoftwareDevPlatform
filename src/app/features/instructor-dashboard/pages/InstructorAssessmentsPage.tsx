@@ -312,17 +312,17 @@ export default function InstructorAssessmentsPage() {
   return (
     <div className="space-y-4">
       <Card className="overflow-hidden rounded-2xl border-border bg-primary text-white">
-        <CardContent className="space-y-3 p-4 sm:p-6">
+        <CardContent className="space-y-4 p-6 sm:p-8">
           <p className="text-xs uppercase tracking-[0.2em] text-white/75">Assessments</p>
-          <h1 className="heading-font text-2xl sm:text-3xl">{headingHub} Exercise Workflow</h1>
-          <p className="max-w-2xl text-sm text-white/80">
+          <h1 className="heading-font text-3xl sm:text-4xl leading-tight">{headingHub} Exercise Workflow</h1>
+          <p className="max-w-2xl text-sm sm:text-base text-white/80">
             Send coding exercises to students, track completion in sandbox, and review returned submissions in one place.
           </p>
 
-          <div className="grid grid-cols-3 gap-2 text-xs">
-            <div className="rounded-xl bg-white/15 p-2.5"><p className="text-white/70">Assigned</p><p className="mt-1 text-base text-white">{assignedCount}</p></div>
-            <div className="rounded-xl bg-white/15 p-2.5"><p className="text-white/70">Submitted</p><p className="mt-1 text-base text-white">{submittedCount}</p></div>
-            <div className="rounded-xl bg-white/15 p-2.5"><p className="text-white/70">Reviewed</p><p className="mt-1 text-base text-white">{reviewedCount}</p></div>
+          <div className="grid grid-cols-3 gap-3 text-xs sm:text-sm">
+            <div className="rounded-xl bg-white/15 p-3 sm:p-4"><p className="text-white/70">Assigned</p><p className="mt-1 text-xl sm:text-2xl font-bold text-white">{assignedCount}</p></div>
+            <div className="rounded-xl bg-white/15 p-3 sm:p-4"><p className="text-white/70">Submitted</p><p className="mt-1 text-xl sm:text-2xl font-bold text-white">{submittedCount}</p></div>
+            <div className="rounded-xl bg-white/15 p-3 sm:p-4"><p className="text-white/70">Reviewed</p><p className="mt-1 text-xl sm:text-2xl font-bold text-white">{reviewedCount}</p></div>
           </div>
         </CardContent>
       </Card>
