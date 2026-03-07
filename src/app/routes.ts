@@ -21,8 +21,11 @@ import InstructorAssessmentsPage from './features/instructor-dashboard/pages/Ins
 import InstructorProjectsInsightsPage from './features/instructor-dashboard/pages/InstructorProjectsInsightsPage';
 import InstructorLiveOpsPage from './features/instructor-dashboard/pages/InstructorLiveOpsPage';
 import InstructorHubOperationsPage from './features/instructor-dashboard/pages/InstructorHubOperationsPage';
-
 import InstructorSubmissionReviewPage from './features/instructor-dashboard/pages/InstructorSubmissionReviewPage';
+import AdminLayoutPage from './features/admin-dashboard/pages/AdminLayoutPage';
+import AdminOverviewPage from './features/admin-dashboard/pages/AdminOverviewPage';
+import AdminHubDetailPage from './features/admin-dashboard/pages/AdminHubDetailPage';
+import AdminStudentsPage from './features/admin-dashboard/pages/AdminStudentsPage';
 
 import NotFound from './components/NotFound';
 
@@ -34,7 +37,16 @@ export const router = createBrowserRouter([
       { index: true, Component: Login },
       { path: 'signup', Component: Signup },
       { path: 'dashboard', Component: Dashboard },
-      { path: 'admin', loader: () => redirect('/dashboard') },
+      {
+        path: 'admin',
+        Component: AdminLayoutPage,
+        children: [
+          { index: true, Component: AdminOverviewPage },
+          { path: 'hubs', Component: AdminOverviewPage },
+          { path: 'hubs/:hubId', Component: AdminHubDetailPage },
+          { path: 'students', Component: AdminStudentsPage },
+        ],
+      },
       { path: 'sandbox', Component: Sandbox },
       { path: 'courses', Component: Courses },
       { path: 'courses/:courseId', Component: CourseDetail },
