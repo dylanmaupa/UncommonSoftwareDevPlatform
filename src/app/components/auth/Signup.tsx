@@ -1,4 +1,4 @@
-﻿import { Link, useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -25,7 +25,6 @@ export default function Signup() {
     try {
       const role = email.trim().toLowerCase().endsWith('@uncommon.org') ? 'instructor' : 'student';
 
-      // 1. Sign up the user (this creates the auth.users record)
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
@@ -42,8 +41,6 @@ export default function Signup() {
       }
 
       if (authData.user) {
-        // We now rely on a Supabase Database Trigger to create the profile
-        // automatically using the metadata we passed in the options.data object.
         toast.success('Account created! Welcome to your coding journey!');
         navigate('/dashboard');
       }
@@ -55,7 +52,7 @@ export default function Signup() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0747a1]/5 via-white to-[#FF6B35]/5 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-[#0747a1]/5 via-white to-[#1D4ED8]/5 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-6">
           <h1 className="text-4xl mb-2 heading-font" style={{ color: '#1a1a2e' }}>
@@ -107,7 +104,6 @@ export default function Signup() {
               />
             </div>
 
-
             <Button type="submit" disabled={isLoading} className="w-full h-12 rounded-xl text-base mt-2" style={{ backgroundColor: '#0747a1' }}>
               {isLoading ? 'Creating account...' : 'Create Account'}
             </Button>
@@ -124,4 +120,3 @@ export default function Signup() {
     </div>
   );
 }
-

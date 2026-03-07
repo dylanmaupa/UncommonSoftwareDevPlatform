@@ -5,7 +5,7 @@ import { LuArrowLeft, LuHouse } from 'react-icons/lu';
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0747a1]/5 via-white to-[#FF6B35]/5 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-[#0747a1]/5 via-white to-[#1D4ED8]/5 flex items-center justify-center p-4">
       <div className="text-center max-w-md">
         <div className="mb-8">
           <h1 className="text-9xl heading-font mb-4" style={{ color: '#0747a1' }}>
@@ -42,3 +42,4 @@ export default function NotFound() {
     </div>
   );
 }
+

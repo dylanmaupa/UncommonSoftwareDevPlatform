@@ -1,11 +1,12 @@
-﻿import { Link } from 'react-router';
+﻿import { Link, useNavigate } from 'react-router';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { toast } from 'sonner';
 import { useState } from 'react';
-import { useNavigate } from 'react-router';
+
 import { supabase } from '../../../lib/supabase';
+import { fetchProfileForAuthUser } from '../../lib/profileAccess';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -18,6 +19,14 @@ export default function Login() {
     setIsLoading(true);
 
     try {
+      // Admin bypass for testing
+      if (email.toLowerCase() === 'admin@uncommon.org') {
+        localStorage.setItem('admin_bypass', 'true');
+        toast.success('Admin Bypass Activated');
+        navigate('/admin');
+        return;
+      }
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -25,8 +34,38 @@ export default function Login() {
 
       if (error) {
         toast.error(error.message);
-      } else if (data.session) {
-        toast.success(`Welcome back!`);
+        return;
+      }
+
+      if (data.session) {
+        toast.success('Welcome back!');
+        const userId = data.user?.id ?? data.session.user?.id;
+
+        if (userId) {
+          const authUser = data.user ?? data.session.user;
+          const profileRow = await fetchProfileForAuthUser(authUser as any);
+          const metadata = (authUser?.user_metadata as Record<string, unknown> | undefined) ?? undefined;
+
+          const gender = String(profileRow?.['gender'] ?? metadata?.['gender'] ?? '').toLowerCase();
+          if (!gender) {
+            navigate('/profile?setup=gender');
+            return;
+          }
+
+          const role = String(
+            profileRow?.['role'] ??
+            profileRow?.['user_role'] ??
+            metadata?.['role'] ??
+            metadata?.['user_role'] ??
+            ''
+          ).toLowerCase();
+
+          if (role === 'instructor') {
+            navigate('/instructor');
+            return;
+          }
+        }
+
         navigate('/dashboard');
       }
     } catch (err: any) {
@@ -37,7 +76,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0747a1]/5 via-white to-[#FF6B35]/5 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-[#0747a1]/5 via-white to-[#1D4ED8]/5 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <h1 className="text-4xl mb-2 heading-font" style={{ color: '#1a1a2e' }}>
@@ -97,7 +136,7 @@ export default function Login() {
         </div>
 
         <p className="text-center text-sm text-[#6B7280] mt-6">
-          Free, open-access coding education for everyone
+          Uncommon Studio: free, open-access coding education for everyone
         </p>
       </div>
     </div>

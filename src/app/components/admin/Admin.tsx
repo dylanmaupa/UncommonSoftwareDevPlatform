@@ -19,6 +19,7 @@ import {
 } from 'react-icons/lu';
 import { useNavigate } from 'react-router';
 import { supabase } from '../../../lib/supabase';
+import { fetchProfileForAuthUser } from '../../lib/profileAccess';
 
 const instructorSections = [
   {
@@ -159,71 +160,53 @@ const instructorSections = [
   },
 ] as const;
 
-const phaseRoadmap = [
-  {
-    phase: 'MVP',
-    focus: 'Teaching efficiency and reliable review workflow',
-    modules: ['Dashboard', 'Courses', 'Lessons', 'Assignments', 'Submissions', 'Settings'],
-  },
-  {
-    phase: 'Intermediate',
-    focus: 'Better visibility and communication',
-    modules: ['Students', 'Analytics', 'Announcements'],
-  },
-  {
-    phase: 'Advanced',
-    focus: 'Consistency and operational intelligence',
-    modules: ['Rubrics & Grading', 'Versioning & Draft History', 'AI Assistance'],
-  },
-] as const;
 
-const submissionQueue = [
-  {
-    id: 'SUB-2014',
-    student: 'Ari Johnson',
-    assignment: 'React Module 2 Reflection',
-    status: 'Pending',
-    submitted: '35m ago',
-  },
-  {
-    id: 'SUB-2011',
-    student: 'Mina Lopez',
-    assignment: 'Python Functions Drill',
-    status: 'Reviewed',
-    submitted: '2h ago',
-  },
-  {
-    id: 'SUB-2009',
-    student: 'Owen Park',
-    assignment: 'JS DOM Mini Project',
-    status: 'Approved',
-    submitted: '4h ago',
-  },
-] as const;
+type SubmissionStatus = 'Pending' | 'Reviewed' | 'Approved';
 
-const recentStudentActivity = [
-  'Mina Lopez completed Lesson: Variables and Data Types',
-  'Ari Johnson submitted React Module 2 Reflection',
-  'Owen Park completed Project: Calculator App',
-  'Priya Das started Lesson: Lists and Dictionaries',
-] as const;
+interface HubSubmissionItem {
+  id: string;
+  studentId: string;
+  student: string;
+  assignment: string;
+  status: SubmissionStatus;
+  submitted: string;
+}
 
-/* Left mock stats structure to fit the UI but we won't show real students array if empty just yet */
-const studentStats = [
-  { name: 'Ari Johnson', completionRate: 72, averageScore: 88, lastActiveDays: 1 },
-  { name: 'Mina Lopez', completionRate: 84, averageScore: 92, lastActiveDays: 0 },
-  { name: 'Owen Park', completionRate: 41, averageScore: 76, lastActiveDays: 8 },
-  { name: 'Priya Das', completionRate: 67, averageScore: 81, lastActiveDays: 2 },
-  { name: 'Noah Kim', completionRate: 29, averageScore: 69, lastActiveDays: 11 },
-] as const;
+const mapExerciseStatusToSubmissionStatus = (status: string): SubmissionStatus => {
+  const normalized = String(status || '').toLowerCase();
 
+  if (normalized === 'reviewed') return 'Reviewed';
+  if (normalized === 'approved') return 'Approved';
+  return 'Pending';
+};
+
+const formatRelativeTime = (timestamp: string | null) => {
+  if (!timestamp) return 'Not submitted';
+
+  const submittedAt = new Date(timestamp);
+  if (Number.isNaN(submittedAt.getTime())) return 'Not submitted';
+
+  const diffMs = Date.now() - submittedAt.getTime();
+  const minutes = Math.floor(diffMs / (1000 * 60));
+
+  if (minutes < 1) return 'Just now';
+  if (minutes < 60) return `${minutes}m ago`;
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d ago`;
+
+  return submittedAt.toLocaleDateString();
+};
 const stageBadgeVariant: Record<(typeof instructorSections)[number]['stage'] | 'Advanced', 'default' | 'secondary' | 'outline'> = {
   MVP: 'default',
   Intermediate: 'secondary',
   Advanced: 'outline',
 };
 
-const submissionBadgeVariant: Record<(typeof submissionQueue)[number]['status'], 'default' | 'secondary' | 'outline'> = {
+const submissionBadgeVariant: Record<SubmissionStatus, 'default' | 'secondary' | 'outline'> = {
   Pending: 'secondary',
   Reviewed: 'outline',
   Approved: 'default',
@@ -243,7 +226,9 @@ export default function Admin() {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [students, setStudents] = useState<UserProfile[]>([]);
-  const [activeCoursesCount, setActiveCoursesCount] = useState<number>(0);
+  const [hubSubmissionQueue, setHubSubmissionQueue] = useState<HubSubmissionItem[]>([]);
+  const [hubRecentActivity, setHubRecentActivity] = useState<string[]>([]);
+  const [hubActiveStudentsCount, setHubActiveStudentsCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [activeSection, setActiveSection] = useState<SectionId>('dashboard');
 
@@ -257,36 +242,109 @@ export default function Admin() {
           return;
         }
 
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
-
-        if (profileError || !profileData) {
-          console.error("Failed to load profile", profileError);
-          return;
-        }
+        const profileRow = await fetchProfileForAuthUser(user as any);
+        const metadata = (user.user_metadata as Record<string, unknown> | undefined) ?? undefined;
+        const profileData = (profileRow ?? {
+          id: user.id,
+          email: user.email ?? '',
+          role: String(metadata?.['role'] ?? metadata?.['user_role'] ?? 'student'),
+          hub_location: String(metadata?.['hub_location'] ?? ''),
+          full_name: String(metadata?.['full_name'] ?? user.email?.split('@')[0] ?? 'Instructor'),
+        }) as UserProfile;
 
         setProfile(profileData);
 
-        if (profileData.role === 'instructor') {
+        const hasRoleColumn = profileRow ? Object.prototype.hasOwnProperty.call(profileRow, 'role') : false;
+
+        if (profileData.role === 'instructor' && profileData.hub_location && hasRoleColumn) {
           const { data: studentData, error: studentError } = await supabase
             .from('profiles')
             .select('*')
             .eq('role', 'student')
             .eq('hub_location', profileData.hub_location);
 
-          if (!studentError && studentData) {
-            setStudents(studentData);
+          if (studentError) {
+            console.error('Failed to load hub students', studentError);
           }
 
-          const { count, error: courseError } = await supabase
-            .from('courses')
-            .select('*', { count: 'exact', head: true });
+          const hubStudents = (!studentError && studentData ? studentData : []) as UserProfile[];
+          setStudents(hubStudents);
 
-          if (!courseError && count !== null) {
-            setActiveCoursesCount(count);
+          const hubStudentIds = hubStudents.map((student) => String(student.id));
+          const hubStudentIdSet = new Set(hubStudentIds);
+          const studentNameMap = new Map(
+            hubStudents.map((student) => [
+              String(student.id),
+              String(student.full_name || student.email || 'Student'),
+            ]),
+          );
+
+          if (hubStudentIds.length > 0) {
+            const { data: exerciseData, error: exerciseError } = await supabase
+              .from('instructor_exercises')
+              .select('id, student_id, title, status, submitted_at, created_at')
+              .eq('instructor_id', user.id)
+              .order('submitted_at', { ascending: false, nullsFirst: false })
+              .order('created_at', { ascending: false });
+
+            if (!exerciseError && exerciseData) {
+              const hubItems: HubSubmissionItem[] = exerciseData
+                .filter((row: any) => hubStudentIdSet.has(String(row.student_id)))
+                .map((row: any) => {
+                  const studentId = String(row.student_id || '');
+
+                  return {
+                    id: String(row.id || ''),
+                    studentId,
+                    student: studentNameMap.get(studentId) || 'Student',
+                    assignment: String(row.title || 'Untitled Assignment'),
+                    status: mapExerciseStatusToSubmissionStatus(String(row.status || '')),
+                    submitted: formatRelativeTime(row.submitted_at ? String(row.submitted_at) : null),
+                  };
+                })
+                .slice(0, 12);
+
+              setHubSubmissionQueue(hubItems);
+
+              const fallbackActivity = hubItems
+                .map((item) => `${item.student} ${item.status === 'Pending' ? 'submitted' : 'updated'} ${item.assignment}`)
+                .slice(0, 8);
+
+              setHubRecentActivity(fallbackActivity);
+              setHubActiveStudentsCount(new Set(hubItems.map((item) => item.studentId)).size);
+            } else {
+              setHubSubmissionQueue([]);
+              setHubRecentActivity([]);
+              setHubActiveStudentsCount(0);
+
+              if (exerciseError?.code !== '42P01') {
+                console.error('Failed to load hub submissions', exerciseError);
+              }
+            }
+
+            const { data: activityData, error: activityError } = await supabase
+              .from('user_activity_logs')
+              .select('user_id, active_date')
+              .in('user_id', hubStudentIds)
+              .order('active_date', { ascending: false })
+              .limit(8);
+
+            if (!activityError && activityData && activityData.length > 0) {
+              const activityFeed = activityData.map((row: any) => {
+                const studentName = studentNameMap.get(String(row.user_id || '')) || 'Student';
+                const activeDate = row.active_date ? new Date(String(row.active_date)).toLocaleDateString() : 'recently';
+                return `${studentName} was active on ${activeDate}`;
+              });
+
+              setHubRecentActivity(activityFeed);
+              setHubActiveStudentsCount(new Set(activityData.map((row: any) => String(row.user_id || ''))).size);
+            } else if (activityError?.code !== '42P01') {
+              console.error('Failed to load hub activity', activityError);
+            }
+          } else {
+            setHubSubmissionQueue([]);
+            setHubRecentActivity([]);
+            setHubActiveStudentsCount(0);
           }
         } else {
           // Admin UI is not for students
@@ -307,20 +365,22 @@ export default function Admin() {
   if (!profile) return null;
 
   const selectedSection = instructorSections.find((section) => section.id === activeSection) ?? instructorSections[0];
-  const activeCourses = activeCoursesCount;
-  // Use real count if students returned, fallback to mock UI stat if empty (just to match previous visual state)
-  const totalStudents = students.length > 0 ? students.length : studentStats.length;
-  const assignmentsPendingReview = submissionQueue.filter((item) => item.status === 'Pending').length;
-  const recentActivityCount = recentStudentActivity.length;
+  const totalStudents = students.length;
+  const assignmentsPendingReview = hubSubmissionQueue.filter((item) => item.status === 'Pending').length;
+  const recentActivityCount = hubRecentActivity.length;
+  const reviewedSubmissions = hubSubmissionQueue.filter(
+    (item) => item.status === 'Reviewed' || item.status === 'Approved',
+  ).length;
 
-  // We are keeping these computations to satisfy existing mock UI until deeper supabase schema is designed for course completions.
   const analyticsSnapshot = {
-    avgCompletion: Math.round(
-      studentStats.reduce((sum, student) => sum + student.completionRate, 0) / studentStats.length,
-    ),
-    avgScore: Math.round(studentStats.reduce((sum, student) => sum + student.averageScore, 0) / studentStats.length),
-    inactiveStudents: studentStats.filter((student) => student.lastActiveDays >= 7).length,
-    dropOffPoint: 'Module 2: Control Flow',
+    avgCompletion:
+      hubSubmissionQueue.length > 0
+        ? Math.round((reviewedSubmissions / hubSubmissionQueue.length) * 100)
+        : 0,
+    reviewedSubmissions,
+    inactiveStudents: Math.max(totalStudents - hubActiveStudentsCount, 0),
+    dropOffPoint:
+      hubSubmissionQueue.length > 0 ? 'Track in submissions table' : 'No hub submission data yet',
   };
 
   return (
@@ -329,7 +389,7 @@ export default function Admin() {
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3 sm:mb-6">
           <div>
             <Badge variant="secondary" className="rounded-full px-3 py-1 text-[11px] uppercase tracking-wider">
-              Instructor Workspace: {profile.hub_location}
+              Hub: {profile.hub_location}
             </Badge>
             <h1 className="heading-font mt-2 text-2xl text-foreground sm:text-3xl">Instructor Dashboard</h1>
             <p className="mt-1 text-sm text-muted-foreground">
@@ -461,8 +521,8 @@ export default function Admin() {
                     </Card>
                     <Card className="rounded-2xl border-border bg-sidebar">
                       <CardContent className="p-4">
-                        <p className="text-xs text-muted-foreground">Active courses</p>
-                        <p className="mt-2 text-2xl text-foreground">{activeCourses}</p>
+                        <p className="text-xs text-muted-foreground">Active students in hub</p>
+                        <p className="mt-2 text-2xl text-foreground">{hubActiveStudentsCount}</p>
                       </CardContent>
                     </Card>
                     <Card className="rounded-2xl border-border bg-sidebar">
@@ -536,22 +596,30 @@ export default function Admin() {
                             </tr>
                           </thead>
                           <tbody>
-                            {submissionQueue.map((item) => (
-                              <tr key={item.id} className="border-b border-border text-sm text-foreground last:border-b-0">
-                                <td className="whitespace-nowrap px-4 py-3">{item.id}</td>
-                                <td className="whitespace-nowrap px-4 py-3">{item.student}</td>
-                                <td className="px-4 py-3">{item.assignment}</td>
-                                <td className="px-4 py-3">
-                                  <Badge variant={submissionBadgeVariant[item.status]}>{item.status}</Badge>
-                                </td>
-                                <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">{item.submitted}</td>
-                                <td className="px-4 py-3">
-                                  <Button size="sm" variant="ghost" className="rounded-full border border-border text-xs">
-                                    Review
-                                  </Button>
+                            {hubSubmissionQueue.length > 0 ? (
+                              hubSubmissionQueue.map((item) => (
+                                <tr key={item.id} className="border-b border-border text-sm text-foreground last:border-b-0">
+                                  <td className="whitespace-nowrap px-4 py-3">{item.id}</td>
+                                  <td className="whitespace-nowrap px-4 py-3">{item.student}</td>
+                                  <td className="px-4 py-3">{item.assignment}</td>
+                                  <td className="px-4 py-3">
+                                    <Badge variant={submissionBadgeVariant[item.status]}>{item.status}</Badge>
+                                  </td>
+                                  <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">{item.submitted}</td>
+                                  <td className="px-4 py-3">
+                                    <Button size="sm" variant="ghost" className="rounded-full border border-border text-xs">
+                                      Review
+                                    </Button>
+                                  </td>
+                                </tr>
+                              ))
+                            ) : (
+                              <tr>
+                                <td colSpan={6} className="px-4 py-6 text-center text-sm text-muted-foreground">
+                                  No submissions from your hub yet.
                                 </td>
                               </tr>
-                            ))}
+                            )}
                           </tbody>
                         </table>
                       </div>
@@ -573,8 +641,8 @@ export default function Admin() {
                     <p className="mt-1 text-lg text-foreground">{analyticsSnapshot.avgCompletion}%</p>
                   </div>
                   <div className="rounded-xl bg-sidebar p-3">
-                    <p className="text-xs text-muted-foreground">Average assignment score</p>
-                    <p className="mt-1 text-lg text-foreground">{analyticsSnapshot.avgScore}%</p>
+                    <p className="text-xs text-muted-foreground">Reviewed submissions</p>
+                    <p className="mt-1 text-lg text-foreground">{analyticsSnapshot.reviewedSubmissions}</p>
                   </div>
                   <div className="rounded-xl bg-sidebar p-3">
                     <p className="text-xs text-muted-foreground">Inactive students flagged</p>
@@ -592,52 +660,17 @@ export default function Admin() {
                   <CardTitle className="heading-font text-base text-foreground">Recent Student Activity</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  {recentStudentActivity.map((item) => (
-                    <div key={item} className="rounded-xl bg-sidebar p-3 text-sm text-foreground">
-                      {item}
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-
-              <Card className="rounded-2xl border-border">
-                <CardHeader>
-                  <CardTitle className="heading-font text-base text-foreground">MVP to Advanced Roadmap</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {phaseRoadmap.map((phase) => (
-                    <div key={phase.phase} className="rounded-xl bg-sidebar p-3">
-                      <div className="mb-2 flex items-center justify-between gap-2">
-                        <p className="text-sm text-foreground">{phase.phase}</p>
-                        <Badge variant={stageBadgeVariant[phase.phase]}>{phase.phase}</Badge>
+                  {hubRecentActivity.length > 0 ? (
+                    hubRecentActivity.map((item) => (
+                      <div key={item} className="rounded-xl bg-sidebar p-3 text-sm text-foreground">
+                        {item}
                       </div>
-                      <p className="text-xs text-muted-foreground">{phase.focus}</p>
-                      <p className="mt-2 text-xs text-foreground">{phase.modules.join(' • ')}</p>
+                    ))
+                  ) : (
+                    <div className="rounded-xl bg-sidebar p-3 text-sm text-muted-foreground">
+                      No recent activity recorded for your hub yet.
                     </div>
-                  ))}
-                </CardContent>
-              </Card>
-
-              <Card className="rounded-2xl border-border bg-destructive/5">
-                <CardHeader>
-                  <CardTitle className="heading-font text-base text-foreground">What Not To Add Early</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2 text-sm text-foreground">
-                  <p className="rounded-xl bg-card p-3">Complex grading formulas</p>
-                  <p className="rounded-xl bg-card p-3">Over-detailed analytics</p>
-                  <p className="rounded-xl bg-card p-3">Realtime chat systems</p>
-                  <p className="rounded-xl bg-card p-3">Too many role types</p>
-                </CardContent>
-              </Card>
-
-              <Card className="rounded-2xl border-border bg-gradient-to-br from-primary/5 to-accent/5">
-                <CardHeader>
-                  <CardTitle className="heading-font text-base text-foreground">Instructor Dashboard = Teaching Tool</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2 text-sm text-muted-foreground">
-                  <p>Each dashboard metric maps to an aggregated backend query.</p>
-                  <p>Every workflow button maps to a state transition in your data model.</p>
-                  <p>Each list view maps to filtered relational queries students can inspect and learn from.</p>
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -647,3 +680,4 @@ export default function Admin() {
     </DashboardLayout>
   );
 }
+

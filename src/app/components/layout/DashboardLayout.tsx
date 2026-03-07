@@ -3,15 +3,20 @@ import { Link, useLocation, useNavigate } from 'react-router';
 import { loadPyodideEnvironment } from '../../../lib/pyodide';
 import { supabase } from '../../../lib/supabase';
 import AccountSetup from '../auth/AccountSetup';
+import { fetchProfileForAuthUser } from '../../lib/profileAccess';
 import {
   LuBookOpen,
+  LuBookOpenCheck,
+  LuBuilding2,
   LuFolderKanban,
   LuLayoutDashboard,
   LuLogOut,
   LuSettings,
+  LuTarget,
   LuTerminal,
   LuTrophy,
   LuUser,
+  LuUsers,
 } from 'react-icons/lu';
 import { toast } from 'sonner';
 import { Button } from '../ui/button';
@@ -20,57 +25,96 @@ interface DashboardLayoutProps {
   children: ReactNode;
 }
 
+type NavItem = {
+  icon: typeof LuLayoutDashboard;
+  label: string;
+  path: string;
+};
+
+const INSTRUCTOR_BLOCKED_PATHS = ['/dashboard', '/sandbox', '/courses', '/projects', '/achievements'];
+
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
-  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+  const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [profileRole, setProfileRole] = useState<string | null>(null);
+
+  const readString = (value: unknown) => (typeof value === 'string' ? value.trim() : '');
+
+  const checkUser = async () => {
+    setIsAuthLoading(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    setUser(user);
+
+    if (user) {
+      const profileRow = await fetchProfileForAuthUser(user as any);
+      setProfile(profileRow);
+
+      const metadata = (user.user_metadata as Record<string, unknown> | undefined) ?? undefined;
+      const role = readString(
+        profileRow?.['role'] ??
+        profileRow?.['user_role'] ??
+        metadata?.['role'] ??
+        metadata?.['user_role']
+      ).toLowerCase();
+
+      setProfileRole(role || null);
+    }
+    setIsAuthLoading(false);
+  };
 
   useEffect(() => {
-    // Preload Python environment in the background silently
     loadPyodideEnvironment().catch(console.error);
-
     checkUser();
   }, []);
 
-  const checkUser = async () => {
-    setIsLoadingProfile(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        navigate('/');
-        return;
-      }
-
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-      setProfile(profileData);
-    } catch (error) {
-      console.error('Error fetching profile:', error);
+  useEffect(() => {
+    if (!isAuthLoading && !user) {
       navigate('/');
-    } finally {
-      setIsLoadingProfile(false);
     }
-  };
+  }, [user, isAuthLoading, navigate]);
 
-  if (isLoadingProfile) {
+  useEffect(() => {
+    if (!isAuthLoading && user && profileRole === 'instructor') {
+      const isBlockedPath = INSTRUCTOR_BLOCKED_PATHS.some((path) => {
+        return location.pathname === path || location.pathname.startsWith(`${path}/`);
+      });
+
+      if (isBlockedPath) {
+        navigate('/instructor', { replace: true });
+      }
+    }
+  }, [isAuthLoading, user, profileRole, location.pathname, navigate]);
+
+  if (isAuthLoading) {
     return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Loading...</div>;
   }
 
-  if (!profile) {
-    // Fallback if user is logged in but profile fetch fails completely
-    return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Error loading profile.</div>;
+  if (!user) {
+    return null;
   }
 
-  if (!profile.full_name) {
-    return <AccountSetup onComplete={checkUser} userRole={profile.role} />;
+  if (!profile?.full_name) {
+    return <AccountSetup onComplete={checkUser} userRole={(profileRole as 'instructor' | 'student') || 'student'} />;
   }
 
-  const overviewItems = [
+  const isInstructor = profileRole === 'instructor';
+
+  const instructorNavItems: NavItem[] = [
+    { icon: LuLayoutDashboard, label: 'Instructor Home', path: '/instructor' },
+    { icon: LuUsers, label: 'Students', path: '/instructor/students' },
+    { icon: LuBookOpen, label: 'Curriculum', path: '/instructor/curriculum' },
+    { icon: LuBookOpenCheck, label: 'Assessments', path: '/instructor/assessments' },
+    { icon: LuFolderKanban, label: 'Projects', path: '/instructor/projects' },
+    { icon: LuTarget, label: 'Live Ops', path: '/instructor/live' },
+    { icon: LuBuilding2, label: 'Hub Operations', path: '/instructor/hub-operations' },
+
+    { icon: LuUser, label: 'Profile', path: '/profile' },
+  ];
+
+  const learnerNavItems: NavItem[] = [
     { icon: LuLayoutDashboard, label: 'Dashboard', path: '/dashboard' },
     { icon: LuTerminal, label: 'Sandbox', path: '/sandbox' },
     { icon: LuBookOpen, label: 'Courses', path: '/courses' },
@@ -78,7 +122,18 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { icon: LuTrophy, label: 'Achievements', path: '/achievements' },
     { icon: LuUser, label: 'Profile', path: '/profile' },
   ];
+
+  const overviewItems = isInstructor ? instructorNavItems : learnerNavItems;
   const mobileNavItems = [...overviewItems, { icon: LuSettings, label: 'Settings', path: '/settings' }];
+  const homePath = isInstructor ? '/instructor' : '/dashboard';
+
+  const isNavItemActive = (path: string) => {
+    if (path === '/instructor') {
+      return location.pathname === '/instructor';
+    }
+
+    return location.pathname === path || location.pathname.startsWith(`${path}/`);
+  };
 
   const handleLogout = async () => {
     try {
@@ -91,19 +146,19 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   };
 
   return (
-    <div className="min-h-screen bg-sidebar">
-      <div className="mx-auto flex min-h-screen max-w-[1280px] flex-col border-x border-border bg-card shadow-sm lg:h-screen lg:flex-row lg:overflow-hidden lg:border">
+    <div className="min-h-dvh w-full bg-sidebar">
+      <div className="flex min-h-dvh w-full flex-col bg-card lg:h-dvh lg:flex-row lg:overflow-hidden">
         <header className="sticky top-0 z-20 border-b border-border bg-card/95 backdrop-blur lg:hidden">
           <div className="flex items-center justify-between gap-3 px-4 py-3">
-            <Link to="/dashboard" className="flex items-center gap-2">
+            <Link to={homePath} className="flex items-center gap-2">
               <div className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-full bg-primary/10">
                 <img
                   src="https://uncommon.org/images/hd-logo.svg"
-                  alt="Uncommon logo"
+                  alt="Uncommon Studio logo"
                   className="h-5 w-5 object-contain"
                 />
               </div>
-              <span className="heading-font text-base normal-case text-foreground">Coursue</span>
+              <span className="heading-font text-base normal-case text-foreground">Uncommon Studio</span>
             </Link>
             <div className="flex items-center gap-2">
               <Link
@@ -120,7 +175,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 variant="ghost"
                 size="icon"
                 onClick={handleLogout}
-                className="h-9 w-9 rounded-full border border-border bg-card text-accent hover:bg-secondary hover:text-accent"
+                className="h-9 w-9 rounded-full border border-border bg-card text-[#FF6B35] hover:bg-secondary hover:text-[#FF6B35]"
               >
                 <LuLogOut className="h-4 w-4" />
                 <span className="sr-only">Logout</span>
@@ -131,7 +186,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             <div className="flex w-max items-center gap-1">
               {mobileNavItems.map((item) => {
                 const Icon = item.icon;
-                const isActive = location.pathname === item.path;
+                const isActive = isNavItemActive(item.path);
 
                 return (
                   <Link
@@ -152,23 +207,25 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </header>
 
         <aside className="hidden w-56 shrink-0 flex-col overflow-y-auto border-r border-border bg-card px-3 py-6 lg:flex">
-          <Link to="/dashboard" className="mb-8 flex items-center gap-2 px-2">
+          <Link to={homePath} className="mb-8 flex items-center gap-2 px-2">
             <div className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-full bg-primary/10">
               <img
                 src="https://uncommon.org/images/hd-logo.svg"
-                alt="Uncommon logo"
+                alt="Uncommon Studio logo"
                 className="h-5 w-5 object-contain"
               />
             </div>
-            <span className="heading-font text-base normal-case text-foreground">Coursue</span>
+            <span className="heading-font text-base normal-case text-foreground">Uncommon Studio</span>
           </Link>
 
           <div>
-            <p className="px-2 pb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">Overview</p>
+            <p className="px-2 pb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+              Overview
+            </p>
             <nav className="space-y-1">
               {overviewItems.map((item) => {
                 const Icon = item.icon;
-                const isActive = location.pathname === item.path;
+                const isActive = isNavItemActive(item.path);
 
                 return (
                   <Link
@@ -186,7 +243,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
 
           <div className="mt-auto space-y-1 pt-8">
-            <p className="px-2 pb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">Settings</p>
+            <p className="px-2 pb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+              Settings
+            </p>
             <Link
               to="/settings"
               className={`flex items-center gap-2 rounded-lg px-2 py-2 text-sm transition-colors ${location.pathname === '/settings'
@@ -200,7 +259,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             <Button
               variant="ghost"
               onClick={handleLogout}
-              className="mt-1 w-full justify-start gap-2 rounded-lg px-2 py-2 text-sm text-accent hover:bg-secondary hover:text-accent"
+              className="mt-1 w-full justify-start gap-2 rounded-lg px-2 py-2 text-sm text-[#FF6B35] hover:bg-secondary hover:text-[#FF6B35]"
             >
               <LuLogOut className="h-4 w-4" />
               Logout
@@ -208,10 +267,19 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
         </aside>
 
-        <main className="min-h-0 flex-1 lg:overflow-y-auto">{children}</main>
+        <main className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto">{children}</main>
       </div>
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
 
 

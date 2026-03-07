@@ -1,9 +1,11 @@
-﻿import { Link, useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import DashboardLayout from '../layout/DashboardLayout';
+import Admin from '../admin/Admin';
 import StreakWidget from './StreakWidget';
 // @ts-ignore
 import dashboardAvatar from '../../../assets/avatar2.png';
 import { Card, CardContent } from '../ui/card';
+import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import {
@@ -21,6 +23,7 @@ import {
 import { useEffect, useState } from 'react';
 import { calculateUserLevel } from '../../../lib/gamificationUtils';
 import { supabase } from '../../../lib/supabase';
+import { fetchProfileForAuthUser } from '../../lib/profileAccess';
 
 interface UserProfile {
   id: string;
@@ -31,6 +34,20 @@ interface UserProfile {
   specialization?: string | null;
   streak?: number;
   xp?: number;
+}
+
+interface InstructorExercise {
+  id: string;
+  instructor_id: string;
+  student_id: string;
+  title: string;
+  instructions: string;
+  language: 'python' | 'javascript';
+  status: 'assigned' | 'submitted' | 'reviewed';
+  due_date: string | null;
+  created_at: string;
+  submitted_at: string | null;
+  instructor_name: string;
 }
 
 interface DashboardMainProps {
@@ -44,6 +61,7 @@ interface DashboardMainProps {
   completedLessons: number;
   nextCourse: any;
   inProgressCourses: any[];
+  assignedExercises: InstructorExercise[];
 }
 
 function DashboardMain({
@@ -57,6 +75,7 @@ function DashboardMain({
   completedLessons,
   nextCourse,
   inProgressCourses,
+  assignedExercises,
 }: DashboardMainProps) {
   const navigate = useNavigate();
   const getCourseImage = (title: string) => {
@@ -96,10 +115,10 @@ function DashboardMain({
               />
             </div>
             <div className="order-2 flex items-center gap-2">
-              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full border border-border bg-card text-muted-foreground">
+              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full border border-border bg-card text-muted-foreground" onClick={() => navigate('/settings')}>
                 <LuBell className="h-4 w-4" />
               </Button>
-              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full border border-border bg-card text-muted-foreground">
+              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full border border-border bg-card text-muted-foreground" onClick={() => navigate('/achievements')}>
                 <LuSparkles className="h-4 w-4" />
               </Button>
             </div>
@@ -129,7 +148,7 @@ function DashboardMain({
                 Sharpen Your Skills with Professional Online Courses
               </h2>
               <p className="mt-2 text-sm text-white/80">Continue with: {nextCourse.title}</p>
-              <Button className="mt-5 rounded-full bg-white text-foreground hover:bg-white/90">
+              <Button className="mt-5 rounded-full bg-white text-foreground hover:bg-white/90" onClick={() => navigate('/courses')}>
                 Join Now
                 <LuArrowRight className="ml-2 h-4 w-4" />
               </Button>
@@ -170,7 +189,7 @@ function DashboardMain({
             <div>
               <div className="mb-3 flex items-center justify-between">
                 <h3 className="text-lg text-foreground heading-font">Timeline</h3>
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground">
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground" onClick={() => navigate('/courses')}>
                   <LuChevronRight className="h-4 w-4" />
                 </Button>
               </div>
@@ -199,6 +218,69 @@ function DashboardMain({
                 ))}
               </div>
             </div>
+          )}
+
+          {profile.role === 'student' && (
+            <Card className="rounded-2xl border-border">
+              <CardContent className="p-0">
+                <div className="flex items-center justify-between border-b border-border px-4 py-3">
+                  <h3 className="text-lg text-foreground heading-font">Instructor Exercises</h3>
+                  <Link to="/sandbox" className="text-xs text-muted-foreground hover:text-foreground">Open sandbox</Link>
+                </div>
+
+                <div className="space-y-2 p-3">
+                  {assignedExercises.length > 0 ? assignedExercises.map((exercise) => {
+                    const statusTone =
+                      exercise.status === 'submitted'
+                        ? 'bg-amber-100 text-amber-800 border-amber-200'
+                        : exercise.status === 'reviewed'
+                          ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                          : 'bg-blue-100 text-blue-800 border-blue-200';
+
+                    return (
+                      <div key={exercise.id} className="relative rounded-xl border border-border bg-sidebar p-3">
+                        <div className={exercise.language === 'javascript' ? 'blur-[2px] pointer-events-none select-none' : ''}>
+                          <div className="flex flex-wrap items-start justify-between gap-2">
+                            <div>
+                              <p className="text-sm text-foreground">{exercise.title}</p>
+                              <p className="mt-1 text-xs text-muted-foreground">From {exercise.instructor_name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {exercise.due_date ? `Due ${new Date(exercise.due_date).toLocaleDateString()}` : 'No due date'}
+                              </p>
+                            </div>
+                            <Badge className={`border ${statusTone}`}>{exercise.status}</Badge>
+                          </div>
+
+                          <div className="mt-3 flex items-center justify-between gap-2">
+                            <p className="line-clamp-2 text-xs text-muted-foreground">{exercise.instructions || 'Open the sandbox to view full instructions.'}</p>
+                            <Button
+                              size="sm"
+                              disabled={exercise.language === 'javascript'}
+                              className="h-8 rounded-full bg-primary px-3 text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-70"
+                              onClick={() => navigate(`/sandbox?exerciseId=${exercise.id}`)}
+                            >
+                              {exercise.language === 'javascript' ? 'Coming soon' : exercise.status === 'assigned' ? 'Start' : 'Open'}
+                            </Button>
+                          </div>
+                        </div>
+
+                        {exercise.language === 'javascript' && (
+                          <div className="absolute inset-0 flex items-center justify-center rounded-xl border border-white/15 bg-black/35 backdrop-blur-sm shadow-[inset_0_0_30px_rgba(255,255,255,0.12)]">
+                            <span className="rounded-full border border-white/30 bg-black/60 px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-white">
+                              JavaScript Coming Soon
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }) : (
+                    <div className="rounded-xl border border-dashed border-border bg-sidebar p-4 text-sm text-muted-foreground">
+                      No assigned exercises yet. Your instructor will send one soon.
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           )}
 
           <Card className="rounded-2xl border-border">
@@ -259,8 +341,7 @@ function DashboardMain({
                             <td className="whitespace-nowrap px-4 py-3">{instructor.specialization || 'Software Engineering'}</td>
                             <td className="px-4 py-3">Learn {instructor.specialization || 'Software Engineering'} today</td>
                             <td className="px-4 py-3">
-                              <Button size="sm" className="h-8 rounded-full bg-primary px-3 text-primary-foreground hover:bg-primary/90">
-                                Start
+                              <Button size="sm" className="h-8 rounded-full bg-primary px-3 text-primary-foreground hover:bg-primary/90" onClick={() => navigate('/courses')}>Start
                               </Button>
                             </td>
                           </tr>
@@ -354,6 +435,7 @@ export default function Dashboard() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [students, setStudents] = useState<UserProfile[]>([]);
   const [instructors, setInstructors] = useState<UserProfile[]>([]);
+  const [assignedExercises, setAssignedExercises] = useState<InstructorExercise[]>([]);
   const [courses, setCourses] = useState<any[]>([]);
   const [userProgress, setUserProgress] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -368,21 +450,24 @@ export default function Dashboard() {
           return;
         }
 
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
+        const profileRow = await fetchProfileForAuthUser(user as any);
+        const metadata = (user.user_metadata as Record<string, unknown> | undefined) ?? undefined;
 
-        if (profileError || !profileData) {
-          console.error("Failed to load profile", profileError);
-          // Optional: handle user with no profile gracefully
-          return;
-        }
+        const profileData = (profileRow ?? {
+          id: user.id,
+          email: user.email ?? '',
+          full_name: String(metadata?.['full_name'] ?? user.email?.split('@')[0] ?? 'Learner'),
+          role: String(metadata?.['role'] ?? metadata?.['user_role'] ?? 'student'),
+          hub_location: String(metadata?.['hub_location'] ?? ''),
+          xp: Number(metadata?.['xp'] ?? 0),
+          streak: Number(metadata?.['streak'] ?? 0),
+        }) as UserProfile;
 
         setProfile(profileData);
 
-        if (profileData.role === 'instructor') {
+        const hasRoleColumn = profileRow ? Object.prototype.hasOwnProperty.call(profileRow, 'role') : false;
+
+        if (hasRoleColumn && profileData.role === 'instructor' && profileData.hub_location) {
           const { data: studentData, error: studentError } = await supabase
             .from('profiles')
             .select('*')
@@ -390,20 +475,69 @@ export default function Dashboard() {
             .eq('hub_location', profileData.hub_location);
 
           if (!studentError && studentData) {
-            setStudents(studentData);
+            setStudents(studentData as UserProfile[]);
           }
         }
 
-        // Load instructors for the hub location (relevant for both students and instructors viewing peers)
-        const { data: instructorData, error: instructorError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('role', 'instructor')
-          .eq('hub_location', profileData.hub_location)
-          .neq('id', profileData.id); // don't show self in the sidebar list
+        if (hasRoleColumn && profileData.hub_location) {
+          // Load instructors for the hub location (relevant for both students and instructors viewing peers)
+          const { data: instructorData, error: instructorError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('role', 'instructor')
+            .eq('hub_location', profileData.hub_location)
+            .neq('id', profileData.id); // don't show self in the sidebar list
 
-        if (!instructorError && instructorData) {
-          setInstructors(instructorData);
+          if (!instructorError && instructorData) {
+            setInstructors(instructorData as UserProfile[]);
+          }
+        }
+
+        const normalizedRole = String(profileData.role || '').toLowerCase();
+        if (normalizedRole === 'student') {
+          const { data: exerciseRows, error: exerciseError } = await supabase
+            .from('instructor_exercises')
+            .select('*')
+            .eq('student_id', user.id)
+            .order('created_at', { ascending: false });
+
+          if (!exerciseError && exerciseRows) {
+            const instructorIds = Array.from(new Set(exerciseRows.map((row: any) => String(row.instructor_id)).filter(Boolean)));
+
+            const instructorNameMap = new Map<string, string>();
+            if (instructorIds.length > 0) {
+              const { data: instructorRows, error: instructorRowsError } = await supabase
+                .from('profiles')
+                .select('id, full_name, email')
+                .in('id', instructorIds);
+
+              if (!instructorRowsError && instructorRows) {
+                instructorRows.forEach((row: any) => {
+                  instructorNameMap.set(String(row.id), String(row.full_name || row.email || 'Instructor'));
+                });
+              }
+            }
+
+            setAssignedExercises(
+              exerciseRows.map((row: any) => ({
+                id: String(row.id),
+                instructor_id: String(row.instructor_id),
+                student_id: String(row.student_id),
+                title: String(row.title || 'Untitled Exercise'),
+                instructions: String(row.instructions || ''),
+                language: row.language === 'javascript' ? 'javascript' : 'python',
+                status: row.status === 'submitted' || row.status === 'reviewed' ? row.status : 'assigned',
+                due_date: row.due_date ? String(row.due_date) : null,
+                created_at: String(row.created_at || ''),
+                submitted_at: row.submitted_at ? String(row.submitted_at) : null,
+                instructor_name: instructorNameMap.get(String(row.instructor_id)) || 'Instructor',
+              }))
+            );
+          } else if (exerciseError?.code !== '42P01') {
+            console.error('Failed to load assigned exercises', exerciseError);
+          }
+        } else {
+          setAssignedExercises([]);
         }
 
         // Load courses
@@ -437,6 +571,7 @@ export default function Dashboard() {
 
   if (isLoading) return <div className="p-8 text-center text-muted-foreground">Loading dashboard...</div>;
   if (!profile) return null;
+  if (profile.role === 'instructor') return <Admin />;
 
   const totalLessons = userProgress.filter(p => p.item_type === 'lesson' && p.status === 'completed').length;
   const coursesWithProgress = courses.map(course => {
@@ -463,7 +598,9 @@ export default function Dashboard() {
         completedLessons={totalLessons}
         nextCourse={nextCourse}
         inProgressCourses={inProgressCourses}
+        assignedExercises={assignedExercises}
       />
     </DashboardLayout>
   );
 }
+

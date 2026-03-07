@@ -113,6 +113,38 @@ export default function CourseDetail() {
     Advanced: 'bg-destructive text-destructive-foreground',
   }[course.difficulty] || '';
 
+  const comingSoonCourseKeywords = ['javascript', 'node', 'data structures', 'data-structures', 'datastructures', 'react fundamentals', 'react-fundamentals'];
+  const isJavaScriptLesson = (item: any) => String(item?.language || '').toLowerCase() === 'javascript';
+  const courseSearchText = `${course.id || ''} ${course.title || ''} ${course.description || ''}`.toLowerCase();
+  const isComingSoonCourse =
+    comingSoonCourseKeywords.some((keyword) => courseSearchText.includes(keyword)) ||
+    course.modules.some((m: any) => (m.lessons || []).some((l: any) => isJavaScriptLesson(l)));
+
+  if (isComingSoonCourse) {
+    return (
+      <DashboardLayout>
+        <div className="p-8 max-w-4xl mx-auto">
+          <Button variant="ghost" onClick={() => navigate('/courses')} className="mb-6 -ml-4">
+            <LuArrowLeft className="w-4 h-4 mr-2" />
+            Back to Courses
+          </Button>
+
+          <Card className="relative overflow-hidden rounded-2xl border-border">
+            <CardContent className="p-12 text-center blur-[2px] pointer-events-none select-none">
+              <h1 className="text-3xl heading-font text-foreground mb-2">{course.title}</h1>
+              <p className="text-muted-foreground">This course is temporarily unavailable.</p>
+            </CardContent>
+            <div className="absolute inset-0 flex items-center justify-center rounded-2xl border border-white/15 bg-black/35 backdrop-blur-sm shadow-[inset_0_0_36px_rgba(255,255,255,0.12)]">
+              <span className="rounded-full border border-white/30 bg-black/60 px-5 py-2 text-[11px] font-semibold uppercase tracking-[0.15em] text-white">
+                Coming Soon
+              </span>
+            </div>
+          </Card>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout>
       <div className="p-8 max-w-5xl mx-auto">
@@ -171,6 +203,8 @@ export default function CourseDetail() {
           </div>
         </div>
 
+
+
         {/* Modules and Lessons */}
         <Card className="border-border shadow-sm">
           <CardHeader>
@@ -216,31 +250,53 @@ export default function CourseDetail() {
                           {(module.lessons || []).map((lesson: any, lessonIndex: number) => {
                             const isCompleted = isLessonCompleted(lesson.id);
 
-                            return (
-                              <Link
-                                key={lesson.id}
-                                to={`/courses/${courseId}/modules/${module.id}/lessons/${lesson.id}`}
-                                className="flex items-center gap-3 p-3 rounded-lg hover:bg-secondary/60 border border-transparent hover:border-border transition-all group"
-                              >
-                                <div className="flex-shrink-0">
-                                  {isCompleted ? (
-                                    <LuCircleCheck className="w-5 h-5 text-success" />
-                                  ) : (
-                                    <LuCircle className="w-5 h-5 text-muted-foreground" />
-                                  )}
+                            return isJavaScriptLesson(lesson) ? (
+                                <div
+                                  key={lesson.id}
+                                  className="relative overflow-hidden flex items-center gap-3 rounded-lg border border-border/70 bg-secondary/20 p-3"
+                                >
+                                  <div className="flex-shrink-0 blur-[2px]">
+                                    {isCompleted ? (
+                                      <LuCircleCheck className="w-5 h-5 text-success" />
+                                    ) : (
+                                      <LuCircle className="w-5 h-5 text-muted-foreground" />
+                                    )}
+                                  </div>
+                                  <div className="flex-1 min-w-0 blur-[2px]">
+                                    <p className={`font-medium ${isCompleted ? 'text-muted-foreground' : 'text-foreground'}`}>
+                                      {lessonIndex + 1}. {lesson.title}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                      +{lesson.xp_reward} XP
+                                    </p>
+                                  </div>
+                                  <Badge className="border border-amber-300/40 bg-amber-100 text-amber-900">Coming soon</Badge>
+                                  <div className="pointer-events-none absolute inset-0 rounded-lg border border-white/10 shadow-[inset_0_0_18px_rgba(255,255,255,0.12)]" />
                                 </div>
-                                <div className="flex-1 min-w-0">
-                                  <p className={`font-medium ${isCompleted ? 'text-muted-foreground' : 'text-foreground'
-                                    }`}>
-                                    {lessonIndex + 1}. {lesson.title}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground">
-                                    +{lesson.xp_reward} XP
-                                  </p>
-                                </div>
-                                <LuChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
-                              </Link>
-                            );
+                              ) : (
+                                <Link
+                                  key={lesson.id}
+                                  to={`/courses/${courseId}/modules/${module.id}/lessons/${lesson.id}`}
+                                  className="flex items-center gap-3 p-3 rounded-lg hover:bg-secondary/60 border border-transparent hover:border-border transition-all group"
+                                >
+                                  <div className="flex-shrink-0">
+                                    {isCompleted ? (
+                                      <LuCircleCheck className="w-5 h-5 text-success" />
+                                    ) : (
+                                      <LuCircle className="w-5 h-5 text-muted-foreground" />
+                                    )}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className={`font-medium ${isCompleted ? 'text-muted-foreground' : 'text-foreground'}`}>
+                                      {lessonIndex + 1}. {lesson.title}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                      +{lesson.xp_reward} XP
+                                    </p>
+                                  </div>
+                                  <LuChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                                </Link>
+                              );
                           })}
                         </div>
                       </AccordionContent>
@@ -255,3 +311,4 @@ export default function CourseDetail() {
     </DashboardLayout>
   );
 }
+
