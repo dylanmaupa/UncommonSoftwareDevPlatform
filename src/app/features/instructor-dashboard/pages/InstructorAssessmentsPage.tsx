@@ -90,6 +90,7 @@ export default function InstructorAssessmentsPage() {
   const [hubLocation, setHubLocation] = useState('');
   const [instructorId, setInstructorId] = useState('');
   const [students, setStudents] = useState<HubStudent[]>([]);
+  const [allStudents, setAllStudents] = useState<HubStudent[]>([]);
   const [exercises, setExercises] = useState<InstructorExercise[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
@@ -149,6 +150,20 @@ export default function InstructorAssessmentsPage() {
             ...prev,
             studentId: prev.studentId || normalizedStudents[0]?.id || '',
           }));
+        }
+
+        const { data: allStudentRows } = await supabase
+          .from('profiles')
+          .select('id, full_name, email')
+          .eq('role', 'student')
+          .order('full_name', { ascending: true });
+
+        if (allStudentRows && isMounted) {
+          setAllStudents(allStudentRows.map((row: any) => ({
+            id: String(row.id),
+            full_name: String(row.full_name || row.email || 'Student'),
+            email: String(row.email || ''),
+          })));
         }
 
         const { data: exerciseRows, error: exerciseError } = await supabase
@@ -230,9 +245,14 @@ export default function InstructorAssessmentsPage() {
     try {
       setIsSending(true);
 
-      const studentIdsToAssign = form.studentId === 'whole-hub'
-        ? students.map((s) => s.id)
-        : [form.studentId];
+      let studentIdsToAssign: string[];
+      if (form.studentId === 'all-students') {
+        studentIdsToAssign = allStudents.map((s) => s.id);
+      } else if (form.studentId === 'whole-hub') {
+        studentIdsToAssign = students.map((s) => s.id);
+      } else {
+        studentIdsToAssign = [form.studentId];
+      }
 
       const payloads = studentIdsToAssign.map((studentId) => ({
         instructor_id: instructorId,
@@ -354,7 +374,8 @@ export default function InstructorAssessmentsPage() {
                   className="h-9 w-full rounded-md border border-input bg-input-background px-3 text-sm text-foreground"
                 >
                   <option value="" disabled>Select a student</option>
-                  <option value="whole-hub">Whole Hub (All Students)</option>
+                  <option value="whole-hub">Whole Hub (All Students in Hub)</option>
+                  <option value="all-students">All Students (Every Hub)</option>
                   {students.map((student) => (
                     <option key={student.id} value={student.id}>
                       {student.full_name} ({student.email})
