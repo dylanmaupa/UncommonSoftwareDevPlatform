@@ -48,7 +48,7 @@ export default function AdminLayoutPage() {
       const profile = await fetchProfileForAuthUser(user as any);
       if (!isMounted) return;
 
-      const metadata = (user.user_metadata as Record<string, unknown> | undefined) ?? undefined;
+      const metadata = (user?.user_metadata as Record<string, unknown> | undefined) ?? undefined;
       const role = String(
         profile?.['role'] ??
         profile?.['user_role'] ??
@@ -96,7 +96,7 @@ export default function AdminLayoutPage() {
   return (
     <div className="flex min-h-screen bg-background">
       {/* Sidebar for Desktop */}
-      <aside className="hidden w-64 border-r border-border bg-sidebar md:flex md:flex-col">
+      <aside className="hidden w-64 border-r border-border bg-sidebar md:flex md:flex-col sticky top-0 h-screen overflow-y-auto">
         <div className="flex h-16 items-center border-b border-border px-6">
           <Link to="/admin" className="flex items-center gap-2 font-bold text-primary">
             <LuTarget className="h-6 w-6" />
