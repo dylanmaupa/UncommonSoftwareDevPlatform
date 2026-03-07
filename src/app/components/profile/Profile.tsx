@@ -323,12 +323,22 @@ export default function Profile() {
                 </CardHeader>
                 <CardContent className="pt-0">
                   <div className="flex flex-wrap gap-3">
-                    {userStats.achievements.slice(0, 6).map((achievementId) => (
-                      <Badge key={achievementId} className="bg-gradient-to-br from-accent to-primary text-white px-4 py-2">
-                        <LuTrophy className="w-4 h-4 mr-2" />
-                        Achievement
-                      </Badge>
-                    ))}
+                    {userStats.achievements.slice(0, 6).map((achievementId: string) => {
+                      const achievementTitles: Record<string, string> = {
+                        first_blood: 'First Blood',
+                        night_owl: 'Night Owl',
+                        hint_abuser: 'Desperate Times',
+                        on_fire: 'On Fire',
+                        unstoppable: 'Unstoppable',
+                        wealthy: 'Deep Pockets'
+                      };
+                      return (
+                        <Badge key={achievementId} className="bg-gradient-to-br from-accent to-primary text-white px-4 py-2">
+                          <LuTrophy className="w-4 h-4 mr-2" />
+                          {achievementTitles[achievementId] || 'Achievement'}
+                        </Badge>
+                      );
+                    })}
                   </div>
                 </CardContent>
               </Card>

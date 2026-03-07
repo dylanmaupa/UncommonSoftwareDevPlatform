@@ -271,7 +271,32 @@ sys.stderr = io.StringIO()
       if (isCorrect && user) {
         try {
           // Log activity for streaks on successful completion ALWAYS
-          await supabase.rpc('record_user_activity', { p_user_id: user.id });
+          const { error: activityError } = await supabase.rpc('record_user_activity', { p_user_id: user.id });
+          if (activityError) {
+            console.error("Error recording user activity via RPC:", activityError);
+            if (userProfile) {
+              const today = new Date().toISOString().split('T')[0];
+              const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+              const lastActive = userProfile.last_activity_date;
+              if (lastActive !== today) {
+                let newStreak = userProfile.streak || 0;
+                if (lastActive === yesterday) {
+                  newStreak += 1;
+                } else {
+                  newStreak = 1;
+                }
+                const newLongest = Math.max(userProfile.longest_streak || 0, newStreak);
+                await supabase.from('profiles').update({
+                  streak: newStreak,
+                  longest_streak: newLongest,
+                  last_activity_date: today
+                }).eq('id', user.id);
+                userProfile.streak = newStreak;
+                userProfile.longest_streak = newLongest;
+                userProfile.last_activity_date = today;
+              }
+            }
+          }
 
           if (!isCompleted) {
             // Upsert lesson progress
@@ -329,15 +354,26 @@ sys.stderr = io.StringIO()
             }
 
             if (finalXp > 0) {
-              await supabase.rpc('add_user_xp', { p_user_id: user.id, p_amount: finalXp });
-              if (userProfile) {
-                userProfile.xp = (userProfile.xp || 0) + finalXp;
+              const { error } = await supabase.rpc('add_user_xp', { p_user_id: user.id, p_amount: finalXp });
+              if (error) {
+                console.error("Error adding XP via RPC:", error);
+                // Fallback: If RPC is not available, directly update the profile
+                const fallbackXP = (userProfile?.xp || 0) + finalXp;
+                await supabase.from('profiles').update({ xp: fallbackXP }).eq('id', user.id);
               }
             }
 
+            // Create an updated profile object reflecting the new XP to ensure achievements use the latest value
+            const currentProfileXP = (userProfile?.xp || 0) + finalXp;
+            let updatedProfile = userProfile ? { ...userProfile, xp: currentProfileXP } : null;
+
+            if (updatedProfile) {
+              setUserProfile(updatedProfile);
+            }
+
             // --- ACHIEVEMENT CHECKS ---
-            if (userProfile) {
-              const currentAchievements: string[] = userProfile.achievements || [];
+            if (updatedProfile) {
+              const currentAchievements: string[] = updatedProfile.achievements || [];
               const newlyUnlocked: string[] = [];
 
               // 1. First Blood (Complete first lesson)
@@ -357,17 +393,17 @@ sys.stderr = io.StringIO()
               }
 
               // 4. On Fire (3-day streak)
-              if ((userProfile.streak || 0) >= 3 && !currentAchievements.includes('on_fire')) {
+              if ((updatedProfile.streak || 0) >= 3 && !currentAchievements.includes('on_fire')) {
                 newlyUnlocked.push('on_fire');
               }
 
               // 5. Unstoppable (7-day streak)
-              if ((userProfile.streak || 0) >= 7 && !currentAchievements.includes('unstoppable')) {
+              if ((updatedProfile.streak || 0) >= 7 && !currentAchievements.includes('unstoppable')) {
                 newlyUnlocked.push('unstoppable');
               }
 
               // 6. Deep Pockets (Accumulate 500 XP)
-              if ((userProfile.xp || 0) >= 500 && !currentAchievements.includes('wealthy')) {
+              if ((updatedProfile.xp || 0) >= 500 && !currentAchievements.includes('wealthy')) {
                 newlyUnlocked.push('wealthy');
               }
 
@@ -380,8 +416,9 @@ sys.stderr = io.StringIO()
                   .update({ achievements: updatedAchievements })
                   .eq('id', user.id);
 
-                // Update Local State
-                setUserProfile({ ...userProfile, achievements: updatedAchievements });
+                // Update Local State with new achievements
+                updatedProfile = { ...updatedProfile, achievements: updatedAchievements };
+                setUserProfile(updatedProfile);
 
                 // Dispatch notification for each
                 newlyUnlocked.forEach(achId => {
@@ -550,7 +587,12 @@ sys.stderr = io.StringIO()
                           return;
                         }
                         if (user) {
-                          await supabase.rpc('add_user_xp', { p_user_id: user.id, p_amount: -100 });
+                          const { error } = await supabase.rpc('add_user_xp', { p_user_id: user.id, p_amount: -100 });
+                          if (error) {
+                            console.error("Error deducting XP via RPC:", error);
+                            const fallbackXP = (userProfile?.xp || 0) - 100;
+                            await supabase.from('profiles').update({ xp: fallbackXP }).eq('id', user.id);
+                          }
                           toast.info("100 XP deducted for using a hint!");
                           if (userProfile) {
                             setUserProfile({ ...userProfile, xp: (userProfile.xp || 0) - 100 });

@@ -5,7 +5,6 @@ import { Label } from '../ui/label';
 import { toast } from 'sonner';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
-import { LuCode, LuSparkles } from 'react-icons/lu';
 import { supabase } from '../../../lib/supabase';
 
 export default function Login() {
@@ -41,9 +40,6 @@ export default function Login() {
     <div className="min-h-screen bg-gradient-to-br from-[#0747a1]/5 via-white to-[#FF6B35]/5 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[#0747a1] mb-4">
-            <LuCode className="w-8 h-8 text-white" />
-          </div>
           <h1 className="text-4xl mb-2 heading-font" style={{ color: '#1a1a2e' }}>
             Welcome Back
           </h1>

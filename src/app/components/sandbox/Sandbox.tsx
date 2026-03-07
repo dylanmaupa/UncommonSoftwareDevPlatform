@@ -16,7 +16,31 @@ export default function Sandbox() {
     const logActivity = async () => {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
-            await supabase.rpc('record_user_activity', { p_user_id: user.id });
+            const { error: activityError } = await supabase.rpc('record_user_activity', { p_user_id: user.id });
+            if (activityError) {
+                console.error("Error recording user activity via RPC:", activityError);
+                // Fallback
+                const { data: profile } = await supabase.from('profiles').select('streak, longest_streak, last_activity_date').eq('id', user.id).single();
+                if (profile) {
+                    const today = new Date().toISOString().split('T')[0];
+                    const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+                    const lastActive = profile.last_activity_date;
+                    if (lastActive !== today) {
+                        let newStreak = profile.streak || 0;
+                        if (lastActive === yesterday) {
+                            newStreak += 1;
+                        } else {
+                            newStreak = 1;
+                        }
+                        const newLongest = Math.max(profile.longest_streak || 0, newStreak);
+                        await supabase.from('profiles').update({
+                            streak: newStreak,
+                            longest_streak: newLongest,
+                            last_activity_date: today
+                        }).eq('id', user.id);
+                    }
+                }
+            }
         }
     };
 

@@ -2,66 +2,36 @@
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { toast } from 'sonner';
 import { useState } from 'react';
-import { LuRocket } from 'react-icons/lu';
 import { supabase } from '../../../lib/supabase';
-
-const HUB_LOCATIONS = [
-  'Dzivarasekwa',
-  'Kuwadzana',
-  'Kambuzuma',
-  'Mbare',
-  'Mufakose',
-  'Warren Park',
-  'Bulawayo',
-  'Victoria Falls',
-  'Gwai',
-  'Gokwe',
-];
-
-const SPECIALIZATIONS = [
-  'Digital Marketing',
-  'Product Design',
-  'Software Engineering'
-];
 
 export default function Signup() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [fullName, setFullName] = useState('');
-  const [role, setRole] = useState<'student' | 'instructor'>('student');
-  const [hubLocation, setHubLocation] = useState('');
-  const [specialization, setSpecialization] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!hubLocation) {
-      toast.error('Please select a Hub Location');
-      return;
-    }
-
-    if (role === 'instructor' && !specialization) {
-      toast.error('Please select an Area of Specialization');
+    if (password !== confirmPassword) {
+      toast.error('Passwords do not match');
       return;
     }
 
     setIsLoading(true);
 
     try {
+      const role = email.trim().toLowerCase().endsWith('@uncommon.org') ? 'instructor' : 'student';
+
       // 1. Sign up the user (this creates the auth.users record)
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
-            full_name: fullName,
             role: role,
-            hub_location: hubLocation,
-            specialization: role === 'instructor' ? specialization : null,
           },
         },
       });
@@ -88,9 +58,6 @@ export default function Signup() {
     <div className="min-h-screen bg-gradient-to-br from-[#0747a1]/5 via-white to-[#FF6B35]/5 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-[#0747a1] to-[#8B5CF6] mb-4">
-            <LuRocket className="w-8 h-8 text-white" />
-          </div>
           <h1 className="text-4xl mb-2 heading-font" style={{ color: '#1a1a2e' }}>
             Start Your Journey
           </h1>
@@ -99,19 +66,6 @@ export default function Signup() {
 
         <div className="bg-white rounded-2xl shadow-lg p-8 border border-[rgba(0,0,0,0.08)]">
           <form onSubmit={handleSignup} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="fullName">Full Name</Label>
-              <Input
-                id="fullName"
-                type="text"
-                placeholder="John Doe"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                required
-                className="h-12 rounded-xl bg-[#F5F5FA] border-0"
-              />
-            </div>
-
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -140,47 +94,18 @@ export default function Signup() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="role">I am a</Label>
-              <Select value={role} onValueChange={(value: 'student' | 'instructor') => setRole(value)} required>
-                <SelectTrigger className="w-full h-12 bg-[#F5F5FA] border-0 rounded-xl">
-                  <SelectValue placeholder="Select your role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="student">Student</SelectItem>
-                  <SelectItem value="instructor">Instructor</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                placeholder="Confirm your password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                minLength={6}
+                className="h-12 rounded-xl bg-[#F5F5FA] border-0"
+              />
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="hubLocation">Reporting Hub Location</Label>
-              <Select value={hubLocation} onValueChange={setHubLocation} required>
-                <SelectTrigger className="w-full h-12 bg-[#F5F5FA] border-0 rounded-xl">
-                  <SelectValue placeholder="Select Hub Location" />
-                </SelectTrigger>
-                <SelectContent>
-                  {HUB_LOCATIONS.map((hub) => (
-                    <SelectItem key={hub} value={hub}>{hub}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {role === 'instructor' && (
-              <div className="space-y-2">
-                <Label htmlFor="specialization">Area of Specialization</Label>
-                <Select value={specialization} onValueChange={setSpecialization} required={role === 'instructor'}>
-                  <SelectTrigger className="w-full h-12 bg-[#F5F5FA] border-0 rounded-xl">
-                    <SelectValue placeholder="Select your specialization" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {SPECIALIZATIONS.map((spec) => (
-                      <SelectItem key={spec} value={spec}>{spec}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
 
 
             <Button type="submit" disabled={isLoading} className="w-full h-12 rounded-xl text-base mt-2" style={{ backgroundColor: '#0747a1' }}>

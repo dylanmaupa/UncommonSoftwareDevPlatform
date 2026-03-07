@@ -1,7 +1,8 @@
-import { useEffect, ReactNode } from 'react';
+import { useEffect, useState, ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
-import { authService } from '../../services/mockData';
 import { loadPyodideEnvironment } from '../../../lib/pyodide';
+import { supabase } from '../../../lib/supabase';
+import AccountSetup from '../auth/AccountSetup';
 import {
   LuBookOpen,
   LuFolderKanban,
@@ -22,16 +23,51 @@ interface DashboardLayoutProps {
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
-  const user = authService.getCurrentUser();
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+  const [profile, setProfile] = useState<any>(null);
 
   useEffect(() => {
     // Preload Python environment in the background silently
     loadPyodideEnvironment().catch(console.error);
+
+    checkUser();
   }, []);
 
-  if (!user) {
-    navigate('/');
-    return null;
+  const checkUser = async () => {
+    setIsLoadingProfile(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        navigate('/');
+        return;
+      }
+
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      setProfile(profileData);
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+      navigate('/');
+    } finally {
+      setIsLoadingProfile(false);
+    }
+  };
+
+  if (isLoadingProfile) {
+    return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Loading...</div>;
+  }
+
+  if (!profile) {
+    // Fallback if user is logged in but profile fetch fails completely
+    return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Error loading profile.</div>;
+  }
+
+  if (!profile.full_name) {
+    return <AccountSetup onComplete={checkUser} userRole={profile.role} />;
   }
 
   const overviewItems = [
@@ -44,10 +80,14 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   ];
   const mobileNavItems = [...overviewItems, { icon: LuSettings, label: 'Settings', path: '/settings' }];
 
-  const handleLogout = () => {
-    authService.logout();
-    toast.success('Logged out successfully');
-    navigate('/');
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      toast.success('Logged out successfully');
+      navigate('/');
+    } catch (error) {
+      toast.error('Error logging out');
+    }
   };
 
   return (
