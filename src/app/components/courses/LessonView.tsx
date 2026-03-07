@@ -44,6 +44,7 @@ export default function LessonView() {
   const [showXPAnimation, setShowXPAnimation] = useState(false);
   const [hintUsed, setHintUsed] = useState(false);
   const [solutionUsed, setSolutionUsed] = useState(false);
+  const [failedAttempts, setFailedAttempts] = useState(0);
 
   useEffect(() => {
     async function loadData() {
@@ -121,6 +122,7 @@ export default function LessonView() {
       setShowSolution(false);
       setHintUsed(false);
       setSolutionUsed(false);
+      setFailedAttempts(0);
     }
   }, [lessonId, lesson]);
 
@@ -505,6 +507,7 @@ sys.stderr = io.StringIO()
           toast.error('Failed to save progress.');
         }
       } else if (!isCorrect) {
+        setFailedAttempts(prev => prev + 1);
         toast.error(
           <div>
             <p className="font-semibold">Not quite right</p>
@@ -663,50 +666,52 @@ sys.stderr = io.StringIO()
                 )}
               </div>
 
-              <div className="mt-4">
-                <div className="flex items-center gap-3">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setShowSolution(!showSolution);
-                      if (!showSolution) setSolutionUsed(true);
-                    }}
-                    className="border-destructive/60 text-destructive hover:bg-destructive/10"
-                  >
-                    {showSolution ? <LuEyeOff className="w-4 h-4 mr-2" /> : <LuEye className="w-4 h-4 mr-2" />}
-                    {showSolution ? 'Hide' : 'View'} Solution
-                  </Button>
-                  {!showSolution && !solutionUsed && (
-                    <span className="text-xs text-destructive/80 font-medium">?? Forfeits all XP for this lesson</span>
-                  )}
-                  {solutionUsed && (
-                    <span className="text-xs text-muted-foreground font-medium">0 XP will be awarded</span>
+              {failedAttempts >= 3 && (
+                <div className="mt-4 border-t border-border pt-4">
+                  <div className="flex items-center gap-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setShowSolution(!showSolution);
+                        if (!showSolution) setSolutionUsed(true);
+                      }}
+                      className="border-destructive/60 text-destructive hover:bg-destructive/10"
+                    >
+                      {showSolution ? <LuEyeOff className="w-4 h-4 mr-2" /> : <LuEye className="w-4 h-4 mr-2" />}
+                      {showSolution ? 'Hide' : 'View'} Solution
+                    </Button>
+                    {!showSolution && !solutionUsed && (
+                      <span className="text-xs text-destructive/80 font-medium">⚠️ Forfeits all XP for this lesson</span>
+                    )}
+                    {solutionUsed && (
+                      <span className="text-xs text-muted-foreground font-medium">0 XP will be awarded</span>
+                    )}
+                  </div>
+                  {showSolution && (
+                    <Card className="mt-3 border-border overflow-hidden">
+                      <div className="bg-foreground px-4 py-2">
+                        <span className="text-sm text-white/70">Solution</span>
+                      </div>
+                      <div className="bg-[#1e1e1e]">
+                        <Editor
+                          height="150px"
+                          language={lesson.language || 'javascript'}
+                          value={lesson.exercise_solution || ''}
+                          theme="vs-dark"
+                          options={{
+                            readOnly: true,
+                            minimap: { enabled: false },
+                            fontSize: 14,
+                            lineNumbers: 'on',
+                            scrollBeyondLastLine: false,
+                          }}
+                        />
+                      </div>
+                    </Card>
                   )}
                 </div>
-                {showSolution && (
-                  <Card className="mt-3 border-border overflow-hidden">
-                    <div className="bg-foreground px-4 py-2">
-                      <span className="text-sm text-white/70">Solution</span>
-                    </div>
-                    <div className="bg-[#1e1e1e]">
-                      <Editor
-                        height="150px"
-                        language={lesson.language || 'javascript'}
-                        value={lesson.exercise_solution || ''}
-                        theme="vs-dark"
-                        options={{
-                          readOnly: true,
-                          minimap: { enabled: false },
-                          fontSize: 14,
-                          lineNumbers: 'on',
-                          scrollBeyondLastLine: false,
-                        }}
-                      />
-                    </div>
-                  </Card>
-                )}
-              </div>
+              )}
             </div>
           </div>
 
