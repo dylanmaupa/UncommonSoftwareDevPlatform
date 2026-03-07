@@ -11,7 +11,8 @@ import { supabase } from '../../../../lib/supabase';
 import { fetchProfileForAuthUser } from '../../../lib/profileAccess';
 import { useInstructorData } from '../hooks/useInstructorData';
 
-type ExerciseLanguage = 'python' | 'javascript';
+type ExerciseType = 'code' | 'essay';
+type ExerciseLanguage = 'python' | 'javascript' | 'essay';
 type ExerciseStatus = 'assigned' | 'submitted' | 'reviewed';
 
 interface HubStudent {
@@ -38,6 +39,7 @@ interface InstructorExercise {
 
 interface ExerciseFormState {
   studentId: string;
+  type: ExerciseType;
   title: string;
   instructions: string;
   language: ExerciseLanguage;
@@ -58,7 +60,7 @@ function isExerciseTableMissing(error: any) {
 }
 
 function normalizeLanguage(value: unknown): ExerciseLanguage {
-  return value === 'javascript' ? 'javascript' : 'python';
+  return value === 'javascript' ? 'javascript' : value === 'essay' ? 'essay' : 'python';
 }
 
 function normalizeStatus(value: unknown): ExerciseStatus {
@@ -99,6 +101,7 @@ export default function InstructorAssessmentsPage() {
 
   const [form, setForm] = useState<ExerciseFormState>({
     studentId: '',
+    type: 'code',
     title: '',
     instructions: '',
     language: 'python',
@@ -259,8 +262,8 @@ export default function InstructorAssessmentsPage() {
         student_id: studentId,
         title: form.title.trim(),
         instructions: form.instructions.trim(),
-        language: form.language,
-        starter_code: form.starterCode,
+        language: form.type === 'essay' ? 'essay' : form.language,
+        starter_code: form.type === 'essay' ? '' : form.starterCode,
         due_date: form.dueDate || null,
       }));
 
@@ -290,7 +293,7 @@ export default function InstructorAssessmentsPage() {
         title: '',
         instructions: '',
         dueDate: '',
-        starterCode: getDefaultStarterCode(prev.language),
+        starterCode: prev.type === 'code' ? getDefaultStarterCode(prev.language) : '',
       }));
 
       toast.success('Exercise sent. It is now visible on the student dashboard and sandbox.');
@@ -400,29 +403,30 @@ export default function InstructorAssessmentsPage() {
                   id="exercise-instructions"
                   value={form.instructions}
                   onChange={(event) => setForm((prev) => ({ ...prev, instructions: event.target.value }))}
-                  placeholder="Describe what the student must build or solve."
+                  placeholder="Describe what the student must build, solve, or write."
                   className="min-h-24"
                 />
               </div>
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5">
-                  <Label htmlFor="exercise-language">Language</Label>
+                  <Label htmlFor="exercise-type">Assignment Type</Label>
                   <select
-                    id="exercise-language"
-                    value={form.language}
+                    id="exercise-type"
+                    value={form.type}
                     onChange={(event) => {
-                      const nextLanguage = normalizeLanguage(event.target.value);
+                      const nextType = event.target.value as ExerciseType;
                       setForm((prev) => ({
                         ...prev,
-                        language: nextLanguage,
-                        starterCode: getDefaultStarterCode(nextLanguage),
+                        type: nextType,
+                        language: nextType === 'essay' ? 'essay' : 'python',
+                        starterCode: nextType === 'code' ? DEFAULT_PYTHON_STARTER : '',
                       }));
                     }}
                     className="h-9 w-full rounded-md border border-input bg-input-background px-3 text-sm text-foreground"
                   >
-                    <option value="python">Python</option>
-                    <option value="javascript">JavaScript</option>
+                    <option value="code">Coding Exercise</option>
+                    <option value="essay">Essay / Free Response</option>
                   </select>
                 </div>
 
@@ -437,15 +441,39 @@ export default function InstructorAssessmentsPage() {
                 </div>
               </div>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="exercise-starter">Starter code</Label>
-                <Textarea
-                  id="exercise-starter"
-                  value={form.starterCode}
-                  onChange={(event) => setForm((prev) => ({ ...prev, starterCode: event.target.value }))}
-                  className="min-h-32 font-mono text-xs"
-                />
-              </div>
+              {form.type === 'code' && (
+                <div className="grid grid-cols-1 gap-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="exercise-language">Programming Language</Label>
+                    <select
+                      id="exercise-language"
+                      value={form.language}
+                      onChange={(event) => {
+                        const nextLanguage = normalizeLanguage(event.target.value);
+                        setForm((prev) => ({
+                          ...prev,
+                          language: nextLanguage,
+                          starterCode: getDefaultStarterCode(nextLanguage),
+                        }));
+                      }}
+                      className="h-9 w-full rounded-md border border-input bg-input-background px-3 text-sm text-foreground"
+                    >
+                      <option value="python">Python</option>
+                      <option value="javascript">JavaScript</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="exercise-starter">Starter code</Label>
+                    <Textarea
+                      id="exercise-starter"
+                      value={form.starterCode}
+                      onChange={(event) => setForm((prev) => ({ ...prev, starterCode: event.target.value }))}
+                      className="min-h-32 font-mono text-xs"
+                    />
+                  </div>
+                </div>
+              )}
 
               <Button type="submit" disabled={isSending || !students.length} className="w-full">
                 {isSending ? 'Sending...' : 'Send Exercise'}
