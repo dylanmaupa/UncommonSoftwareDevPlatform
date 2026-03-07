@@ -304,29 +304,43 @@ sys.stderr = io.StringIO()
         try {
           // Log activity for streaks on successful completion ALWAYS
           const { error: activityError } = await supabase.rpc('record_user_activity', { p_user_id: user.id });
+
+          let currentProfileData = userProfile;
+
           if (activityError) {
             console.error("Error recording user activity via RPC:", activityError);
-            if (userProfile) {
+            if (currentProfileData) {
               const today = new Date().toISOString().split('T')[0];
               const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-              const lastActive = userProfile.last_activity_date;
+              const lastActive = currentProfileData.last_activity_date;
               if (lastActive !== today) {
-                let newStreak = userProfile.streak || 0;
+                let newStreak = currentProfileData.streak || 0;
                 if (lastActive === yesterday) {
                   newStreak += 1;
                 } else {
                   newStreak = 1;
                 }
-                const newLongest = Math.max(userProfile.longest_streak || 0, newStreak);
+                const newLongest = Math.max(currentProfileData.longest_streak || 0, newStreak);
                 await supabase.from('profiles').update({
                   streak: newStreak,
                   longest_streak: newLongest,
                   last_activity_date: today
                 }).eq('id', user.id);
-                userProfile.streak = newStreak;
-                userProfile.longest_streak = newLongest;
-                userProfile.last_activity_date = today;
+                currentProfileData = {
+                  ...currentProfileData,
+                  streak: newStreak,
+                  longest_streak: newLongest,
+                  last_activity_date: today
+                };
+                setUserProfile(currentProfileData);
               }
+            }
+          } else {
+            // RPC succeeded, fetch fresh profile to get the newly updated streak
+            const freshProfile = await fetchProfileForAuthUser(user as any);
+            if (freshProfile) {
+              currentProfileData = freshProfile;
+              setUserProfile(freshProfile);
             }
           }
 
@@ -390,14 +404,14 @@ sys.stderr = io.StringIO()
               if (error) {
                 console.error("Error adding XP via RPC:", error);
                 // Fallback: If RPC is not available, directly update the profile
-                const fallbackXP = (userProfile?.xp || 0) + finalXp;
+                const fallbackXP = (currentProfileData?.xp || 0) + finalXp;
                 await supabase.from('profiles').update({ xp: fallbackXP }).eq('id', user.id);
               }
             }
 
             // Create an updated profile object reflecting the new XP to ensure achievements use the latest value
-            const currentProfileXP = (userProfile?.xp || 0) + finalXp;
-            let updatedProfile = userProfile ? { ...userProfile, xp: currentProfileXP } : null;
+            const currentProfileXP = (currentProfileData?.xp || 0) + finalXp;
+            let updatedProfile = currentProfileData ? { ...currentProfileData, xp: currentProfileXP } : null;
 
             if (updatedProfile) {
               setUserProfile(updatedProfile);
