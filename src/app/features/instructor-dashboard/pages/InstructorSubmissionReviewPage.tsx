@@ -1,3 +1,4 @@
+// Trivial change to force Vite reload
 import { useEffect, useState, type FormEvent } from 'react';
 import { useParams, Link, useNavigate } from 'react-router';
 import { toast } from 'sonner';
