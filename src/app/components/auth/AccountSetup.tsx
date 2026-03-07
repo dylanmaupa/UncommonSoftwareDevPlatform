@@ -5,7 +5,7 @@ import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { toast } from 'sonner';
 import { supabase } from '../../../lib/supabase';
-import { LuUser } from 'react-icons/lu';
+import { getRandomAvatar, type Gender } from '../../lib/avatars';
 
 const HUB_LOCATIONS = [
     'Dzivarasekwa',
@@ -35,6 +35,7 @@ export default function AccountSetup({ onComplete, userRole }: AccountSetupProps
     const [fullName, setFullName] = useState('');
     const [hubLocation, setHubLocation] = useState('');
     const [specialization, setSpecialization] = useState('');
+    const [gender, setGender] = useState<Gender | ''>('');
     const [isLoading, setIsLoading] = useState(false);
 
     const handleSetup = async (e: React.FormEvent) => {
@@ -46,6 +47,17 @@ export default function AccountSetup({ onComplete, userRole }: AccountSetupProps
 
         if (userRole === 'instructor' && !specialization) {
             toast.error('Please select an Area of Specialization');
+            return;
+        }
+
+        const nameParts = fullName.trim().split(/\s+/);
+        if (nameParts.length < 2) {
+            toast.error('Please enter both your first and last name');
+            return;
+        }
+
+        if (!gender) {
+            toast.error('Please select your Gender');
             return;
         }
 
@@ -62,6 +74,8 @@ export default function AccountSetup({ onComplete, userRole }: AccountSetupProps
                     full_name: fullName,
                     hub_location: hubLocation,
                     specialization: userRole === 'instructor' ? specialization : null,
+                    gender: gender,
+                    avatar_url: getRandomAvatar(gender),
                 })
                 .eq('id', user.id);
 
@@ -82,9 +96,6 @@ export default function AccountSetup({ onComplete, userRole }: AccountSetupProps
         <div className="fixed inset-0 z-50 bg-[#F5F5FA] flex items-center justify-center p-4">
             <div className="w-full max-w-md">
                 <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[#0747a1] mb-4">
-                        <LuUser className="w-8 h-8 text-white" />
-                    </div>
                     <h1 className="text-4xl mb-2 heading-font" style={{ color: '#1a1a2e' }}>
                         Complete Your Profile
                     </h1>
@@ -98,12 +109,25 @@ export default function AccountSetup({ onComplete, userRole }: AccountSetupProps
                             <Input
                                 id="fullName"
                                 type="text"
-                                placeholder="John Doe"
+                                placeholder="First Last"
                                 value={fullName}
                                 onChange={(e) => setFullName(e.target.value)}
                                 required
                                 className="h-12 rounded-xl bg-[#F5F5FA] border-0"
                             />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="gender">Gender</Label>
+                            <Select value={gender} onValueChange={(value: Gender) => setGender(value)} required>
+                                <SelectTrigger className="w-full h-12 bg-[#F5F5FA] border-0 rounded-xl">
+                                    <SelectValue placeholder="Select Gender" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="female">Female</SelectItem>
+                                    <SelectItem value="male">Male</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
 
                         <div className="space-y-2">
