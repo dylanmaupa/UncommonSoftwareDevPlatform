@@ -180,7 +180,7 @@ export default function InstructorAssessmentsPage() {
           if (isExerciseTableMissing(exerciseError)) {
             if (isMounted) {
               setIsSchemaReady(false);
-              setSchemaMessage('Instructor exercise tables are missing. Run supabase/11_instructor_exercises.sql and refresh.');
+              setSchemaMessage('Instructor exercise tables are missing. Please run the SQL script in supabase/11_instructor_exercises.sql in your Supabase SQL Editor.');
               setExercises([]);
             }
           } else {
@@ -276,7 +276,7 @@ export default function InstructorAssessmentsPage() {
       if (error) {
         if (isExerciseTableMissing(error)) {
           setIsSchemaReady(false);
-          setSchemaMessage('Instructor exercise tables are missing. Run supabase/11_instructor_exercises.sql and refresh.');
+          setSchemaMessage('Instructor exercise tables are missing. Please run the SQL script in supabase/11_instructor_exercises.sql in your Supabase SQL Editor.');
           toast.error('Database schema not ready.');
         } else {
           console.error('Failed to send exercise', error);
@@ -328,10 +328,13 @@ export default function InstructorAssessmentsPage() {
       </Card>
 
       {!isSchemaReady && (
-        <Card className="rounded-2xl border-amber-300 bg-amber-50">
-          <CardContent className="p-4 text-sm text-amber-900">
-            <p className="font-medium">Schema setup required</p>
-            <p className="mt-1">{schemaMessage}</p>
+        <Card className="rounded-2xl border-destructive/50 bg-destructive/10">
+          <CardContent className="p-4 text-sm text-destructive space-y-2">
+            <p className="font-semibold">Action Required: Database Migration Needed</p>
+            <p>{schemaMessage}</p>
+            <p className="text-xs text-muted-foreground mt-2 text-destructive font-mono bg-destructive/20 p-2 rounded">
+              You must copy the contents of supabase/11_instructor_exercises.sql and execute it in your Supabase SQL Editor to enable assignments.
+            </p>
           </CardContent>
         </Card>
       )}
