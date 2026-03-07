@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
-import { achievements, hubs, instructor, students } from '../data';
+import { createContext, useContext, useMemo } from 'react';
+import { achievements, hubs, instructor as defaultInstructor, students } from '../data';
 import {
   buildDashboardMetrics,
   calculateHubSummary,
@@ -10,10 +10,23 @@ import {
 } from '../data/selectors';
 import type { Achievement, HubSummary, Student } from '../types/instructor.types';
 
-export function useInstructorData() {
+export function useComputeInstructorData(hubLocationName?: string, fullName?: string, email?: string) {
   const instructorHubId = useMemo(() => {
-    return instructor.hubId || instructor.hubIds?.[0] || '';
-  }, []);
+    if (hubLocationName) {
+      const hub = hubs.find((h) => h.name.toLowerCase() === hubLocationName.toLowerCase() || h.id === hubLocationName);
+      if (hub) return hub.id;
+    }
+    return defaultInstructor.hubId || defaultInstructor.hubIds?.[0] || '';
+  }, [hubLocationName]);
+
+  const instructor = useMemo(() => {
+    return {
+      id: defaultInstructor.id,
+      fullName: fullName || defaultInstructor.fullName,
+      email: email || defaultInstructor.email,
+      hubId: instructorHubId,
+    };
+  }, [fullName, email, instructorHubId]);
 
   const instructorHub = useMemo(() => {
     return hubs.find((hub) => hub.id === instructorHubId) ?? null;
@@ -76,4 +89,16 @@ export function useInstructorData() {
     getStudentById,
     getStudentAchievements,
   };
+}
+
+export type InstructorContextType = ReturnType<typeof useComputeInstructorData>;
+
+export const InstructorContext = createContext<InstructorContextType | null>(null);
+
+export function useInstructorData() {
+  const context = useContext(InstructorContext);
+  if (!context) {
+    throw new Error('useInstructorData must be used within an InstructorContext.Provider');
+  }
+  return context;
 }

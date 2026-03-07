@@ -230,21 +230,24 @@ export default function InstructorAssessmentsPage() {
     try {
       setIsSending(true);
 
-      const payload = {
+      const studentIdsToAssign = form.studentId === 'whole-hub'
+        ? students.map((s) => s.id)
+        : [form.studentId];
+
+      const payloads = studentIdsToAssign.map((studentId) => ({
         instructor_id: instructorId,
-        student_id: form.studentId,
+        student_id: studentId,
         title: form.title.trim(),
         instructions: form.instructions.trim(),
         language: form.language,
         starter_code: form.starterCode,
         due_date: form.dueDate || null,
-      };
+      }));
 
       const { data, error } = await supabase
         .from('instructor_exercises')
-        .insert(payload)
-        .select('*')
-        .single();
+        .insert(payloads)
+        .select('*');
 
       if (error) {
         if (isExerciseTableMissing(error)) {
@@ -259,7 +262,7 @@ export default function InstructorAssessmentsPage() {
       }
 
       if (data) {
-        setExercises((prev) => [normalizeExerciseRow(data), ...prev]);
+        setExercises((prev) => [...data.map(normalizeExerciseRow), ...prev]);
       }
 
       setForm((prev) => ({
@@ -350,7 +353,8 @@ export default function InstructorAssessmentsPage() {
                   onChange={(event) => setForm((prev) => ({ ...prev, studentId: event.target.value }))}
                   className="h-9 w-full rounded-md border border-input bg-input-background px-3 text-sm text-foreground"
                 >
-                  <option value="">Select a student</option>
+                  <option value="" disabled>Select a student</option>
+                  <option value="whole-hub">Whole Hub (All Students)</option>
                   {students.map((student) => (
                     <option key={student.id} value={student.id}>
                       {student.full_name} ({student.email})
