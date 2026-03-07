@@ -97,7 +97,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   }
 
   if (!profile?.full_name) {
-    return <AccountSetup onComplete={checkUser} userRole={(profileRole as 'instructor' | 'student') || 'student'} />;
+    return (
+      <div className="min-h-dvh w-full bg-[#f8f9fa] flex items-center justify-center p-4">
+        <AccountSetup onComplete={checkUser} userRole={(profileRole as 'instructor' | 'student') || 'student'} />
+      </div>
+    );
   }
 
   const isInstructor = profileRole === 'instructor';

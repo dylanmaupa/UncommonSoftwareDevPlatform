@@ -3,7 +3,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { toast } from 'sonner';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { supabase } from '../../../lib/supabase';
 
 export default function Signup() {
@@ -12,6 +12,19 @@ export default function Signup() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  const passwordStrength = useMemo(() => {
+    if (!password) return 0;
+    let score = 0;
+    if (password.length >= 8) score += 1;
+    if (password.match(/[a-z]/) && password.match(/[A-Z]/)) score += 1;
+    if (password.match(/\d/)) score += 1;
+    if (password.match(/[^a-zA-Z\d]/)) score += 1;
+    return score; // 0 to 4
+  }, [password]);
+
+  const strengthColor = ['bg-red-500', 'bg-red-400', 'bg-yellow-500', 'bg-green-400', 'bg-green-600'][passwordStrength];
+  const strengthText = ['Very Weak', 'Weak', 'Fair', 'Good', 'Strong'][passwordStrength];
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,18 +89,29 @@ export default function Signup() {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Create a strong password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
-                className="h-12 rounded-xl bg-[#F5F5FA] border-0"
-              />
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Create a strong password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  className="h-12 rounded-xl bg-[#F5F5FA] border-0"
+                />
+              </div>
+
+              {password && (
+                <div className="space-y-1.5">
+                  <div className="flex h-1.5 w-full overflow-hidden rounded-full bg-secondary">
+                    <div className={`h-full ${strengthColor} transition-all duration-300`} style={{ width: `${Math.max(10, passwordStrength * 25)}%` }} />
+                  </div>
+                  <p className="text-right text-[10px] font-medium uppercase tracking-wider text-muted-foreground">{strengthText}</p>
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">
