@@ -1,6 +1,5 @@
 import { Link, useNavigate } from 'react-router';
 import DashboardLayout from '../layout/DashboardLayout';
-import Admin from '../admin/Admin';
 import StreakWidget from './StreakWidget';
 // @ts-ignore
 import dashboardAvatar from '../../../assets/avatar2.png';
@@ -24,6 +23,7 @@ import { useEffect, useState } from 'react';
 import { calculateUserLevel } from '../../../lib/gamificationUtils';
 import { supabase } from '../../../lib/supabase';
 import { fetchProfileForAuthUser } from '../../lib/profileAccess';
+import { getGreeting } from '../../lib/timeUtils';
 
 interface UserProfile {
   id: string;
@@ -34,6 +34,7 @@ interface UserProfile {
   specialization?: string | null;
   streak?: number;
   xp?: number;
+  last_activity_date?: string;
 }
 
 interface InstructorExercise {
@@ -372,7 +373,7 @@ function DashboardMain({
                   <AvatarImage src={dashboardAvatar} alt={nickname} />
                   <AvatarFallback>{nickname ? nickname[0] : 'U'}</AvatarFallback>
                 </Avatar>
-                <p className="mt-3 text-base text-foreground">Good Morning {nickname}</p>
+                <p className="mt-3 text-base text-foreground">{getGreeting()} {nickname}</p>
                 <p className="text-xs text-muted-foreground">{profile.role === 'instructor' ? `Hub: ${profile.hub_location}` : 'Continue your journey to your target'}</p>
               </div>
               <div className="rounded-2xl bg-secondary p-3">
@@ -396,7 +397,11 @@ function DashboardMain({
                 <div className="rounded-xl bg-sidebar p-2 text-muted-foreground">Lessons: {completedLessons}</div>
               </div>
               <div className="mt-4">
-                <StreakWidget streak={streak || profile.streak || 0} userId={profile.id} />
+                <StreakWidget
+                  streak={profile.streak || 0}
+                  userId={profile.id}
+                  lastActivityDate={profile.last_activity_date}
+                />
               </div>
             </CardContent>
           </Card>
@@ -461,7 +466,8 @@ export default function Dashboard() {
           hub_location: String(metadata?.['hub_location'] ?? ''),
           xp: Number(metadata?.['xp'] ?? 0),
           streak: Number(metadata?.['streak'] ?? 0),
-        }) as UserProfile;
+          last_activity_date: String(metadata?.['last_activity_date'] ?? ''),
+        }) as unknown as UserProfile;
 
         setProfile(profileData);
 
@@ -571,7 +577,7 @@ export default function Dashboard() {
 
   if (isLoading) return <div className="p-8 text-center text-muted-foreground">Loading dashboard...</div>;
   if (!profile) return null;
-  if (profile.role === 'instructor') return <Admin />;
+  if (profile.role === 'instructor') return null; // Instructors redirect away in layout
 
   const totalLessons = userProgress.filter(p => p.item_type === 'lesson' && p.status === 'completed').length;
   const coursesWithProgress = courses.map(course => {

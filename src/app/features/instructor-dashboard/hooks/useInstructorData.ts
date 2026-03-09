@@ -1,5 +1,5 @@
-import { createContext, useContext, useMemo } from 'react';
-import { achievements, hubs, instructor as defaultInstructor, students } from '../data';
+import { useMemo } from 'react';
+import { achievements, hubs, students } from '../data';
 import {
   buildDashboardMetrics,
   calculateHubSummary,
@@ -10,63 +10,42 @@ import {
 } from '../data/selectors';
 import type { Achievement, HubSummary, Student } from '../types/instructor.types';
 
-export function useComputeInstructorData(hubLocationName?: string, fullName?: string, email?: string) {
-  const instructorHubId = useMemo(() => {
-    if (hubLocationName) {
-      const hub = hubs.find((h) => h.name.toLowerCase() === hubLocationName.toLowerCase() || h.id === hubLocationName);
-      if (hub) return hub.id;
-    }
-    return defaultInstructor.hubId || defaultInstructor.hubIds?.[0] || '';
-  }, [hubLocationName]);
-
-  const instructor = useMemo(() => {
-    return {
-      id: defaultInstructor.id,
-      fullName: fullName || defaultInstructor.fullName,
-      email: email || defaultInstructor.email,
-      hubId: instructorHubId,
-    };
-  }, [fullName, email, instructorHubId]);
-
-  const instructorHub = useMemo(() => {
-    return hubs.find((hub) => hub.id === instructorHubId) ?? null;
-  }, [instructorHubId]);
-
-  const instructorHubs = useMemo(() => {
-    return instructorHub ? [instructorHub] : [];
-  }, [instructorHub]);
-
-  const instructorStudents = useMemo(() => {
-    if (!instructorHubId) return [];
-    return students.filter((student) => student.hubId === instructorHubId);
-  }, [instructorHubId]);
-
+export function useInstructorData() {
+  const allHubs = hubs;
+  const allStudents = students;
   const achievementMap = useMemo(() => getAchievementMap(achievements), []);
 
   const hubSummaries = useMemo<HubSummary[]>(() => {
-    if (!instructorHub) return [];
-    const studentsForHub = getStudentsForHub(instructorStudents, instructorHub.id);
-    return [calculateHubSummary(instructorHub, studentsForHub)];
-  }, [instructorHub, instructorStudents]);
-
-  const hubSummary = hubSummaries[0] ?? null;
+    return allHubs.map((hub) => {
+      const studentsForHub = getStudentsForHub(allStudents, hub.id);
+      return calculateHubSummary(hub, studentsForHub);
+    });
+  }, [allHubs, allStudents]);
 
   const metrics = useMemo(() => {
-    return buildDashboardMetrics(instructorHubs, instructorStudents);
-  }, [instructorHubs, instructorStudents]);
+    return buildDashboardMetrics(allHubs, allStudents);
+  }, [allHubs, allStudents]);
 
   const topStudents = useMemo(() => {
-    return [...instructorStudents]
+    return [...allStudents]
       .sort((a, b) => calculateProgressPercentage(b.progress) - calculateProgressPercentage(a.progress))
       .slice(0, 5);
-  }, [instructorStudents]);
+  }, [allStudents]);
 
   const chartData = useMemo(() => {
     return toStudentChartData(hubSummaries);
   }, [hubSummaries]);
 
+  function getHubById(hubId: string) {
+    return allHubs.find((h) => h.id === hubId);
+  }
+
+  function getStudentsByHubId(hubId: string) {
+    return allStudents.filter((s) => s.hubId === hubId);
+  }
+
   function getStudentById(studentId: string): Student | undefined {
-    return instructorStudents.find((student) => student.id === studentId);
+    return allStudents.find((student) => student.id === studentId);
   }
 
   function getStudentAchievements(student: Student): Achievement[] {
@@ -76,29 +55,15 @@ export function useComputeInstructorData(hubLocationName?: string, fullName?: st
   }
 
   return {
-    instructor,
-    instructorHub,
-    instructorHubId,
-    instructorHubs,
-    instructorStudents,
+    allHubs,
+    allStudents,
     hubSummaries,
-    hubSummary,
     metrics,
     topStudents,
     chartData,
+    getHubById,
+    getStudentsByHubId,
     getStudentById,
     getStudentAchievements,
   };
-}
-
-export type InstructorContextType = ReturnType<typeof useComputeInstructorData>;
-
-export const InstructorContext = createContext<InstructorContextType | null>(null);
-
-export function useInstructorData() {
-  const context = useContext(InstructorContext);
-  if (!context) {
-    throw new Error('useInstructorData must be used within an InstructorContext.Provider');
-  }
-  return context;
 }

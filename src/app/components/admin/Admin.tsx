@@ -17,7 +17,7 @@ import {
   LuUsers,
   LuZap,
 } from 'react-icons/lu';
-import { useNavigate } from 'react-router';
+import { useNavigate, useParams } from 'react-router';
 import { supabase } from '../../../lib/supabase';
 import { fetchProfileForAuthUser } from '../../lib/profileAccess';
 
@@ -230,7 +230,15 @@ export default function Admin() {
   const [hubRecentActivity, setHubRecentActivity] = useState<string[]>([]);
   const [hubActiveStudentsCount, setHubActiveStudentsCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeSection, setActiveSection] = useState<SectionId>('dashboard');
+  const { section } = useParams();
+  const activeSection = (section as SectionId) || 'dashboard';
+  const [selectedStudent, setSelectedStudent] = useState<UserProfile | null>(null);
+
+  // Instructor Data States
+  const [activeCourses, setActiveCourses] = useState<any[]>([]);
+  const [activeModules, setActiveModules] = useState<any[]>([]);
+  const [activeLessons, setActiveLessons] = useState<any[]>([]);
+  const [activeAssignments, setActiveAssignments] = useState<any[]>([]);
 
   useEffect(() => {
     async function loadData() {
@@ -256,95 +264,116 @@ export default function Admin() {
 
         const hasRoleColumn = profileRow ? Object.prototype.hasOwnProperty.call(profileRow, 'role') : false;
 
-        if (profileData.role === 'instructor' && profileData.hub_location && hasRoleColumn) {
-          const { data: studentData, error: studentError } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('role', 'student')
-            .eq('hub_location', profileData.hub_location);
+        if (profileData.role === 'instructor') {
+          // If no hub location is set yet, we just show empty states instead of failing
+          if (profileData.hub_location && hasRoleColumn) {
+            const { data: studentData, error: studentError } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('role', 'student')
+              .eq('hub_location', profileData.hub_location);
 
-          if (studentError) {
-            console.error('Failed to load hub students', studentError);
-          }
+            if (studentError) {
+              console.error('Failed to load hub students', studentError);
+            }
 
-          const hubStudents = (!studentError && studentData ? studentData : []) as UserProfile[];
-          setStudents(hubStudents);
+            const hubStudents = (!studentError && studentData ? studentData : []) as UserProfile[];
+            setStudents(hubStudents);
 
-          const hubStudentIds = hubStudents.map((student) => String(student.id));
-          const hubStudentIdSet = new Set(hubStudentIds);
-          const studentNameMap = new Map(
-            hubStudents.map((student) => [
-              String(student.id),
-              String(student.full_name || student.email || 'Student'),
-            ]),
-          );
+            // Fetch Instructor Content
+            const [
+              { data: coursesData },
+              { data: modulesData },
+              { data: lessonsData },
+              { data: exercisesData }
+            ] = await Promise.all([
+              supabase.from('courses').select('*'),
+              supabase.from('course_modules').select('*'),
+              supabase.from('lessons').select('*'),
+              supabase.from('exercises').select('*')
+            ]);
 
-          if (hubStudentIds.length > 0) {
-            const { data: exerciseData, error: exerciseError } = await supabase
-              .from('instructor_exercises')
-              .select('id, student_id, title, status, submitted_at, created_at')
-              .eq('instructor_id', user.id)
-              .order('submitted_at', { ascending: false, nullsFirst: false })
-              .order('created_at', { ascending: false });
+            setActiveCourses(coursesData || []);
+            setActiveModules(modulesData || []);
+            setActiveLessons(lessonsData || []);
+            setActiveAssignments(exercisesData || []);
 
-            if (!exerciseError && exerciseData) {
-              const hubItems: HubSubmissionItem[] = exerciseData
-                .filter((row: any) => hubStudentIdSet.has(String(row.student_id)))
-                .map((row: any) => {
-                  const studentId = String(row.student_id || '');
+            const hubStudentIds = hubStudents.map((student) => String(student.id));
+            const hubStudentIdSet = new Set(hubStudentIds);
+            const studentNameMap = new Map(
+              hubStudents.map((student) => [
+                String(student.id),
+                String(student.full_name || student.email || 'Student'),
+              ]),
+            );
 
-                  return {
-                    id: String(row.id || ''),
-                    studentId,
-                    student: studentNameMap.get(studentId) || 'Student',
-                    assignment: String(row.title || 'Untitled Assignment'),
-                    status: mapExerciseStatusToSubmissionStatus(String(row.status || '')),
-                    submitted: formatRelativeTime(row.submitted_at ? String(row.submitted_at) : null),
-                  };
-                })
-                .slice(0, 12);
+            if (hubStudentIds.length > 0) {
+              const { data: exerciseData, error: exerciseError } = await supabase
+                .from('instructor_exercises')
+                .select('id, student_id, title, status, submitted_at, created_at')
+                .eq('instructor_id', user.id)
+                .order('submitted_at', { ascending: false, nullsFirst: false })
+                .order('created_at', { ascending: false });
 
-              setHubSubmissionQueue(hubItems);
+              if (!exerciseError && exerciseData) {
+                const hubItems: HubSubmissionItem[] = exerciseData
+                  .filter((row: any) => hubStudentIdSet.has(String(row.student_id)))
+                  .map((row: any) => {
+                    const studentId = String(row.student_id || '');
 
-              const fallbackActivity = hubItems
-                .map((item) => `${item.student} ${item.status === 'Pending' ? 'submitted' : 'updated'} ${item.assignment}`)
-                .slice(0, 8);
+                    return {
+                      id: String(row.id || ''),
+                      studentId,
+                      student: studentNameMap.get(studentId) || 'Student',
+                      assignment: String(row.title || 'Untitled Assignment'),
+                      status: mapExerciseStatusToSubmissionStatus(String(row.status || '')),
+                      submitted: formatRelativeTime(row.submitted_at ? String(row.submitted_at) : null),
+                    };
+                  })
+                  .slice(0, 12);
 
-              setHubRecentActivity(fallbackActivity);
-              setHubActiveStudentsCount(new Set(hubItems.map((item) => item.studentId)).size);
+                setHubSubmissionQueue(hubItems);
+
+                const fallbackActivity = hubItems
+                  .map((item) => `${item.student} ${item.status === 'Pending' ? 'submitted' : 'updated'} ${item.assignment}`)
+                  .slice(0, 8);
+
+                setHubRecentActivity(fallbackActivity);
+                setHubActiveStudentsCount(new Set(hubItems.map((item) => item.studentId)).size);
+              } else {
+                setHubSubmissionQueue([]);
+                setHubRecentActivity([]);
+                setHubActiveStudentsCount(0);
+
+                if (exerciseError?.code !== '42P01') {
+                  console.error('Failed to load hub submissions', exerciseError);
+                }
+              }
+
+              const { data: activityData, error: activityError } = await supabase
+                .from('user_activity_logs')
+                .select('user_id, active_date')
+                .in('user_id', hubStudentIds)
+                .order('active_date', { ascending: false })
+                .limit(8);
+
+              if (!activityError && activityData && activityData.length > 0) {
+                const activityFeed = activityData.map((row: any) => {
+                  const studentName = studentNameMap.get(String(row.user_id || '')) || 'Student';
+                  const activeDate = row.active_date ? new Date(String(row.active_date)).toLocaleDateString() : 'recently';
+                  return `${studentName} was active on ${activeDate}`;
+                });
+
+                setHubRecentActivity(activityFeed);
+                setHubActiveStudentsCount(new Set(activityData.map((row: any) => String(row.user_id || ''))).size);
+              } else if (activityError?.code !== '42P01') {
+                console.error('Failed to load hub activity', activityError);
+              }
             } else {
               setHubSubmissionQueue([]);
               setHubRecentActivity([]);
               setHubActiveStudentsCount(0);
-
-              if (exerciseError?.code !== '42P01') {
-                console.error('Failed to load hub submissions', exerciseError);
-              }
             }
-
-            const { data: activityData, error: activityError } = await supabase
-              .from('user_activity_logs')
-              .select('user_id, active_date')
-              .in('user_id', hubStudentIds)
-              .order('active_date', { ascending: false })
-              .limit(8);
-
-            if (!activityError && activityData && activityData.length > 0) {
-              const activityFeed = activityData.map((row: any) => {
-                const studentName = studentNameMap.get(String(row.user_id || '')) || 'Student';
-                const activeDate = row.active_date ? new Date(String(row.active_date)).toLocaleDateString() : 'recently';
-                return `${studentName} was active on ${activeDate}`;
-              });
-
-              setHubRecentActivity(activityFeed);
-              setHubActiveStudentsCount(new Set(activityData.map((row: any) => String(row.user_id || ''))).size);
-            } else if (activityError?.code !== '42P01') {
-              console.error('Failed to load hub activity', activityError);
-            }
-          } else {
-            setHubSubmissionQueue([]);
-            setHubRecentActivity([]);
-            setHubActiveStudentsCount(0);
           }
         } else {
           // Admin UI is not for students
@@ -364,7 +393,7 @@ export default function Admin() {
   if (isLoading) return <div className="p-8 text-center text-muted-foreground">Loading instructor workspace...</div>;
   if (!profile) return null;
 
-  const selectedSection = instructorSections.find((section) => section.id === activeSection) ?? instructorSections[0];
+  const selectedSection = instructorSections.find((s) => s.id === activeSection) ?? instructorSections[0];
   const totalStudents = students.length;
   const assignmentsPendingReview = hubSubmissionQueue.filter((item) => item.status === 'Pending').length;
   const recentActivityCount = hubRecentActivity.length;
@@ -389,7 +418,7 @@ export default function Admin() {
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3 sm:mb-6">
           <div>
             <Badge variant="secondary" className="rounded-full px-3 py-1 text-[11px] uppercase tracking-wider">
-              Hub: {profile.hub_location}
+              Hub: {profile.hub_location || 'Pending Assignment'}
             </Badge>
             <h1 className="heading-font mt-2 text-2xl text-foreground sm:text-3xl">Instructor Dashboard</h1>
             <p className="mt-1 text-sm text-muted-foreground">
@@ -431,7 +460,7 @@ export default function Admin() {
                       <button
                         key={section.id}
                         type="button"
-                        onClick={() => setActiveSection(section.id)}
+                        onClick={() => navigate(`/instructor/${section.id}`)}
                         className={`flex items-center gap-2 rounded-full border px-3 py-2 text-sm transition-colors ${isActive
                           ? 'border-primary bg-primary/10 text-foreground'
                           : 'border-border bg-card text-muted-foreground hover:bg-secondary hover:text-foreground'
@@ -453,134 +482,149 @@ export default function Admin() {
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
             {/* Left Column (Main content area based on section) */}
             <div className="space-y-4">
-              {activeSection === 'students' ? (
-                <Card className="rounded-2xl border-border bg-card">
-                  <CardHeader>
-                    <CardTitle className="heading-font text-xl text-foreground">Student Directory ({profile.hub_location})</CardTitle>
-                    <CardDescription>All students currently registered at your hub.</CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    <div className="overflow-x-auto">
-                      <table className="w-full min-w-[620px] text-left">
-                        <thead>
-                          <tr className="border-y border-border text-xs text-muted-foreground bg-sidebar/50">
-                            <th className="px-4 py-3 font-medium">Name</th>
-                            <th className="px-4 py-3 font-medium">Email</th>
-                            <th className="px-4 py-3 font-medium">Role</th>
-                            <th className="px-4 py-3 font-medium">Action</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {students.length > 0 ? (
-                            students.map((student) => (
-                              <tr key={student.id} className="border-b border-border text-sm text-foreground last:border-b-0 hover:bg-sidebar/30 transition-colors">
-                                <td className="whitespace-nowrap px-4 py-3 font-medium">{student.full_name}</td>
-                                <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">{student.email}</td>
-                                <td className="px-4 py-3 capitalize">{student.role}</td>
-                                <td className="px-4 py-3">
-                                  <Button size="sm" variant="outline" className="rounded-full text-xs h-8">
-                                    View Profile
-                                  </Button>
+              {activeSection === 'students' && (
+                <div className={`grid grid-cols-1 ${selectedStudent ? 'lg:grid-cols-2' : ''} gap-4 items-start`}>
+                  <Card className="rounded-2xl border-border bg-card">
+                    <CardHeader className="flex flex-row items-center justify-between pb-4">
+                      <div>
+                        <CardTitle className="heading-font text-xl text-foreground">
+                          Student Directory ({profile.hub_location || 'All'})
+                        </CardTitle>
+                        <CardDescription>
+                          All students currently registered at your hub.
+                        </CardDescription>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left">
+                          <thead>
+                            <tr className="border-y border-border text-xs text-muted-foreground bg-sidebar/50">
+                              <th className="px-4 py-3 font-medium">Name</th>
+                              <th className="px-4 py-3 font-medium">Role</th>
+                              <th className="px-4 py-3 font-medium">Action</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {students.length > 0 ? (
+                              students.map((student) => (
+                                <tr key={student.id} className={`border-b border-border text-sm text-foreground last:border-b-0 hover:bg-sidebar/30 transition-colors ${selectedStudent?.id === student.id ? 'bg-secondary/30' : ''}`}>
+                                  <td className="whitespace-nowrap px-4 py-3">
+                                    <p className="font-medium">{student.full_name}</p>
+                                    <p className="text-xs text-muted-foreground">{student.email}</p>
+                                  </td>
+                                  <td className="px-4 py-3 capitalize">{student.role}</td>
+                                  <td className="px-4 py-3">
+                                    <Button size="sm" variant={selectedStudent?.id === student.id ? 'default' : 'outline'} className="rounded-full text-xs h-8" onClick={() => setSelectedStudent(selectedStudent?.id === student.id ? null : student)}>
+                                      {selectedStudent?.id === student.id ? 'Close' : 'View Profile'}
+                                    </Button>
+                                  </td>
+                                </tr>
+                              ))
+                            ) : (
+                              <tr>
+                                <td colSpan={3} className="text-center py-8 text-muted-foreground bg-sidebar/30">
+                                  {profile.hub_location ? `No students have registered for ${profile.hub_location} yet.` : 'You are not assigned to a hub yet.'}
                                 </td>
                               </tr>
-                            ))
-                          ) : (
-                            <tr>
-                              <td colSpan={4} className="text-center py-8 text-muted-foreground bg-sidebar/30">
-                                No students have registered for {profile.hub_location} yet.
-                              </td>
-                            </tr>
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-                  </CardContent>
-                </Card>
-              ) : (
-                <>
-                  {/* Keep the original dashboard placeholders for other sections until fully built out */}
-                  <Card className="overflow-hidden rounded-2xl border-border bg-primary">
-                    <CardContent className="p-4 sm:p-6">
-                      <p className="text-xs uppercase tracking-wider text-white/80">Overview / Home</p>
-                      <h2 className="heading-font mt-2 max-w-2xl text-2xl leading-tight text-white sm:text-3xl">
-                        Real instructor operations mapped directly to backend behavior
-                      </h2>
-                      <p className="mt-2 text-sm text-white/80">
-                        Every action here is designed as a live case study for students: data reads, mutations, and workflow
-                        transitions.
-                      </p>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
                     </CardContent>
                   </Card>
 
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                  {selectedStudent && (
+                    <Card className="rounded-2xl border-border bg-card animate-in fade-in slide-in-from-right-4">
+                      <CardHeader className="flex flex-row items-center justify-between pb-4">
+                        <div>
+                          <CardTitle className="heading-font text-xl text-foreground">
+                            {selectedStudent.full_name}
+                          </CardTitle>
+                          <CardDescription>{selectedStudent.email}</CardDescription>
+                        </div>
+                        <Button size="sm" variant="ghost" className="rounded-full h-8 px-3 text-muted-foreground hover:text-foreground" onClick={() => setSelectedStudent(null)}>
+                          Hide
+                        </Button>
+                      </CardHeader>
+                      <CardContent className="p-4 space-y-4">
+                        <div className="rounded-xl border border-border p-4 bg-sidebar">
+                          <h3 className="font-medium text-foreground mb-4">Account Snapshot</h3>
+                          <div className="space-y-3 text-sm">
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Status</span>
+                              <Badge className="bg-success/20 text-success hover:bg-success/30 rounded-full">Active</Badge>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Hub</span>
+                              <span className="text-foreground capitalize">{selectedStudent.hub_location}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Role</span>
+                              <span className="text-foreground capitalize">{selectedStudent.role}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="rounded-xl border border-border p-4 bg-sidebar">
+                          <h3 className="font-medium text-foreground mb-4">Submission History</h3>
+                          <div className="space-y-3">
+                            {hubSubmissionQueue.filter(sub => sub.studentId === selectedStudent.id).length > 0 ? (
+                              hubSubmissionQueue.filter(sub => sub.studentId === selectedStudent.id).map(sub => (
+                                <div key={sub.id} className="flex justify-between items-center bg-secondary/50 p-2 rounded-lg text-sm border border-border">
+                                  <div>
+                                    <p className="font-medium text-foreground truncate max-w-[150px]" title={sub.assignment}>{sub.assignment}</p>
+                                    <p className="text-xs text-muted-foreground">{sub.submitted}</p>
+                                  </div>
+                                  <Badge variant={submissionBadgeVariant[sub.status]} className="text-[10px] uppercase">{sub.status}</Badge>
+                                </div>
+                              ))
+                            ) : (
+                              <div className="text-center py-8 text-muted-foreground text-sm">
+                                No submissions found for this learner yet.
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              )}
+
+              {activeSection === 'dashboard' && (
+                <>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                     <Card className="rounded-2xl border-border bg-sidebar">
                       <CardContent className="p-4">
-                        <p className="text-xs text-muted-foreground">Total students enrolled at Hub</p>
+                        <p className="text-xs text-muted-foreground">Total students enrolled</p>
                         <p className="mt-2 text-2xl text-foreground">{students.length}</p>
                       </CardContent>
                     </Card>
                     <Card className="rounded-2xl border-border bg-sidebar">
                       <CardContent className="p-4">
-                        <p className="text-xs text-muted-foreground">Active students in hub</p>
-                        <p className="mt-2 text-2xl text-foreground">{hubActiveStudentsCount}</p>
+                        <p className="text-xs text-muted-foreground">Active courses</p>
+                        <p className="mt-2 text-2xl text-foreground">{activeCourses.length}</p>
                       </CardContent>
                     </Card>
                     <Card className="rounded-2xl border-border bg-sidebar">
                       <CardContent className="p-4">
-                        <p className="text-xs text-muted-foreground">Assignments pending review</p>
+                        <p className="text-xs text-muted-foreground">Pending review</p>
                         <p className="mt-2 text-2xl text-foreground">{assignmentsPendingReview}</p>
                       </CardContent>
                     </Card>
                     <Card className="rounded-2xl border-border bg-sidebar">
                       <CardContent className="p-4">
-                        <p className="text-xs text-muted-foreground">Recent student activity</p>
+                        <p className="text-xs text-muted-foreground">Recent activity metrics</p>
                         <p className="mt-2 text-2xl text-foreground">{recentActivityCount}</p>
                       </CardContent>
                     </Card>
                   </div>
 
                   <Card className="rounded-2xl border-border">
-                    <CardHeader>
-                      <div className="flex items-center justify-between gap-3">
-                        <div>
-                          <CardTitle className="heading-font text-lg text-foreground">{selectedSection.label}</CardTitle>
-                          <CardDescription className="mt-1">{selectedSection.purpose}</CardDescription>
-                        </div>
-                        <Badge variant={stageBadgeVariant[selectedSection.stage]} className="rounded-full px-3 py-1 text-[11px]">
-                          {selectedSection.stage}
-                        </Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="grid grid-cols-1 gap-4 pt-0 md:grid-cols-2">
-                      <div className="rounded-xl bg-sidebar p-3">
-                        <p className="mb-2 text-xs uppercase tracking-wider text-muted-foreground">Feature Set</p>
-                        <ul className="space-y-2 text-sm text-foreground">
-                          {selectedSection.features.map((item) => (
-                            <li key={item} className="flex items-start gap-2">
-                              <LuCircleCheck className="mt-0.5 h-4 w-4 text-primary" />
-                              <span>{item}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                      <div className="rounded-xl bg-sidebar p-3">
-                        <p className="mb-2 text-xs uppercase tracking-wider text-muted-foreground">Teaching Value</p>
-                        <ul className="space-y-2 text-sm text-foreground">
-                          {selectedSection.teachingValue.map((item) => (
-                            <li key={item} className="flex items-start gap-2">
-                              <LuSparkles className="mt-0.5 h-4 w-4 text-accent" />
-                              <span>{item}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="rounded-2xl border-border">
                     <CardHeader className="pb-2">
-                      <CardTitle className="heading-font text-lg text-foreground">Submission Review & Feedback</CardTitle>
-                      <CardDescription>Core instructor workflow: review, feedback, and state transitions.</CardDescription>
+                      <CardTitle className="heading-font text-lg text-foreground">Active Submissions (Hub Overview)</CardTitle>
+                      <CardDescription>Recent submissions from learners at {profile.hub_location}.</CardDescription>
                     </CardHeader>
                     <CardContent className="p-0">
                       <div className="overflow-x-auto">
@@ -597,10 +641,10 @@ export default function Admin() {
                           </thead>
                           <tbody>
                             {hubSubmissionQueue.length > 0 ? (
-                              hubSubmissionQueue.map((item) => (
+                              hubSubmissionQueue.slice(0, 5).map((item) => (
                                 <tr key={item.id} className="border-b border-border text-sm text-foreground last:border-b-0">
-                                  <td className="whitespace-nowrap px-4 py-3">{item.id}</td>
-                                  <td className="whitespace-nowrap px-4 py-3">{item.student}</td>
+                                  <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">#{item.id.slice(0, 8)}</td>
+                                  <td className="whitespace-nowrap px-4 py-3 font-medium">{item.student}</td>
                                   <td className="px-4 py-3">{item.assignment}</td>
                                   <td className="px-4 py-3">
                                     <Badge variant={submissionBadgeVariant[item.status]}>{item.status}</Badge>
@@ -616,7 +660,7 @@ export default function Admin() {
                             ) : (
                               <tr>
                                 <td colSpan={6} className="px-4 py-6 text-center text-sm text-muted-foreground">
-                                  No submissions from your hub yet.
+                                  No active submissions from your hub yet.
                                 </td>
                               </tr>
                             )}
@@ -626,6 +670,236 @@ export default function Admin() {
                     </CardContent>
                   </Card>
                 </>
+              )}
+
+              {activeSection === 'courses' && (
+                <Card className="rounded-2xl border-border bg-card">
+                  <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <div>
+                      <CardTitle className="heading-font text-xl text-foreground">Course Catalog</CardTitle>
+                      <CardDescription>Manage curriculum structure and module organization.</CardDescription>
+                    </div>
+                    <Button size="sm" className="rounded-full">
+                      <LuBookOpen className="mr-2 h-4 w-4" /> Create Course
+                    </Button>
+                  </CardHeader>
+                  <CardContent>
+                    {activeCourses.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {activeCourses.map(course => (
+                          <Card key={course.id} className="rounded-xl border border-border bg-sidebar hover:border-primary/50 transition">
+                            <CardContent className="p-4 flex gap-4">
+                              <div className="h-16 w-16 rounded-xl bg-secondary flex items-center justify-center text-3xl shrink-0">
+                                {course.icon || '📚'}
+                              </div>
+                              <div className="flex-1">
+                                <div className="flex justify-between items-start mb-1">
+                                  <h3 className="font-semibold text-foreground line-clamp-1">{course.title}</h3>
+                                  <Badge variant="outline" className="text-[10px] rounded-full px-2 uppercase">{course.difficulty_level || 'Beginner'}</Badge>
+                                </div>
+                                <p className="text-xs text-muted-foreground line-clamp-2 mb-3">{course.description || 'No description provided.'}</p>
+                                <div className="flex items-center gap-2">
+                                  <Button size="sm" variant="secondary" className="h-7 text-xs rounded-lg flex-1">Modules ({activeModules.filter(m => m.course_id === course.id).length})</Button>
+                                  <Button size="sm" variant="default" className="h-7 text-xs rounded-lg flex-1">Edit Course</Button>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="p-8 text-center bg-sidebar/50 rounded-xl border border-dashed border-border text-muted-foreground">
+                        No courses available. Start by creating your first course.
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {activeSection === 'lessons' && (
+                <Card className="rounded-2xl border-border bg-card">
+                  <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <div>
+                      <CardTitle className="heading-font text-xl text-foreground">Lesson Content Editor</CardTitle>
+                      <CardDescription>Author and organize individual lesson structures.</CardDescription>
+                    </div>
+                    <Button size="sm" className="rounded-full">
+                      <LuFolderKanban className="mr-2 h-4 w-4" /> New Lesson
+                    </Button>
+                  </CardHeader>
+                  <CardContent>
+                    {activeLessons.length > 0 ? (
+                      <div className="space-y-2">
+                        {activeLessons.map(lesson => {
+                          const course = activeCourses.find(c => c.id === lesson.course_id);
+                          return (
+                            <div key={lesson.id} className="flex items-center justify-between p-3 rounded-xl border border-border bg-sidebar hover:bg-secondary/50 transition">
+                              <div className="flex items-center gap-3">
+                                <div className="bg-primary/10 text-primary p-2 rounded-lg"><LuFolderKanban className="h-4 w-4" /></div>
+                                <div>
+                                  <p className="font-medium text-sm text-foreground">{lesson.title}</p>
+                                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                    {course?.title || 'Unassigned'}
+                                  </p>
+                                </div>
+                              </div>
+                              <Button size="sm" variant="ghost" className="h-8 rounded-lg text-xs">Edit Content</Button>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    ) : (
+                      <div className="p-8 text-center bg-sidebar/50 rounded-xl border border-dashed border-border text-muted-foreground">
+                        No lessons have been created yet.
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {activeSection === 'assignments' && (
+                <Card className="rounded-2xl border-border bg-card">
+                  <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <div>
+                      <CardTitle className="heading-font text-xl text-foreground">Exercises & Projects</CardTitle>
+                      <CardDescription>Build interactive validation and practical tasks.</CardDescription>
+                    </div>
+                    <Button size="sm" className="rounded-full">
+                      <LuTarget className="mr-2 h-4 w-4" /> Add Exercise
+                    </Button>
+                  </CardHeader>
+                  <CardContent>
+                    {activeAssignments.length > 0 ? (
+                      <div className="space-y-2">
+                        {activeAssignments.map(exercise => (
+                          <div key={exercise.id} className="flex items-center justify-between p-3 rounded-xl border border-border bg-sidebar hover:bg-secondary/50 transition">
+                            <div className="flex items-center gap-3">
+                              <div className="bg-accent/10 text-accent p-2 rounded-lg">
+                                <LuKey className="h-4 w-4" />
+                              </div>
+                              <div>
+                                <p className="font-medium text-sm text-foreground">{exercise.title}</p>
+                                <p className="text-xs text-muted-foreground">Type: <span className="uppercase text-foreground">{exercise.type || 'Standard'}</span> • Points: {exercise.xp_reward || 0}</p>
+                              </div>
+                            </div>
+                            <Badge variant="outline" className="text-[10px] rounded-full">Configured</Badge>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="p-8 text-center bg-sidebar/50 rounded-xl border border-dashed border-border text-muted-foreground">
+                        No exercises found.
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {activeSection === 'submissions' && (
+                <Card className="rounded-2xl border-border">
+                  <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <div>
+                      <CardTitle className="heading-font text-xl text-foreground">Full Review Queue</CardTitle>
+                      <CardDescription>Review process for {profile.hub_location} submissions.</CardDescription>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary" className="rounded-full">{assignmentsPendingReview} Pending</Badge>
+                      <Badge variant="outline" className="rounded-full">{reviewedSubmissions} Done</Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <div className="overflow-x-auto">
+                      <table className="w-full min-w-[620px] text-left">
+                        <thead>
+                          <tr className="border-y border-border text-xs text-muted-foreground bg-sidebar/50">
+                            <th className="px-4 py-3 font-medium">Tracking ID</th>
+                            <th className="px-4 py-3 font-medium">Student</th>
+                            <th className="px-4 py-3 font-medium">Assignment Output</th>
+                            <th className="px-4 py-3 font-medium">Current Status</th>
+                            <th className="px-4 py-3 font-medium">Submitted</th>
+                            <th className="px-4 py-3 font-medium">Review Action</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {hubSubmissionQueue.length > 0 ? (
+                            hubSubmissionQueue.map((item) => (
+                              <tr key={item.id} className="border-b border-border text-sm text-foreground last:border-b-0 hover:bg-secondary/30 transition">
+                                <td className="whitespace-nowrap px-4 py-4 font-mono text-xs text-muted-foreground">{item.id.slice(0, 8)}...</td>
+                                <td className="whitespace-nowrap px-4 py-4 font-medium">
+                                  <div className="flex items-center gap-2">
+                                    <div className="h-6 w-6 rounded-full bg-primary/20 text-primary flex items-center justify-center text-[10px] uppercase font-bold">
+                                      {item.student.slice(0, 2)}
+                                    </div>
+                                    {item.student}
+                                  </div>
+                                </td>
+                                <td className="px-4 py-4 max-w-[200px] truncate" title={item.assignment}>{item.assignment}</td>
+                                <td className="px-4 py-4">
+                                  <Badge variant={submissionBadgeVariant[item.status]} className="rounded-full">{item.status}</Badge>
+                                </td>
+                                <td className="whitespace-nowrap px-4 py-4 text-muted-foreground text-xs">{item.submitted}</td>
+                                <td className="px-4 py-4">
+                                  <Button size="sm" className="rounded-full h-8 px-4 font-medium" variant={item.status === 'Pending' ? 'default' : 'outline'}>
+                                    {item.status === 'Pending' ? 'Start Review' : 'View Feedback'}
+                                  </Button>
+                                </td>
+                              </tr>
+                            ))
+                          ) : (
+                            <tr>
+                              <td colSpan={6} className="px-4 py-8 text-center text-sm text-muted-foreground bg-sidebar/40 border-dashed border-border border-b">
+                                No learner submissions are in the queue for your hub.
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {activeSection === 'analytics' && (
+                <Card className="rounded-2xl border-border bg-card">
+                  <CardHeader>
+                    <CardTitle className="heading-font text-xl text-foreground">Teaching Analytics</CardTitle>
+                    <CardDescription>Metrics based on user events and submission velocity.</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="p-8 text-center bg-sidebar/50 rounded-xl border border-dashed border-border text-muted-foreground">
+                      <LuZap className="h-8 w-8 mx-auto mb-3 opacity-50" />
+                      <p>Detailed visualization charts will appear here.</p>
+                      <p className="text-xs mt-1">Currently aggregating interaction records for {students.length} students.</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {activeSection === 'settings' && (
+                <Card className="rounded-2xl border-border bg-card">
+                  <CardHeader>
+                    <CardTitle className="heading-font text-xl text-foreground">Instructor Preferences</CardTitle>
+                    <CardDescription>Configure notifications and assignment validation rules.</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4 max-w-xl">
+                      <div className="flex items-center justify-between p-3 border border-border rounded-xl">
+                        <div>
+                          <p className="font-medium text-sm text-foreground">Email Notifications</p>
+                          <p className="text-xs text-muted-foreground">Receive daily digest of new submissions</p>
+                        </div>
+                        <Badge variant="default" className="rounded-full cursor-not-allowed">Enabled</Badge>
+                      </div>
+                      <div className="flex items-center justify-between p-3 border border-border rounded-xl">
+                        <div>
+                          <p className="font-medium text-sm text-foreground">Auto-Review Trivial Exercises</p>
+                          <p className="text-xs text-muted-foreground">Automatically pass coding questions that pass unit tests</p>
+                        </div>
+                        <Badge variant="outline" className="rounded-full text-muted-foreground hover:bg-secondary cursor-pointer">Off</Badge>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               )}
             </div>
 
@@ -677,7 +951,7 @@ export default function Admin() {
           </div>
         </div>
       </div>
-    </DashboardLayout>
+    </DashboardLayout >
   );
 }
 
