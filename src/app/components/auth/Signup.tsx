@@ -54,8 +54,9 @@ export default function Signup() {
       }
 
       if (authData.user) {
-        toast.success('Account created! Welcome to your coding journey!');
-        navigate('/dashboard');
+        await supabase.auth.signOut();
+        toast.success('Account created successfully! Please log in to continue.');
+        navigate('/');
       }
     } catch (err: any) {
       toast.error(err.message || 'An unexpected error occurred during signup.');
@@ -75,7 +76,7 @@ export default function Signup() {
         </div>
 
         <div className="bg-white rounded-2xl shadow-lg p-8 border border-[rgba(0,0,0,0.08)]">
-          <form onSubmit={handleSignup} className="space-y-4">
+          <form onSubmit={handleSignup} className="space-y-4" autoComplete="off">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -85,6 +86,7 @@ export default function Signup() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                autoComplete="off"
                 className="h-12 rounded-xl bg-[#F5F5FA] border-0"
               />
             </div>
@@ -100,6 +102,7 @@ export default function Signup() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   minLength={6}
+                  autoComplete="new-password"
                   className="h-12 rounded-xl bg-[#F5F5FA] border-0"
                 />
               </div>
@@ -124,6 +127,7 @@ export default function Signup() {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
                 minLength={6}
+                autoComplete="new-password"
                 className="h-12 rounded-xl bg-[#F5F5FA] border-0"
               />
             </div>

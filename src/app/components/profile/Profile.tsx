@@ -49,7 +49,7 @@ export default function Profile() {
   const [nickname, setNickname] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [gender, setGender] = useState<Gender | ''>('');
-  const [isGenderSaving, setIsGenderSaving] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [selectedAvatar, setSelectedAvatar] = useState('');
   const [userRole, setUserRole] = useState('');
 
@@ -93,6 +93,10 @@ export default function Profile() {
             .eq('user_id', user.id);
           if (pData) setUserProgress(pData);
         }
+
+        if (!String(resolvedProfile.gender ?? '')) {
+          setIsEditing(true);
+        }
       } catch (err) {
         console.error(err);
       } finally {
@@ -109,49 +113,44 @@ export default function Profile() {
       return;
     }
 
-    try {
-      await updateProfileForAuthUser(authUser as any, { full_name: nickname.trim() });
-      await supabase.auth.updateUser({ data: { full_name: nickname.trim() } });
+    let finalAvatarUrl = selectedAvatar || userProfile.avatar_url;
 
-      setUserProfile((prev: any) => ({ ...prev, full_name: nickname.trim() }));
+    if (gender && !selectedAvatar && (!userProfile.avatar_url || gender !== userProfile.gender)) {
+      finalAvatarUrl = getRandomAvatar(gender) || profileAvatar;
+    }
+
+    try {
+      setIsSaving(true);
+      await updateProfileForAuthUser(authUser as any, {
+        full_name: nickname.trim(),
+        ...(gender ? { gender, avatar_url: finalAvatarUrl } : {})
+      });
+      await supabase.auth.updateUser({
+        data: {
+          full_name: nickname.trim(),
+          ...(gender ? { gender, avatar_url: finalAvatarUrl } : {})
+        }
+      });
+
+      setUserProfile((prev: any) => ({
+        ...prev,
+        full_name: nickname.trim(),
+        ...(gender ? { gender, avatar_url: finalAvatarUrl } : {})
+      }));
       toast.success('Profile updated successfully');
       setIsEditing(false);
     } catch {
       toast.error('Failed to update profile');
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const handleCancel = () => {
     setNickname(userProfile.full_name || '');
+    setGender((userProfile.gender || '') as Gender | '');
+    setSelectedAvatar(userProfile.avatar_url || '');
     setIsEditing(false);
-  };
-
-  const handleGenderSave = async () => {
-    if (!gender) {
-      toast.error('Please select a gender');
-      return;
-    }
-
-    const pool = getAvatarsByGender(gender);
-    if (pool.length > 0 && !selectedAvatar) {
-      toast.error('Please choose an avatar');
-      return;
-    }
-
-    try {
-      setIsGenderSaving(true);
-      const avatarUrl = selectedAvatar || getRandomAvatar(gender) || userProfile.avatar_url || profileAvatar;
-
-      await updateProfileForAuthUser(authUser as any, { gender, avatar_url: avatarUrl });
-      await supabase.auth.updateUser({ data: { gender, avatar_url: avatarUrl } });
-
-      setUserProfile((prev: any) => ({ ...prev, gender, avatar_url: avatarUrl }));
-      toast.success('Profile updated');
-    } catch {
-      toast.error('Failed to update gender');
-    } finally {
-      setIsGenderSaving(false);
-    }
   };
 
   const availableAvatars = gender ? getAvatarsByGender(gender) : [];
@@ -221,89 +220,6 @@ export default function Profile() {
           </p>
         </div>
 
-        <Card className={`mb-4 rounded-2xl border-border ${needsGender ? 'bg-secondary/60 ring-1 ring-primary/20' : 'bg-secondary/40'}`}>
-          <CardContent className="flex flex-col gap-4 p-4">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h2 className="text-lg text-foreground heading-font">Gender</h2>
-                <p className="text-sm text-muted-foreground">
-                  {needsGender
-                    ? 'Select your gender to set a default avatar. You can update this later.'
-                    : 'Update your gender to refresh your avatar.'}
-                </p>
-              </div>
-              {needsGender && (
-                <Badge className="rounded-full border border-primary/20 bg-primary/10 px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-primary">
-                  Required
-                </Badge>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="gender">Gender</Label>
-              {gender ? (
-                <div className="flex items-center gap-3 rounded-xl bg-secondary/70 p-3">
-                  <p className="flex-1 text-sm capitalize text-muted-foreground">Selected: {gender}</p>
-                  <Button type="button" variant="outline" size="sm" className="rounded-lg" onClick={() => setGender('')}>
-                    Change
-                  </Button>
-                </div>
-              ) : (
-                <Select value={gender} onValueChange={(value: Gender) => setGender(value)}>
-                  <SelectTrigger className="h-10 w-full rounded-xl border-0 bg-secondary">
-                    <SelectValue placeholder="Select gender" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="female">Female</SelectItem>
-                    <SelectItem value="male">Male</SelectItem>
-                  </SelectContent>
-                </Select>
-              )}
-            </div>
-
-            {gender && (
-              <div className="space-y-2">
-                <Label>Choose Avatar</Label>
-                {availableAvatars.length > 0 ? (
-                  selectedAvatar ? (
-                    <div className="flex items-center gap-3 rounded-xl bg-secondary/70 p-3">
-                      <img src={selectedAvatar} alt="Selected avatar" className="h-16 w-16 rounded-xl object-cover" />
-                      <p className="flex-1 text-sm text-muted-foreground">Selected avatar</p>
-                      <Button type="button" variant="outline" size="sm" className="rounded-lg" onClick={() => setSelectedAvatar('')}>
-                        Change
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-4 gap-2 rounded-xl bg-secondary/70 p-3 sm:grid-cols-6">
-                      {availableAvatars.map((avatar, index) => (
-                        <button
-                          key={`${gender}-avatar-${index}`}
-                          type="button"
-                          onClick={() => setSelectedAvatar(avatar)}
-                          className="aspect-square overflow-hidden rounded-xl border border-transparent transition hover:border-primary/40"
-                          aria-label={`Select avatar ${index + 1}`}
-                        >
-                          <img src={avatar} alt={`Avatar option ${index + 1}`} className="h-full w-full object-cover" />
-                        </button>
-                      ))}
-                    </div>
-                  )
-                ) : (
-                  <p className="text-sm text-muted-foreground">No avatars found for this gender yet.</p>
-                )}
-              </div>
-            )}
-
-            <Button
-              onClick={handleGenderSave}
-              disabled={!gender || isGenderSaving || (availableAvatars.length > 0 && !selectedAvatar)}
-              className="self-start rounded-xl"
-            >
-              {isGenderSaving ? 'Saving...' : 'Save Gender'}
-            </Button>
-          </CardContent>
-        </Card>
-
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-[300px_minmax(0,1fr)]">
           <div className="space-y-4">
             <Card className="rounded-2xl border-border">
@@ -315,22 +231,64 @@ export default function Profile() {
                   </Avatar>
 
                   {isEditing ? (
-                    <div className="w-full space-y-3">
+                    <div className="w-full space-y-4 text-left">
                       <div className="space-y-2">
                         <Label htmlFor="nickname">Name</Label>
                         <Input
                           id="nickname"
                           value={nickname}
                           onChange={(e) => setNickname(e.target.value)}
-                          className="h-10 rounded-xl border-0 bg-secondary"
+                          className="h-9 rounded-xl border-0 bg-secondary"
                         />
                       </div>
-                      <div className="flex gap-2">
-                        <Button onClick={handleSave} size="sm" className="flex-1 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90">
+
+                      <div className="space-y-2">
+                        <Label>Gender</Label>
+                        <Select value={gender} onValueChange={(value: Gender) => { setGender(value); setSelectedAvatar(''); }}>
+                          <SelectTrigger className="h-9 w-full rounded-xl border-0 bg-secondary">
+                            <SelectValue placeholder="Select gender" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="female">Female</SelectItem>
+                            <SelectItem value="male">Male</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {gender && availableAvatars.length > 0 && (
+                        <div className="space-y-2">
+                          <Label>Choose Avatar</Label>
+                          {selectedAvatar ? (
+                            <div className="flex items-center gap-2 rounded-xl bg-secondary/50 p-2">
+                              <img src={selectedAvatar} alt="Selected" className="h-10 w-10 rounded-lg object-cover" />
+                              <p className="flex-1 text-xs text-muted-foreground whitespace-nowrap overflow-hidden text-ellipsis">Avatar selected</p>
+                              <Button type="button" variant="ghost" size="sm" className="h-8 rounded-lg px-2 text-xs" onClick={() => setSelectedAvatar('')}>
+                                Change
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="grid grid-cols-4 gap-2 rounded-xl bg-secondary/50 p-2">
+                              {availableAvatars.map((avatar, index) => (
+                                <button
+                                  key={`${gender}-avatar-${index}`}
+                                  type="button"
+                                  onClick={() => setSelectedAvatar(avatar)}
+                                  className="aspect-square overflow-hidden rounded-lg border border-transparent hover:border-primary/40 focus:ring-2 focus:ring-primary"
+                                >
+                                  <img src={avatar} alt={`Avatar ${index + 1}`} className="h-full w-full object-cover" />
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      <div className="flex gap-2 pt-2">
+                        <Button disabled={isSaving} onClick={handleSave} size="sm" className="flex-1 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90">
                           <LuSave className="mr-1 h-4 w-4" />
-                          Save
+                          {isSaving ? 'Saving...' : 'Save'}
                         </Button>
-                        <Button onClick={handleCancel} size="sm" variant="outline" className="flex-1 rounded-lg">
+                        <Button disabled={isSaving} onClick={handleCancel} size="sm" variant="outline" className="flex-1 rounded-lg">
                           <LuX className="mr-1 h-4 w-4" />
                           Cancel
                         </Button>

@@ -11,10 +11,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui
 import { Badge } from '../../../components/ui/badge';
 import { Progress } from '../../../components/ui/progress';
 import { Button } from '../../../components/ui/button';
-import { useAdminData } from '../hooks/useAdminData';
+import { useInstructorData } from '../hooks/useInstructorData';
 
-export default function AdminOverviewPage() {
-  const { metrics, hubSummaries, topStudents } = useAdminData();
+export default function InstructorOverviewPage() {
+  const { metrics, hubSummaries, topStudents } = useInstructorData();
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -54,7 +54,7 @@ export default function AdminOverviewPage() {
               Regional Hubs
             </h2>
           </div>
-          
+
           <div className="grid gap-4 sm:grid-cols-2">
             {hubSummaries.map((summary) => (
               <Card key={summary.hub.id} className="group overflow-hidden rounded-2xl border-border bg-sidebar hover:shadow-md transition-all border-none bg-sidebar/30">
@@ -77,9 +77,9 @@ export default function AdminOverviewPage() {
                     </div>
                     <Progress value={summary.averageProgress} className="h-1.5" />
                   </div>
-                  
-                  <Link 
-                    to={`/admin/hubs/${summary.hub.id}`}
+
+                  <Link
+                    to={`/instructor/hubs/${summary.hub.id}`}
                     className="flex w-full items-center justify-between rounded-xl bg-card px-4 py-2 text-sm font-medium text-foreground hover:bg-sidebar transition-colors group-hover:bg-primary group-hover:text-white"
                   >
                     View Hub Details
@@ -113,7 +113,7 @@ export default function AdminOverviewPage() {
                 </div>
               ))}
               <Button asChild variant="outline" className="w-full mt-2 rounded-xl border-border hover:bg-sidebar">
-                <Link to="/admin/students">View All Students</Link>
+                <Link to="/instructor/students">View All Students</Link>
               </Button>
             </CardContent>
           </Card>

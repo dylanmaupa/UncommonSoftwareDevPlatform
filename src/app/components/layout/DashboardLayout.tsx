@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router';
 import { loadPyodideEnvironment } from '../../../lib/pyodide';
 import { supabase } from '../../../lib/supabase';
 import AccountSetup from '../auth/AccountSetup';
+import EmailVerificationBlock from '../auth/EmailVerificationBlock';
 import { fetchProfileForAuthUser } from '../../lib/profileAccess';
 import {
   LuBookOpen,
@@ -96,25 +97,38 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     return null;
   }
 
-  if (!profile?.full_name) {
+  const isEmailVerified = !!user.email_confirmed_at;
+  const daysSinceCreation = (Date.now() - new Date(user.created_at).getTime()) / (1000 * 60 * 60 * 24);
+  const isVerificationMandatory = !isEmailVerified && daysSinceCreation >= 1;
+
+  if (isVerificationMandatory) {
     return (
-      <div className="min-h-dvh w-full bg-[#f8f9fa] flex items-center justify-center p-4">
-        <AccountSetup onComplete={checkUser} userRole={(profileRole as 'instructor' | 'student') || 'student'} />
+      <div className="min-h-dvh w-full bg-[#f8f9fa] flex flex-col items-center justify-center p-4">
+        <EmailVerificationBlock user={user} onChecked={checkUser} />
       </div>
     );
   }
 
   const isInstructor = profileRole === 'instructor';
+  const needsStudentSetup = !isInstructor && !profile?.full_name;
+  const needsInstructorSetup = isInstructor && !profile?.hub_location;
+
+  if (needsStudentSetup || needsInstructorSetup) {
+    return (
+      <div className="min-h-dvh w-full bg-[#f8f9fa] flex items-center justify-center p-4">
+        <AccountSetup onComplete={checkUser} userRole={isInstructor ? 'instructor' : 'student'} />
+      </div>
+    );
+  }
 
   const instructorNavItems: NavItem[] = [
     { icon: LuLayoutDashboard, label: 'Instructor Home', path: '/instructor' },
+    { icon: LuBookOpen, label: 'Courses', path: '/instructor/courses' },
+    { icon: LuFolderKanban, label: 'Lessons', path: '/instructor/lessons' },
+    { icon: LuTarget, label: 'Assignments', path: '/instructor/assignments' },
+    { icon: LuBookOpenCheck, label: 'Submissions', path: '/instructor/submissions' },
     { icon: LuUsers, label: 'Students', path: '/instructor/students' },
-    { icon: LuBookOpen, label: 'Curriculum', path: '/instructor/curriculum' },
-    { icon: LuBookOpenCheck, label: 'Assessments', path: '/instructor/assessments' },
-    { icon: LuFolderKanban, label: 'Projects', path: '/instructor/projects' },
-    { icon: LuTarget, label: 'Live Ops', path: '/instructor/live' },
-    { icon: LuBuilding2, label: 'Hub Operations', path: '/instructor/hub-operations' },
-
+    { icon: LuBuilding2, label: 'Analytics', path: '/instructor/analytics' },
     { icon: LuUser, label: 'Profile', path: '/profile' },
   ];
 

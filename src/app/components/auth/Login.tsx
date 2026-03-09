@@ -19,11 +19,11 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      // Admin bypass for testing
-      if (email.toLowerCase() === 'admin@uncommon.org') {
-        localStorage.setItem('admin_bypass', 'true');
-        toast.success('Admin Bypass Activated');
-        navigate('/admin');
+      // Instructor bypass for testing
+      if (email.toLowerCase() === 'instructor@uncommon.org') {
+        localStorage.setItem('instructor_bypass', 'true');
+        toast.success('Instructor Bypass Activated');
+        navigate('/instructor');
         return;
       }
 
@@ -86,7 +86,7 @@ export default function Login() {
         </div>
 
         <div className="bg-white rounded-2xl shadow-lg p-8 border border-[rgba(0,0,0,0.08)]">
-          <form onSubmit={handleLogin} className="space-y-5">
+          <form onSubmit={handleLogin} className="space-y-5" autoComplete="off">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -96,6 +96,7 @@ export default function Login() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                autoComplete="off"
                 className="h-12 rounded-xl bg-[#F5F5FA] border-0"
               />
             </div>
@@ -117,6 +118,7 @@ export default function Login() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                autoComplete="new-password"
                 className="h-12 rounded-xl bg-[#F5F5FA] border-0"
               />
             </div>

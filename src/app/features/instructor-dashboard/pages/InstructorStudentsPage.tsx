@@ -10,18 +10,18 @@ import { Input } from '../../../components/ui/input';
 import { Badge } from '../../../components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '../../../components/ui/avatar';
 import { Button } from '../../../components/ui/button';
-import { useAdminData } from '../hooks/useAdminData';
+import { useInstructorData } from '../hooks/useInstructorData';
 
-export default function AdminStudentsPage() {
-  const { allStudents, allHubs } = useAdminData();
+export default function InstructorStudentsPage() {
+  const { allStudents, allHubs } = useInstructorData();
   const [searchQuery, setSearchQuery] = useState('');
   const [hubFilter, setHubFilter] = useState('all');
   const [riskFilter, setRiskFilter] = useState('all');
 
   const filteredStudents = useMemo(() => {
     return allStudents.filter((student) => {
-      const matchesSearch = student.fullName.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                            student.email.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSearch = student.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        student.email.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesHub = hubFilter === 'all' || student.hubId === hubFilter;
       const matchesRisk = riskFilter === 'all' || student.riskLevel === riskFilter;
       return matchesSearch && matchesHub && matchesRisk;
@@ -103,11 +103,10 @@ export default function AdminStudentsPage() {
                         <p className="text-xs text-muted-foreground truncate">{student.email}</p>
                       </div>
                     </div>
-                    <Badge className={`border-none text-[10px] sm:text-xs ${
-                      student.riskLevel === 'on-track' ? 'bg-emerald-500/10 text-emerald-500' :
-                      student.riskLevel === 'needs-attention' ? 'bg-amber-500/10 text-amber-500' :
-                      'bg-rose-500/10 text-rose-500'
-                    }`}>
+                    <Badge className={`border-none text-[10px] sm:text-xs ${student.riskLevel === 'on-track' ? 'bg-emerald-500/10 text-emerald-500' :
+                        student.riskLevel === 'needs-attention' ? 'bg-amber-500/10 text-amber-500' :
+                          'bg-rose-500/10 text-rose-500'
+                      }`}>
                       {student.riskLevel.replace('-', ' ')}
                     </Badge>
                   </div>
@@ -121,7 +120,7 @@ export default function AdminStudentsPage() {
                     </div>
                     <div className="space-y-1">
                       <p className="flex items-center gap-1.5 font-medium text-foreground/70 uppercase tracking-tight">
-                         XP Earnings
+                        XP Earnings
                       </p>
                       <p className="font-bold text-primary">{student.progress.xp.toLocaleString()}</p>
                     </div>
@@ -133,12 +132,11 @@ export default function AdminStudentsPage() {
                       <span className="text-foreground">{progress}%</span>
                     </div>
                     <div className="h-2 rounded-full bg-border/50 overflow-hidden">
-                      <div 
-                        className={`h-full rounded-full transition-all duration-500 ${
-                          progress > 80 ? 'bg-emerald-500' : 
-                          progress > 50 ? 'bg-blue-500' : 
-                          'bg-primary'
-                        }`}
+                      <div
+                        className={`h-full rounded-full transition-all duration-500 ${progress > 80 ? 'bg-emerald-500' :
+                            progress > 50 ? 'bg-blue-500' :
+                              'bg-primary'
+                          }`}
                         style={{ width: `${progress}%` }}
                       />
                     </div>

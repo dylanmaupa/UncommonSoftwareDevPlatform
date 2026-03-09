@@ -1,6 +1,5 @@
 import { Link, useNavigate } from 'react-router';
 import DashboardLayout from '../layout/DashboardLayout';
-import Admin from '../admin/Admin';
 import StreakWidget from './StreakWidget';
 // @ts-ignore
 import dashboardAvatar from '../../../assets/avatar2.png';
@@ -578,7 +577,7 @@ export default function Dashboard() {
 
   if (isLoading) return <div className="p-8 text-center text-muted-foreground">Loading dashboard...</div>;
   if (!profile) return null;
-  if (profile.role === 'instructor') return <Admin />;
+  if (profile.role === 'instructor') return null; // Instructors redirect away in layout
 
   const totalLessons = userProgress.filter(p => p.item_type === 'lesson' && p.status === 'completed').length;
   const coursesWithProgress = courses.map(course => {

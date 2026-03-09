@@ -8,11 +8,11 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card';
 import { Badge } from '../../../components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '../../../components/ui/avatar';
-import { useAdminData } from '../hooks/useAdminData';
+import { useInstructorData } from '../hooks/useInstructorData';
 
-export default function AdminHubDetailPage() {
+export default function InstructorHubDetailPage() {
   const { hubId } = useParams();
-  const { getHubById, getStudentsByHubId } = useAdminData();
+  const { getHubById, getStudentsByHubId } = useInstructorData();
 
   const hub = getHubById(hubId || '');
   const students = getStudentsByHubId(hubId || '');
@@ -21,22 +21,22 @@ export default function AdminHubDetailPage() {
     return (
       <div className="flex flex-col items-center justify-center p-12 space-y-4">
         <p className="text-muted-foreground">Hub not found.</p>
-        <Link to="/admin" className="text-primary hover:underline">Return to Overview</Link>
+        <Link to="/instructor" className="text-primary hover:underline">Return to Overview</Link>
       </div>
     );
   }
 
-  const averageProgress = students.length 
+  const averageProgress = students.length
     ? Math.round(students.reduce((acc, s) => {
-        const p = Math.round((s.progress.completedLessons / s.progress.totalLessons) * 100);
-        return acc + p;
-      }, 0) / students.length)
+      const p = Math.round((s.progress.completedLessons / s.progress.totalLessons) * 100);
+      return acc + p;
+    }, 0) / students.length)
     : 0;
 
   return (
     <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
       <div className="flex flex-col gap-4">
-        <Link to="/admin" className="text-sm font-medium text-primary hover:underline flex items-center gap-1">
+        <Link to="/instructor" className="text-sm font-medium text-primary hover:underline flex items-center gap-1">
           <LuArrowLeft className="h-4 w-4" />
           Back to Platform Overview
         </Link>
@@ -120,23 +120,21 @@ export default function AdminHubDetailPage() {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <Badge className={`border-none ${
-                          student.riskLevel === 'on-track' ? 'bg-emerald-500/10 text-emerald-500' :
-                          student.riskLevel === 'needs-attention' ? 'bg-amber-500/10 text-amber-500' :
-                          'bg-rose-500/10 text-rose-500'
-                        }`}>
+                        <Badge className={`border-none ${student.riskLevel === 'on-track' ? 'bg-emerald-500/10 text-emerald-500' :
+                            student.riskLevel === 'needs-attention' ? 'bg-amber-500/10 text-amber-500' :
+                              'bg-rose-500/10 text-rose-500'
+                          }`}>
                           {student.riskLevel.replace('-', ' ')}
                         </Badge>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3 w-40">
                           <div className="flex-1 h-1.5 rounded-full bg-border overflow-hidden">
-                            <div 
-                              className={`h-full rounded-full ${
-                                progress > 80 ? 'bg-emerald-500' : 
-                                progress > 50 ? 'bg-blue-500' : 
-                                'bg-muted-foreground'
-                              }`}
+                            <div
+                              className={`h-full rounded-full ${progress > 80 ? 'bg-emerald-500' :
+                                  progress > 50 ? 'bg-blue-500' :
+                                    'bg-muted-foreground'
+                                }`}
                               style={{ width: `${progress}%` }}
                             />
                           </div>

@@ -201,6 +201,51 @@ export default function LessonView() {
     }
   }
 
+  const logActivity = async () => {
+    if (!user) return;
+    try {
+      const { error: activityError } = await supabase.rpc('record_user_activity', { p_user_id: user.id });
+
+      if (activityError) {
+        console.error("Error recording user activity via RPC:", activityError);
+        const today = new Date().toISOString().split('T')[0];
+        const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+        const lastActive = userProfile?.last_activity_date;
+
+        if (lastActive !== today) {
+          let newStreak = userProfile?.streak || 0;
+          if (lastActive === yesterday) {
+            newStreak += 1;
+          } else {
+            newStreak = 1;
+          }
+          const newLongest = Math.max(userProfile?.longest_streak || 0, newStreak);
+          await supabase.from('profiles').update({
+            streak: newStreak,
+            longest_streak: newLongest,
+            last_activity_date: today
+          }).eq('id', user.id);
+
+          if (userProfile) {
+            setUserProfile({
+              ...userProfile,
+              streak: newStreak,
+              longest_streak: newLongest,
+              last_activity_date: today
+            });
+          }
+        }
+      } else {
+        const freshProfile = await fetchProfileForAuthUser(user as any);
+        if (freshProfile) {
+          setUserProfile(freshProfile);
+        }
+      }
+    } catch (e) {
+      console.error("Failed to log activity", e);
+    }
+  };
+
   const executeCode = async (sourceCode: string) => {
     const lang = lesson.language || 'javascript';
 
@@ -260,6 +305,9 @@ sys.stderr = io.StringIO()
 
       const result = await executeCode(code);
       setOutput(result?.run?.output || 'No output.');
+
+      // Any attempt to run code counts as daily activity
+      await logActivity();
     } catch (e: any) {
       setOutput(`Execution failed: ${e?.message || String(e)}`);
     } finally {
@@ -292,57 +340,44 @@ sys.stderr = io.StringIO()
         const solutionResult = await executeCode(lesson.exercise_solution);
         const solutionOutput = solutionResult?.run?.output || '';
 
-        if (executionOutput.trim() !== solutionOutput.trim()) {
+        const normalizedUser = executionOutput.trim().toLowerCase();
+        const normalizedSolution = solutionOutput.trim().toLowerCase();
+
+        let passed = normalizedUser === normalizedSolution;
+
+        // Lenient check for the "Cities/Tokyo List" lesson
+        if (!passed) {
+          const lessonTitle = lesson.title?.toLowerCase() || '';
+          const lessonPrompt = lesson.exercise_prompt?.toLowerCase() || '';
+
+          if (lessonTitle.includes('list') || lessonTitle.includes('collection')) {
+            if (lessonPrompt.includes('tokyo') && lessonPrompt.includes('three')) {
+              const hasTokyo = normalizedUser.includes('tokyo');
+              const isListFormat = normalizedUser.includes('[') && normalizedUser.includes(']');
+              const itemSplit = normalizedUser.split(',');
+
+              if (hasTokyo && isListFormat && itemSplit.length === 3) {
+                passed = true;
+              }
+            }
+          }
+        }
+
+        if (!passed) {
           isCorrect = false;
           setOutput((prev) => prev + `\nVerification failed.\nExpected Output:\n${solutionOutput.trim()}\n\nYour Output:\n${executionOutput.trim()}`);
         } else {
-          setOutput((prev) => prev + '\nOutput matches solution perfectly!\n');
+          setOutput((prev) => prev + '\nOutput matches successfully!\n');
         }
       }
 
       if (isCorrect && user) {
         try {
-          // Log activity for streaks on successful completion ALWAYS
-          const { error: activityError } = await supabase.rpc('record_user_activity', { p_user_id: user.id });
+          // We already log activity in run or general submit, but this ensures completion always logs.
+          await logActivity();
 
+          // Set current profile data for evaluating achievements
           let currentProfileData = userProfile;
-
-          if (activityError) {
-            console.error("Error recording user activity via RPC:", activityError);
-            if (currentProfileData) {
-              const today = new Date().toISOString().split('T')[0];
-              const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-              const lastActive = currentProfileData.last_activity_date;
-              if (lastActive !== today) {
-                let newStreak = currentProfileData.streak || 0;
-                if (lastActive === yesterday) {
-                  newStreak += 1;
-                } else {
-                  newStreak = 1;
-                }
-                const newLongest = Math.max(currentProfileData.longest_streak || 0, newStreak);
-                await supabase.from('profiles').update({
-                  streak: newStreak,
-                  longest_streak: newLongest,
-                  last_activity_date: today
-                }).eq('id', user.id);
-                currentProfileData = {
-                  ...currentProfileData,
-                  streak: newStreak,
-                  longest_streak: newLongest,
-                  last_activity_date: today
-                };
-                setUserProfile(currentProfileData);
-              }
-            }
-          } else {
-            // RPC succeeded, fetch fresh profile to get the newly updated streak
-            const freshProfile = await fetchProfileForAuthUser(user as any);
-            if (freshProfile) {
-              currentProfileData = freshProfile;
-              setUserProfile(freshProfile);
-            }
-          }
 
           if (!isCompleted) {
             // Upsert lesson progress
@@ -797,7 +832,7 @@ sys.stderr = io.StringIO()
                     className="bg-blue-500 text-white hover:bg-blue-400 shadow-lg shadow-blue-500/20"
                   >
                     <LuCircleCheck className="w-4 h-4 mr-2" />
-                    {isCompleted ? 'Completed' : 'Submit'}
+                    {isCompleted ? 'Resubmit' : 'Submit'}
                   </Button>
                   {nextLesson && isCompleted && (
                     <Button
