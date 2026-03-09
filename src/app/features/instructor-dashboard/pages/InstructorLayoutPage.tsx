@@ -182,6 +182,7 @@ export default function InstructorLayoutPage() {
                   </div>
 
                   {[
+                    ['Students', '/instructor/students'],
                     ['Assessments', '/instructor/assessments'],
                     ['Projects', '/instructor/projects'],
                   ].map(([label, href]) => (
