@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../..
 import { Badge } from '../../../components/ui/badge';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
+import { Textarea } from '../../../components/ui/textarea';
 import { 
   LuBookOpen, 
   LuSearch, 
@@ -14,11 +15,13 @@ import {
   LuBug,
   LuClock,
   LuMoreHorizontal,
-  LuEdit,
+  LuPencil,
   LuTrash2,
   LuEye,
-  LuCheckCircle,
-  LuBarChart
+  LuCircleCheck,
+  LuBarChart,
+  LuX,
+  LuSave
 } from 'react-icons/lu';
 
 interface Exercise {
@@ -108,6 +111,49 @@ export default function ExercisesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [difficultyFilter, setDifficultyFilter] = useState<string>('all');
+  
+  // Create exercise modal state
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newExercise, setNewExercise] = useState<Partial<Exercise>>({
+    title: '',
+    description: '',
+    type: 'coding',
+    difficulty: 'beginner',
+    module: '',
+    deadline: '',
+    xpReward: 100,
+    status: 'draft'
+  });
+
+  const handleCreateExercise = () => {
+    if (newExercise.title && newExercise.description && newExercise.module && newExercise.deadline) {
+      const exercise: Exercise = {
+        id: Date.now().toString(),
+        title: newExercise.title,
+        description: newExercise.description,
+        type: newExercise.type as Exercise['type'],
+        difficulty: newExercise.difficulty as Exercise['difficulty'],
+        module: newExercise.module,
+        deadline: newExercise.deadline,
+        xpReward: newExercise.xpReward || 100,
+        completions: 0,
+        averageScore: 0,
+        status: newExercise.status as Exercise['status']
+      };
+      setExercises([exercise, ...exercises]);
+      setShowCreateModal(false);
+      setNewExercise({
+        title: '',
+        description: '',
+        type: 'coding',
+        difficulty: 'beginner',
+        module: '',
+        deadline: '',
+        xpReward: 100,
+        status: 'draft'
+      });
+    }
+  };
 
   const filteredExercises = exercises.filter(exercise => {
     const matchesSearch = exercise.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -166,7 +212,10 @@ export default function ExercisesPage() {
           <h1 className="text-2xl font-bold text-slate-900">Exercise Management</h1>
           <p className="text-slate-500 mt-1">Create and manage learning exercises and assignments</p>
         </div>
-        <Button className="rounded-full bg-blue-600 hover:bg-blue-700">
+        <Button 
+          className="rounded-full bg-blue-600 hover:bg-blue-700"
+          onClick={() => setShowCreateModal(true)}
+        >
           <LuPlus className="mr-2 h-4 w-4" />
           Create Exercise
         </Button>
@@ -333,7 +382,7 @@ export default function ExercisesPage() {
                   Preview
                 </Button>
                 <Button size="sm" variant="outline" className="flex-1 rounded-full h-9 text-xs border-blue-200 text-blue-600 hover:bg-blue-50">
-                  <LuEdit className="mr-1 h-3 w-3" />
+                  <LuPencil className="mr-1 h-3 w-3" />
                   Edit
                 </Button>
                 <Button size="sm" variant="outline" className="rounded-full h-9 w-9 p-0 text-slate-400 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50">
@@ -352,6 +401,156 @@ export default function ExercisesPage() {
             <p className="text-slate-500">No exercises found matching your criteria.</p>
           </CardContent>
         </Card>
+      )}
+
+      {/* Create Exercise Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="rounded-2xl border-blue-200/60 bg-white w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <CardHeader className="flex flex-row items-center justify-between pb-4">
+              <div>
+                <CardTitle className="text-lg font-semibold text-slate-900">Create New Exercise</CardTitle>
+                <CardDescription>Define a new learning exercise for your students</CardDescription>
+              </div>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8 rounded-full"
+                onClick={() => setShowCreateModal(false)}
+              >
+                <LuX className="h-4 w-4" />
+              </Button>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <label className="text-sm font-medium text-slate-700 mb-1 block">Exercise Title *</label>
+                <Input 
+                  placeholder="e.g., React Hooks Challenge"
+                  value={newExercise.title}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewExercise({...newExercise, title: e.target.value})}
+                  className="rounded-xl border-slate-200"
+                />
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium text-slate-700 mb-1 block">Description *</label>
+                <Textarea 
+                  placeholder="Describe what students will learn and accomplish..."
+                  value={newExercise.description}
+                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNewExercise({...newExercise, description: e.target.value})}
+                  className="min-h-[100px] rounded-xl border-slate-200"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-slate-700 mb-1 block">Exercise Type</label>
+                  <select 
+                    value={newExercise.type}
+                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setNewExercise({...newExercise, type: e.target.value as Exercise['type']})}
+                    className="w-full h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="coding">Coding</option>
+                    <option value="quiz">Quiz</option>
+                    <option value="project">Project</option>
+                    <option value="debugging">Debugging</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="text-sm font-medium text-slate-700 mb-1 block">Difficulty Level</label>
+                  <select 
+                    value={newExercise.difficulty}
+                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setNewExercise({...newExercise, difficulty: e.target.value as Exercise['difficulty']})}
+                    className="w-full h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="beginner">Beginner</option>
+                    <option value="intermediate">Intermediate</option>
+                    <option value="advanced">Advanced</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-slate-700 mb-1 block">Module/Course *</label>
+                <Input 
+                  placeholder="e.g., React Fundamentals"
+                  value={newExercise.module}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewExercise({...newExercise, module: e.target.value})}
+                  className="rounded-xl border-slate-200"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-slate-700 mb-1 block">Deadline *</label>
+                  <Input 
+                    type="date"
+                    value={newExercise.deadline}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewExercise({...newExercise, deadline: e.target.value})}
+                    className="rounded-xl border-slate-200"
+                  />
+                </div>
+                
+                <div>
+                  <label className="text-sm font-medium text-slate-700 mb-1 block">XP Reward</label>
+                  <Input 
+                    type="number"
+                    min="0"
+                    max="1000"
+                    value={newExercise.xpReward}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewExercise({...newExercise, xpReward: parseInt(e.target.value) || 0})}
+                    className="rounded-xl border-slate-200"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-slate-700 mb-1 block">Status</label>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setNewExercise({...newExercise, status: 'draft'})}
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                      newExercise.status === 'draft' 
+                        ? 'bg-amber-100 text-amber-700 ring-2 ring-amber-200' 
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    Draft
+                  </button>
+                  <button
+                    onClick={() => setNewExercise({...newExercise, status: 'published'})}
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                      newExercise.status === 'published' 
+                        ? 'bg-emerald-100 text-emerald-700 ring-2 ring-emerald-200' 
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    Published
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-4 border-t border-slate-100">
+                <Button 
+                  className="flex-1 rounded-full bg-blue-600 hover:bg-blue-700"
+                  onClick={handleCreateExercise}
+                  disabled={!newExercise.title || !newExercise.description || !newExercise.module || !newExercise.deadline}
+                >
+                  <LuSave className="mr-2 h-4 w-4" />
+                  Create Exercise
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="rounded-full border-slate-200"
+                  onClick={() => setShowCreateModal(false)}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       )}
     </div>
   );

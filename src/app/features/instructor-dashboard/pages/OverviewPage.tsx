@@ -80,15 +80,15 @@ export default function OverviewPage() {
       case 'active':
         return <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-full">Active</Badge>;
       case 'stuck':
-        return <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-200 rounded-full">Stuck</Badge>;
+        return <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-full">Stuck</Badge>;
       case 'inactive':
         return <Badge className="bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-full">Inactive</Badge>;
       case 'pending':
         return <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-full">Pending</Badge>;
       case 'reviewed':
-        return <Badge className="bg-indigo-100 text-indigo-700 hover:bg-indigo-200 rounded-full">Reviewed</Badge>;
+        return <Badge className="bg-blue-200 text-blue-800 hover:bg-blue-300 rounded-full">Reviewed</Badge>;
       case 'approved':
-        return <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 rounded-full">Approved</Badge>;
+        return <Badge className="bg-blue-600 text-white hover:bg-blue-700 rounded-full">Approved</Badge>;
       default:
         return <Badge variant="outline" className="rounded-full">{status}</Badge>;
     }
@@ -132,31 +132,31 @@ export default function OverviewPage() {
           </CardContent>
         </Card>
 
-        <Card className="rounded-2xl border-emerald-200/60 bg-white hover:shadow-md transition-shadow">
+        <Card className="rounded-2xl border-blue-200/60 bg-white hover:shadow-md transition-shadow">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-emerald-600/70 uppercase tracking-wider">Active Today</p>
+                <p className="text-xs font-medium text-blue-600/70 uppercase tracking-wider">Active Today</p>
                 <p className="text-2xl font-bold text-slate-900 mt-1">{stats.activeToday}</p>
               </div>
-              <div className="h-10 w-10 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-600">
+              <div className="h-10 w-10 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600">
                 <LuActivity className="h-5 w-5" />
               </div>
             </div>
-            <p className="text-xs text-emerald-600 mt-2 flex items-center gap-1">
+            <p className="text-xs text-blue-600 mt-2 flex items-center gap-1">
               <LuTrendingUp className="h-3 w-3" /> Engaging now
             </p>
           </CardContent>
         </Card>
 
-        <Card className="rounded-2xl border-indigo-200/60 bg-white hover:shadow-md transition-shadow">
+        <Card className="rounded-2xl border-blue-200/60 bg-white hover:shadow-md transition-shadow">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-indigo-600/70 uppercase tracking-wider">Completed Today</p>
+                <p className="text-xs font-medium text-blue-600/70 uppercase tracking-wider">Completed Today</p>
                 <p className="text-2xl font-bold text-slate-900 mt-1">{stats.exercisesCompletedToday}</p>
               </div>
-              <div className="h-10 w-10 rounded-xl bg-indigo-100 flex items-center justify-center text-indigo-600">
+              <div className="h-10 w-10 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600">
                 <LuCircleCheck className="h-5 w-5" />
               </div>
             </div>
@@ -164,29 +164,29 @@ export default function OverviewPage() {
           </CardContent>
         </Card>
 
-        <Card className="rounded-2xl border-amber-200/60 bg-white hover:shadow-md transition-shadow">
+        <Card className="rounded-2xl border-blue-200/60 bg-white hover:shadow-md transition-shadow">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-amber-600/70 uppercase tracking-wider">Stuck Students</p>
+                <p className="text-xs font-medium text-blue-600/70 uppercase tracking-wider">Stuck Students</p>
                 <p className="text-2xl font-bold text-slate-900 mt-1">{stats.stuckStudents}</p>
               </div>
-              <div className="h-10 w-10 rounded-xl bg-amber-100 flex items-center justify-center text-amber-600">
+              <div className="h-10 w-10 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600">
                 <LuTriangle className="h-5 w-5" />
               </div>
             </div>
-            <p className="text-xs text-amber-600 mt-2">Requires intervention</p>
+            <p className="text-xs text-blue-600 mt-2">Requires intervention</p>
           </CardContent>
         </Card>
 
-        <Card className="rounded-2xl border-rose-200/60 bg-white hover:shadow-md transition-shadow">
+        <Card className="rounded-2xl border-blue-200/60 bg-white hover:shadow-md transition-shadow">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-rose-600/70 uppercase tracking-wider">Pending Review</p>
+                <p className="text-xs font-medium text-blue-600/70 uppercase tracking-wider">Pending Review</p>
                 <p className="text-2xl font-bold text-slate-900 mt-1">{stats.pendingReviews}</p>
               </div>
-              <div className="h-10 w-10 rounded-xl bg-rose-100 flex items-center justify-center text-rose-600">
+              <div className="h-10 w-10 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600">
                 <LuClock className="h-5 w-5" />
               </div>
             </div>
