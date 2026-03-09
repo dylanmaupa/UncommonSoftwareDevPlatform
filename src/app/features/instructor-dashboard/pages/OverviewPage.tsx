@@ -270,10 +270,10 @@ export default function OverviewPage() {
         {/* Right Column - Stuck Students & Top Performers */}
         <div className="space-y-6">
           {/* Stuck Students Alert */}
-          <Card className="rounded-2xl border-amber-200/60 bg-white">
+          <Card className="rounded-2xl border-blue-200/60 bg-white">
             <CardHeader className="pb-3">
               <div className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600">
+                <div className="h-8 w-8 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600">
                   <LuCircleAlert className="h-4 w-4" />
                 </div>
                 <CardTitle className="text-base font-semibold text-slate-900">Students Need Help</CardTitle>
@@ -281,10 +281,10 @@ export default function OverviewPage() {
             </CardHeader>
             <CardContent className="space-y-3">
               {stuckStudents.map((student) => (
-                <div key={student.id} className="flex items-center justify-between p-3 rounded-xl bg-amber-50/50 border border-amber-100">
+                <div key={student.id} className="flex items-center justify-between p-3 rounded-xl bg-blue-50/50 border border-blue-100">
                   <div className="flex items-center gap-2">
                     <Avatar className="h-8 w-8">
-                      <AvatarFallback className="bg-amber-100 text-amber-700 text-xs">
+                      <AvatarFallback className="bg-blue-100 text-blue-700 text-xs">
                         {student.name.split(' ').map(n => n[0]).join('')}
                       </AvatarFallback>
                     </Avatar>
@@ -293,22 +293,22 @@ export default function OverviewPage() {
                       <p className="text-xs text-slate-500">{student.progress}% progress • {student.lastActive}</p>
                     </div>
                   </div>
-                  <Button size="sm" variant="ghost" className="h-8 text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-100 rounded-full">
+                  <Button size="sm" variant="ghost" className="h-8 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-100 rounded-full">
                     Reach Out
                   </Button>
                 </div>
               ))}
-              <Button variant="outline" className="w-full rounded-full text-xs border-amber-200 text-amber-700 hover:bg-amber-50">
+              <Button variant="outline" className="w-full rounded-full text-xs border-blue-200 text-blue-700 hover:bg-blue-50">
                 View All Stuck Students
               </Button>
             </CardContent>
           </Card>
 
           {/* Top Performers */}
-          <Card className="rounded-2xl border-emerald-200/60 bg-white">
+          <Card className="rounded-2xl border-blue-200/60 bg-white">
             <CardHeader className="pb-3">
               <div className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-600">
+                <div className="h-8 w-8 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600">
                   <LuTrendingUp className="h-4 w-4" />
                 </div>
                 <CardTitle className="text-base font-semibold text-slate-900">Top Performers</CardTitle>
@@ -316,13 +316,13 @@ export default function OverviewPage() {
             </CardHeader>
             <CardContent className="space-y-3">
               {topPerformers.map((student, index) => (
-                <div key={student.id} className="flex items-center justify-between p-3 rounded-xl bg-emerald-50/50 border border-emerald-100">
+                <div key={student.id} className="flex items-center justify-between p-3 rounded-xl bg-blue-50/50 border border-blue-100">
                   <div className="flex items-center gap-3">
-                    <div className="h-6 w-6 rounded-full bg-emerald-200 text-emerald-700 flex items-center justify-center text-xs font-bold">
+                    <div className="h-6 w-6 rounded-full bg-blue-200 text-blue-700 flex items-center justify-center text-xs font-bold">
                       {index + 1}
                     </div>
                     <Avatar className="h-8 w-8">
-                      <AvatarFallback className="bg-emerald-100 text-emerald-700 text-xs">
+                      <AvatarFallback className="bg-blue-100 text-blue-700 text-xs">
                         {student.name.split(' ').map(n => n[0]).join('')}
                       </AvatarFallback>
                     </Avatar>
@@ -331,7 +331,7 @@ export default function OverviewPage() {
                       <p className="text-xs text-slate-500">{student.exercisesCompleted} exercises</p>
                     </div>
                   </div>
-                  <Badge className="bg-emerald-100 text-emerald-700 rounded-full">{student.progress}%</Badge>
+                  <Badge className="bg-blue-100 text-blue-700 rounded-full">{student.progress}%</Badge>
                 </div>
               ))}
             </CardContent>
@@ -340,7 +340,7 @@ export default function OverviewPage() {
       </div>
 
       {/* Insights & Alerts */}
-      <Card className="rounded-2xl border-blue-200/60 bg-gradient-to-r from-blue-50/50 to-indigo-50/50">
+      <Card className="rounded-2xl border-blue-200/60 bg-gradient-to-r from-blue-50/50 to-blue-100/50">
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-slate-900 flex items-center gap-2">
             <LuCircleAlert className="h-5 w-5 text-blue-600" />
@@ -350,7 +350,7 @@ export default function OverviewPage() {
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="flex items-start gap-3 p-3 rounded-xl bg-white border border-blue-100 shadow-sm">
-              <div className="h-8 w-8 rounded-lg bg-rose-100 flex items-center justify-center text-rose-600 shrink-0">
+              <div className="h-8 w-8 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 shrink-0">
                 <LuTriangle className="h-4 w-4" />
               </div>
               <div>
@@ -359,7 +359,7 @@ export default function OverviewPage() {
               </div>
             </div>
             <div className="flex items-start gap-3 p-3 rounded-xl bg-white border border-blue-100 shadow-sm">
-              <div className="h-8 w-8 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600 shrink-0">
+              <div className="h-8 w-8 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 shrink-0">
                 <LuClock className="h-4 w-4" />
               </div>
               <div>
@@ -368,7 +368,7 @@ export default function OverviewPage() {
               </div>
             </div>
             <div className="flex items-start gap-3 p-3 rounded-xl bg-white border border-blue-100 shadow-sm">
-              <div className="h-8 w-8 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+              <div className="h-8 w-8 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 shrink-0">
                 <LuTrendingUp className="h-4 w-4" />
               </div>
               <div>
@@ -377,7 +377,7 @@ export default function OverviewPage() {
               </div>
             </div>
             <div className="flex items-start gap-3 p-3 rounded-xl bg-white border border-blue-100 shadow-sm">
-              <div className="h-8 w-8 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">
+              <div className="h-8 w-8 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 shrink-0">
                 <LuBookOpen className="h-4 w-4" />
               </div>
               <div>
