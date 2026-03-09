@@ -13,7 +13,7 @@ import {
   LuBell,
   LuBookOpen,
   LuBuilding2,
-  LuCircleCheck,
+  LuCheck,
   LuClock3,
   LuEllipsis,
   LuFolderKanban,
@@ -66,7 +66,7 @@ const instructorSections = [
   {
     id: 'submissions',
     label: 'Submissions',
-    icon: LuCircleCheck,
+    icon: LuCheck,
     stage: 'MVP',
     purpose: 'Run the review workflow with feedback.',
     features: ['Review queue', 'Grade submissions', 'Approve/request revision'],
@@ -427,7 +427,7 @@ export default function Admin() {
                 setHubStuckStudentsCount(stuckStudents);
 
                 // Exercises completed today
-                const completedToday = hubItems.filter(item => 
+                const completedToday = hubSubmissionQueue.filter((item: HubSubmissionItem) => 
                   (item.status === 'Reviewed' || item.status === 'Approved') && 
                   item.submitted.includes('h ago') // Rough heuristic for today
                 ).length;
@@ -1212,7 +1212,7 @@ export default function Admin() {
                     <p className="mt-0.5 text-lg text-foreground font-semibold">{reviewedSubmissions}</p>
                   </div>
                   <div className="h-8 w-8 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500">
-                    <LuCircleCheck className="h-4 w-4" />
+                    <LuCheck className="h-4 w-4" />
                   </div>
                 </div>
                 <div className="rounded-xl bg-sidebar p-3">

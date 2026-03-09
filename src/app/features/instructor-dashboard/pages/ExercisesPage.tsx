@@ -247,7 +247,7 @@ export default function ExercisesPage() {
                 </p>
               </div>
               <div className="h-10 w-10 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-600">
-                <LuCheckCircle className="h-5 w-5" />
+                <LuCircleCheck className="h-5 w-5" />
               </div>
             </div>
           </CardContent>
