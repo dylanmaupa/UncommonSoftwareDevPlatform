@@ -14,12 +14,12 @@ import {
   LuClipboardList,
   LuBug,
   LuClock,
-  LuMoreHorizontal,
+  LuEllipsis,
   LuPencil,
   LuTrash2,
   LuEye,
   LuCircleCheck,
-  LuBarChart,
+  LuActivity,
   LuX,
   LuSave
 } from 'react-icons/lu';
@@ -263,7 +263,7 @@ export default function ExercisesPage() {
                 </p>
               </div>
               <div className="h-10 w-10 rounded-xl bg-indigo-100 flex items-center justify-center text-indigo-600">
-                <LuBarChart className="h-5 w-5" />
+                <LuActivity className="h-5 w-5" />
               </div>
             </div>
           </CardContent>
@@ -280,7 +280,7 @@ export default function ExercisesPage() {
                 </p>
               </div>
               <div className="h-10 w-10 rounded-xl bg-amber-100 flex items-center justify-center text-amber-600">
-                <LuBarChart className="h-5 w-5" />
+                <LuActivity className="h-5 w-5" />
               </div>
             </div>
           </CardContent>
@@ -344,7 +344,7 @@ export default function ExercisesPage() {
                   </div>
                 </div>
                 <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
-                  <LuMoreHorizontal className="h-4 w-4" />
+                  <LuEllipsis className="h-4 w-4" />
                 </Button>
               </div>
 
