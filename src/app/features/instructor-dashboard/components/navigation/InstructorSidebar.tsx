@@ -3,11 +3,7 @@ import { LuBookOpen, LuBookOpenCheck, LuBuilding2, LuLayoutDashboard, LuTarget, 
 
 const navItems = [
   { label: 'Home', path: '/instructor', icon: LuLayoutDashboard },
-  { label: 'Students', path: '/instructor/students', icon: LuUsers },
-  { label: 'Curriculum', path: '/instructor/curriculum', icon: LuBookOpen },
   { label: 'Assessments', path: '/instructor/assessments', icon: LuBookOpenCheck },
-  { label: 'Live Ops', path: '/instructor/live', icon: LuTarget },
-  { label: 'Hub Ops', path: '/instructor/hub-operations', icon: LuBuilding2 },
 ];
 
 export default function InstructorSidebar() {

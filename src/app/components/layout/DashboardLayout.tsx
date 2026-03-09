@@ -118,11 +118,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const instructorNavItems: NavItem[] = [
     { icon: LuLayoutDashboard, label: 'Instructor Home', path: '/instructor' },
     { icon: LuUsers, label: 'Students', path: '/instructor/students' },
-    { icon: LuBookOpen, label: 'Curriculum', path: '/instructor/curriculum' },
     { icon: LuBookOpenCheck, label: 'Assessments', path: '/instructor/assessments' },
     { icon: LuFolderKanban, label: 'Projects', path: '/instructor/projects' },
-    { icon: LuTarget, label: 'Live Ops', path: '/instructor/live' },
-    { icon: LuBuilding2, label: 'Hub Operations', path: '/instructor/hub-operations' },
 
     { icon: LuUser, label: 'Profile', path: '/profile' },
   ];

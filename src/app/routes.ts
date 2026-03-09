@@ -15,12 +15,8 @@ import Settings from './components/settings/Settings';
 import InstructorLayoutPage from './features/instructor-dashboard/pages/InstructorLayoutPage';
 import InstructorHomePage from './features/instructor-dashboard/pages/InstructorHomePage';
 import InstructorLearnersPage from './features/instructor-dashboard/pages/InstructorLearnersPage';
-import InstructorLearnerProfilePage from './features/instructor-dashboard/pages/InstructorLearnerProfilePage';
-import InstructorCurriculumInsightsPage from './features/instructor-dashboard/pages/InstructorCurriculumInsightsPage';
 import InstructorAssessmentsPage from './features/instructor-dashboard/pages/InstructorAssessmentsPage';
 import InstructorProjectsInsightsPage from './features/instructor-dashboard/pages/InstructorProjectsInsightsPage';
-import InstructorLiveOpsPage from './features/instructor-dashboard/pages/InstructorLiveOpsPage';
-import InstructorHubOperationsPage from './features/instructor-dashboard/pages/InstructorHubOperationsPage';
 import InstructorSubmissionReviewPage from './features/instructor-dashboard/pages/InstructorSubmissionReviewPage';
 import AdminLayoutPage from './features/admin-dashboard/pages/AdminLayoutPage';
 import AdminOverviewPage from './features/admin-dashboard/pages/AdminOverviewPage';
@@ -62,13 +58,9 @@ export const router = createBrowserRouter([
         children: [
           { index: true, Component: InstructorHomePage },
           { path: 'students', Component: InstructorLearnersPage },
-          { path: 'students/:studentId', Component: InstructorLearnerProfilePage },
-          { path: 'curriculum', Component: InstructorCurriculumInsightsPage },
           { path: 'assessments', Component: InstructorAssessmentsPage },
           { path: 'assessments/:exerciseId', Component: InstructorSubmissionReviewPage },
           { path: 'projects', Component: InstructorProjectsInsightsPage },
-          { path: 'live', Component: InstructorLiveOpsPage },
-          { path: 'hub-operations', Component: InstructorHubOperationsPage },
         ],
       },
       { path: '*', Component: NotFound },

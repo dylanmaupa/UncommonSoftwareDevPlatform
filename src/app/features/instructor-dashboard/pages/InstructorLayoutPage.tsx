@@ -114,11 +114,6 @@ export default function InstructorLayoutPage() {
 
                 <div className="order-2 flex items-center gap-2">
                   <Button asChild variant="ghost" size="icon" className="h-10 w-10 rounded-full border border-border bg-card text-muted-foreground">
-                    <Link to="/instructor/live" aria-label="Live Ops">
-                      <LuTarget className="h-4 w-4" />
-                    </Link>
-                  </Button>
-                  <Button asChild variant="ghost" size="icon" className="h-10 w-10 rounded-full border border-border bg-card text-muted-foreground">
                     <Link to="/instructor/assessments" aria-label="Assessments">
                       <LuSparkles className="h-4 w-4" />
                     </Link>
@@ -187,12 +182,8 @@ export default function InstructorLayoutPage() {
                   </div>
 
                   {[
-                    ['Students', '/instructor/students'],
-                    ['Curriculum', '/instructor/curriculum'],
                     ['Assessments', '/instructor/assessments'],
                     ['Projects', '/instructor/projects'],
-                    ['Live Ops', '/instructor/live'],
-                    ['Hub Ops', '/instructor/hub-operations'],
                   ].map(([label, href]) => (
                     <Link key={label} to={href} className="flex items-center justify-between rounded-xl bg-sidebar p-2">
                       <span className="text-sm text-foreground">{label}</span>
