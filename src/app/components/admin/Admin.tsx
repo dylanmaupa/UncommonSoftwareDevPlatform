@@ -240,6 +240,9 @@ export default function Admin() {
   const [hubSubmissionQueue, setHubSubmissionQueue] = useState<HubSubmissionItem[]>([]);
   const [hubRecentActivity, setHubRecentActivity] = useState<string[]>([]);
   const [hubActiveStudentsCount, setHubActiveStudentsCount] = useState(0);
+  const [hubActiveTodayCount, setHubActiveTodayCount] = useState(0);
+  const [hubStuckStudentsCount, setHubStuckStudentsCount] = useState(0);
+  const [exercisesCompletedToday, setExercisesCompletedToday] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const { section } = useParams();
   const activeSection = (section as SectionId) || 'dashboard';
@@ -380,6 +383,30 @@ export default function Admin() {
 
                 setHubRecentActivity(activityFeed);
                 setHubActiveStudentsCount(new Set(activityData.map((row: any) => String(row.user_id || ''))).size);
+                
+                // Calculate "Active Today" (simple check for today's logs)
+                const todayStr = new Date().toLocaleDateString();
+                const activeToday = activityData.filter(row => 
+                  row.active_date && new Date(String(row.active_date)).toLocaleDateString() === todayStr
+                ).length;
+                setHubActiveTodayCount(activeToday);
+                
+                // Heuristic for "Stuck Students": Inactive for > 4 days in this hub
+                const fourDaysAgo = new Date();
+                fourDaysAgo.setDate(fourDaysAgo.getDate() - 4);
+                const stuckStudents = hubStudents.filter(s => {
+                  const lastActive = s.last_activity_date ? new Date(s.last_activity_date) : null;
+                  return lastActive && lastActive < fourDaysAgo;
+                }).length;
+                setHubStuckStudentsCount(stuckStudents);
+
+                // Exercises completed today
+                const completedToday = hubItems.filter(item => 
+                  (item.status === 'Reviewed' || item.status === 'Approved') && 
+                  item.submitted.includes('h ago') // Rough heuristic for today
+                ).length;
+                setExercisesCompletedToday(completedToday);
+
               } else if (activityError?.code !== '42P01') {
                 console.error('Failed to load hub activity', activityError);
               }
@@ -387,6 +414,9 @@ export default function Admin() {
               setHubSubmissionQueue([]);
               setHubRecentActivity([]);
               setHubActiveStudentsCount(0);
+              setHubActiveTodayCount(0);
+              setHubStuckStudentsCount(0);
+              setExercisesCompletedToday(0);
             }
           }
         } else {
@@ -508,8 +538,10 @@ export default function Admin() {
                         <table className="w-full text-left">
                           <thead>
                             <tr className="border-y border-border text-xs text-muted-foreground bg-sidebar/50">
-                              <th className="px-4 py-3 font-medium">Name</th>
-                              <th className="px-4 py-3 font-medium">Role</th>
+                              <th className="px-4 py-3 font-medium">Student</th>
+                              <th className="px-4 py-3 font-medium text-center">Progress</th>
+                              <th className="px-4 py-3 font-medium">Last Active</th>
+                              <th className="px-4 py-3 font-medium">Status</th>
                               <th className="px-4 py-3 font-medium">Action</th>
                             </tr>
                           </thead>
@@ -604,29 +636,42 @@ export default function Admin() {
 
               {activeSection === 'dashboard' && (
                 <>
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                    <Card className="rounded-2xl border-border bg-sidebar">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+                    <Card className="rounded-2xl border-border bg-sidebar border-l-4 border-l-blue-500">
                       <CardContent className="p-4">
-                        <p className="text-xs text-muted-foreground">Total students enrolled</p>
-                        <p className="mt-2 text-2xl text-foreground">{students.length}</p>
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Total Students</p>
+                        <p className="mt-2 text-2xl text-foreground font-bold">{students.length}</p>
+                        <p className="text-[10px] text-muted-foreground mt-1">Registered in hub</p>
                       </CardContent>
                     </Card>
-                    <Card className="rounded-2xl border-border bg-sidebar">
+                    <Card className="rounded-2xl border-border bg-sidebar border-l-4 border-l-emerald-500">
                       <CardContent className="p-4">
-                        <p className="text-xs text-muted-foreground">Active courses</p>
-                        <p className="mt-2 text-2xl text-foreground">{activeCourses.length}</p>
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Active Today</p>
+                        <p className="mt-2 text-2xl text-foreground font-bold">{hubActiveTodayCount}</p>
+                        <p className="text-[10px] text-emerald-600 mt-1 flex items-center gap-1">
+                          <LuZap className="h-3 w-3" /> Engaging now
+                        </p>
                       </CardContent>
                     </Card>
-                    <Card className="rounded-2xl border-border bg-sidebar">
+                    <Card className="rounded-2xl border-border bg-sidebar border-l-4 border-l-indigo-500">
                       <CardContent className="p-4">
-                        <p className="text-xs text-muted-foreground">Pending review</p>
-                        <p className="mt-2 text-2xl text-foreground">{assignmentsPendingReview}</p>
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Completed Today</p>
+                        <p className="mt-2 text-2xl text-foreground font-bold">{exercisesCompletedToday}</p>
+                        <p className="text-[10px] text-muted-foreground mt-1">Exercises reviewed</p>
                       </CardContent>
                     </Card>
-                    <Card className="rounded-2xl border-border bg-sidebar">
+                    <Card className="rounded-2xl border-border bg-sidebar border-l-4 border-l-amber-500">
                       <CardContent className="p-4">
-                        <p className="text-xs text-muted-foreground">Recent activity metrics</p>
-                        <p className="mt-2 text-2xl text-foreground">{recentActivityCount}</p>
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Stuck Students</p>
+                        <p className="mt-2 text-2xl text-foreground font-bold">{hubStuckStudentsCount}</p>
+                        <p className="text-[10px] text-amber-600 mt-1">Requires intervention</p>
+                      </CardContent>
+                    </Card>
+                    <Card className="rounded-2xl border-border bg-sidebar border-l-4 border-l-rose-500">
+                      <CardContent className="p-4">
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Pending Review</p>
+                        <p className="mt-2 text-2xl text-foreground font-bold">{assignmentsPendingReview}</p>
+                        <p className="text-[10px] text-muted-foreground mt-1">Awaiting feedback</p>
                       </CardContent>
                     </Card>
                   </div>
@@ -930,36 +975,56 @@ export default function Admin() {
                 </div>
                 
                 <div className="grid grid-cols-2 gap-2 text-xs mt-4">
-                  <div className="rounded-xl bg-sidebar p-2 text-muted-foreground">XP: {xp}</div>
-                  <div className="rounded-xl bg-sidebar p-2 text-muted-foreground">Level: {level}</div>
-                  <div className="col-span-2 rounded-xl bg-sidebar p-2 text-muted-foreground text-center">Students: {totalStudents}</div>
-                </div>
-                <div className="mt-4">
-                  <StreakWidget
-                    streak={profile.streak || 0}
-                    userId={profile.id}
-                    lastActivityDate={profile.last_activity_date}
-                  />
+                  <div className="rounded-xl bg-sidebar p-2 text-muted-foreground flex flex-col items-center">
+                    <span className="text-[10px] opacity-70">Students</span>
+                    <span className="mt-1 text-base text-foreground font-semibold">{totalStudents}</span>
+                  </div>
+                  <div className="rounded-xl bg-sidebar p-2 text-muted-foreground flex flex-col items-center">
+                    <span className="text-[10px] opacity-70">Courses</span>
+                    <span className="mt-1 text-base text-foreground font-semibold">{activeCourses.length}</span>
+                  </div>
+                  <div className="col-span-2 rounded-xl bg-sidebar p-2 text-muted-foreground flex flex-col items-center">
+                    <span className="text-[10px] opacity-70">Hub Presence</span>
+                    <span className="mt-1 text-foreground font-medium">{profile.hub_location || 'Remote'}</span>
+                  </div>
                 </div>
               </CardContent>
             </Card>
 
             <Card className="rounded-2xl border-border">
               <CardHeader className="pb-2">
-                <CardTitle className="heading-font text-base text-foreground">Progress & Hub Analytics</CardTitle>
+                <CardTitle className="heading-font text-base text-foreground">Review Velocity</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                <div className="rounded-xl bg-sidebar p-3">
-                  <p className="text-xs text-muted-foreground">Average lesson completion</p>
-                  <p className="mt-1 text-lg text-foreground">{analyticsSnapshot.avgCompletion}%</p>
+                <div className="rounded-xl bg-sidebar p-3 flex justify-between items-center">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Pending Review</p>
+                    <p className="mt-0.5 text-lg text-foreground font-semibold">{assignmentsPendingReview}</p>
+                  </div>
+                  <div className="h-8 w-8 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-500">
+                    <LuClock3 className="h-4 w-4" />
+                  </div>
+                </div>
+                <div className="rounded-xl bg-sidebar p-3 flex justify-between items-center">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Successful Reviews</p>
+                    <p className="mt-0.5 text-lg text-foreground font-semibold">{reviewedSubmissions}</p>
+                  </div>
+                  <div className="h-8 w-8 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+                    <LuCircleCheck className="h-4 w-4" />
+                  </div>
                 </div>
                 <div className="rounded-xl bg-sidebar p-3">
-                  <p className="text-xs text-muted-foreground">Reviewed submissions</p>
-                  <p className="mt-1 text-lg text-foreground">{analyticsSnapshot.reviewedSubmissions}</p>
-                </div>
-                <div className="rounded-xl bg-sidebar p-3">
-                  <p className="text-xs text-muted-foreground">Drop-off point</p>
-                  <p className="mt-1 text-sm text-foreground">{analyticsSnapshot.dropOffPoint}</p>
+                  <div className="flex justify-between items-center mb-1">
+                    <p className="text-xs text-muted-foreground">Hub Completion Rate</p>
+                    <p className="text-xs text-foreground font-medium">{analyticsSnapshot.avgCompletion}%</p>
+                  </div>
+                  <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-primary transition-all duration-500" 
+                      style={{ width: `${analyticsSnapshot.avgCompletion}%` }}
+                    />
+                  </div>
                 </div>
               </CardContent>
             </Card>
