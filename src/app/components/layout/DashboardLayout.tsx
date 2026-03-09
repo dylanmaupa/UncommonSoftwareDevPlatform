@@ -1,7 +1,9 @@
 import { useEffect, useState, ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
-import { supabase } from '../../../lib/supabase';
 import { loadPyodideEnvironment } from '../../../lib/pyodide';
+import { supabase } from '../../../lib/supabase';
+import AccountSetup from '../auth/AccountSetup';
+import EmailVerificationBlock from '../auth/EmailVerificationBlock';
 import { fetchProfileForAuthUser } from '../../lib/profileAccess';
 import {
   LuBookOpen,
@@ -36,26 +38,37 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [profileRole, setProfileRole] = useState<string | null>(null);
 
   const readString = (value: unknown) => (typeof value === 'string' ? value.trim() : '');
 
+  const checkUser = async () => {
+    setIsAuthLoading(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    setUser(user);
+
+    if (user) {
+      const profileRow = await fetchProfileForAuthUser(user as any);
+      setProfile(profileRow);
+
+      const metadata = (user.user_metadata as Record<string, unknown> | undefined) ?? undefined;
+      const role = readString(
+        profileRow?.['role'] ??
+        profileRow?.['user_role'] ??
+        metadata?.['role'] ??
+        metadata?.['user_role']
+      ).toLowerCase();
+
+      setProfileRole(role || null);
+    }
+    setIsAuthLoading(false);
+  };
+
   useEffect(() => {
-    // Preload Python environment in the background silently.
     loadPyodideEnvironment().catch(console.error);
-  }, []);
-
-  useEffect(() => {
-    const loadUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      setUser(user);
-      setIsAuthLoading(false);
-    };
-
-    loadUser();
+    checkUser();
   }, []);
 
   useEffect(() => {
@@ -65,62 +78,57 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   }, [user, isAuthLoading, navigate]);
 
   useEffect(() => {
-    const syncProfileAccess = async () => {
-      if (!user) {
-        setProfileRole(null);
-        return;
+    if (!isAuthLoading && user && profileRole === 'instructor') {
+      const isBlockedPath = INSTRUCTOR_BLOCKED_PATHS.some((path) => {
+        return location.pathname === path || location.pathname.startsWith(`${path}/`);
+      });
+
+      if (isBlockedPath) {
+        navigate('/instructor', { replace: true });
       }
-
-      const profileRow = await fetchProfileForAuthUser(user as any);
-      const metadata = (user.user_metadata as Record<string, unknown> | undefined) ?? undefined;
-
-      const gender = readString(profileRow?.['gender'] ?? metadata?.['gender']).toLowerCase();
-      const role = readString(
-        profileRow?.['role'] ??
-          profileRow?.['user_role'] ??
-          metadata?.['role'] ??
-          metadata?.['user_role']
-      ).toLowerCase();
-
-      setProfileRole(role || null);
-
-      if (!gender && location.pathname !== '/profile') {
-        navigate('/profile?setup=gender', { replace: true });
-        return;
-      }
-
-      if (role === 'instructor') {
-        const isBlockedPath = INSTRUCTOR_BLOCKED_PATHS.some((path) => {
-          return location.pathname === path || location.pathname.startsWith(`${path}/`);
-        });
-
-        if (isBlockedPath) {
-          navigate('/instructor', { replace: true });
-        }
-      }
-    };
-
-    if (!isAuthLoading && user) {
-      syncProfileAccess();
     }
-  }, [isAuthLoading, user, location.pathname, navigate]);
+  }, [isAuthLoading, user, profileRole, location.pathname, navigate]);
 
   if (isAuthLoading) {
-    return null;
+    return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Loading...</div>;
   }
 
   if (!user) {
     return null;
   }
 
+  const isEmailVerified = !!user.email_confirmed_at;
+  const daysSinceCreation = (Date.now() - new Date(user.created_at).getTime()) / (1000 * 60 * 60 * 24);
+  const isVerificationMandatory = !isEmailVerified && daysSinceCreation >= 1;
+
+  if (isVerificationMandatory) {
+    return (
+      <div className="min-h-dvh w-full bg-[#f8f9fa] flex flex-col items-center justify-center p-4">
+        <EmailVerificationBlock user={user} onChecked={checkUser} />
+      </div>
+    );
+  }
+
   const isInstructor = profileRole === 'instructor';
+  const needsStudentSetup = !isInstructor && !profile?.full_name;
+  const needsInstructorSetup = isInstructor && !profile?.hub_location;
+
+  if (needsStudentSetup || needsInstructorSetup) {
+    return (
+      <div className="min-h-dvh w-full bg-[#f8f9fa] flex items-center justify-center p-4">
+        <AccountSetup onComplete={checkUser} userRole={isInstructor ? 'instructor' : 'student'} />
+      </div>
+    );
+  }
 
   const instructorNavItems: NavItem[] = [
     { icon: LuLayoutDashboard, label: 'Instructor Home', path: '/instructor' },
+    { icon: LuBookOpen, label: 'Courses', path: '/instructor/courses' },
+    { icon: LuFolderKanban, label: 'Lessons', path: '/instructor/lessons' },
+    { icon: LuTarget, label: 'Assignments', path: '/instructor/assignments' },
+    { icon: LuBookOpenCheck, label: 'Submissions', path: '/instructor/submissions' },
     { icon: LuUsers, label: 'Students', path: '/instructor/students' },
-    { icon: LuBookOpenCheck, label: 'Assessments', path: '/instructor/assessments' },
-    { icon: LuFolderKanban, label: 'Projects', path: '/instructor/projects' },
-
+    { icon: LuBuilding2, label: 'Analytics', path: '/instructor/analytics' },
     { icon: LuUser, label: 'Profile', path: '/profile' },
   ];
 
@@ -145,10 +153,14 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     return location.pathname === path || location.pathname.startsWith(`${path}/`);
   };
 
-  const handleLogout = () => {
-    supabase.auth.signOut();
-    toast.success('Logged out successfully');
-    navigate('/');
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      toast.success('Logged out successfully');
+      navigate('/');
+    } catch (error) {
+      toast.error('Error logging out');
+    }
   };
 
   return (
@@ -169,11 +181,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             <div className="flex items-center gap-2">
               <Link
                 to="/settings"
-                className={`flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-foreground ${
-                  location.pathname === '/settings'
-                    ? 'bg-secondary text-foreground'
-                    : 'bg-card hover:bg-secondary hover:text-foreground'
-                }`}
+                className={`flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-foreground ${location.pathname === '/settings'
+                  ? 'bg-secondary text-foreground'
+                  : 'bg-card hover:bg-secondary hover:text-foreground'
+                  }`}
                 aria-label="Settings"
               >
                 <LuSettings className="h-4 w-4" />
@@ -199,11 +210,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   <Link
                     key={`${item.label}-${item.path}-mobile`}
                     to={item.path}
-                    className={`flex items-center gap-2 whitespace-nowrap rounded-full px-3 py-2 text-sm transition-colors ${
-                      isActive
-                        ? 'bg-secondary text-foreground'
-                        : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
-                    }`}
+                    className={`flex items-center gap-2 whitespace-nowrap rounded-full px-3 py-2 text-sm transition-colors ${isActive
+                      ? 'bg-secondary text-foreground'
+                      : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                      }`}
                   >
                     <Icon className="h-4 w-4" />
                     <span>{item.label}</span>
@@ -239,9 +249,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   <Link
                     key={`${item.label}-${item.path}`}
                     to={item.path}
-                    className={`flex items-center gap-2 rounded-lg px-2 py-2 text-sm transition-colors ${
-                      isActive ? 'text-foreground' : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
-                    }`}
+                    className={`flex items-center gap-2 rounded-lg px-2 py-2 text-sm transition-colors ${isActive ? 'text-foreground' : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                      }`}
                   >
                     <Icon className="h-4 w-4" />
                     <span>{item.label}</span>
@@ -257,11 +266,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             </p>
             <Link
               to="/settings"
-              className={`flex items-center gap-2 rounded-lg px-2 py-2 text-sm transition-colors ${
-                location.pathname === '/settings'
-                  ? 'text-foreground'
-                  : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
-              }`}
+              className={`flex items-center gap-2 rounded-lg px-2 py-2 text-sm transition-colors ${location.pathname === '/settings'
+                ? 'text-foreground'
+                : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                }`}
             >
               <LuSettings className="h-4 w-4" />
               <span>Settings</span>

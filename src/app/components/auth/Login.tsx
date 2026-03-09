@@ -1,10 +1,10 @@
-import { Link, useNavigate } from 'react-router';
+﻿import { Link, useNavigate } from 'react-router';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { toast } from 'sonner';
 import { useState } from 'react';
-import { LuCode } from 'react-icons/lu';
+
 import { supabase } from '../../../lib/supabase';
 import { fetchProfileForAuthUser } from '../../lib/profileAccess';
 
@@ -19,11 +19,11 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      // Admin bypass for testing
-      if (email.toLowerCase() === 'admin@uncommon.org') {
-        localStorage.setItem('admin_bypass', 'true');
-        toast.success('Admin Bypass Activated');
-        navigate('/admin');
+      // Instructor bypass for testing
+      if (email.toLowerCase() === 'instructor@uncommon.org') {
+        localStorage.setItem('instructor_bypass', 'true');
+        toast.success('Instructor Bypass Activated');
+        navigate('/instructor');
         return;
       }
 
@@ -54,10 +54,10 @@ export default function Login() {
 
           const role = String(
             profileRow?.['role'] ??
-              profileRow?.['user_role'] ??
-              metadata?.['role'] ??
-              metadata?.['user_role'] ??
-              ''
+            profileRow?.['user_role'] ??
+            metadata?.['role'] ??
+            metadata?.['user_role'] ??
+            ''
           ).toLowerCase();
 
           if (role === 'instructor') {
@@ -79,9 +79,6 @@ export default function Login() {
     <div className="min-h-screen bg-gradient-to-br from-[#0747a1]/5 via-white to-[#1D4ED8]/5 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[#0747a1] mb-4">
-            <LuCode className="w-8 h-8 text-white" />
-          </div>
           <h1 className="text-4xl mb-2 heading-font" style={{ color: '#1a1a2e' }}>
             Welcome Back
           </h1>
@@ -89,7 +86,7 @@ export default function Login() {
         </div>
 
         <div className="bg-white rounded-2xl shadow-lg p-8 border border-[rgba(0,0,0,0.08)]">
-          <form onSubmit={handleLogin} className="space-y-5">
+          <form onSubmit={handleLogin} className="space-y-5" autoComplete="off">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -99,6 +96,7 @@ export default function Login() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                autoComplete="off"
                 className="h-12 rounded-xl bg-[#F5F5FA] border-0"
               />
             </div>
@@ -106,13 +104,12 @@ export default function Login() {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="password">Password</Label>
-                <button
-                  type="button"
+                <Link
+                  to="/forgot-password"
                   className="text-sm text-[#0747a1] hover:underline"
-                  onClick={() => toast.info('Password reset feature coming soon!')}
                 >
                   Forgot?
-                </button>
+                </Link>
               </div>
               <Input
                 id="password"
@@ -121,6 +118,7 @@ export default function Login() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                autoComplete="new-password"
                 className="h-12 rounded-xl bg-[#F5F5FA] border-0"
               />
             </div>

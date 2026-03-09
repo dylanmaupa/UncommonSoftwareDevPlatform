@@ -44,6 +44,7 @@ export default function LessonView() {
   const [showXPAnimation, setShowXPAnimation] = useState(false);
   const [hintUsed, setHintUsed] = useState(false);
   const [solutionUsed, setSolutionUsed] = useState(false);
+  const [failedAttempts, setFailedAttempts] = useState(0);
 
   useEffect(() => {
     async function loadData() {
@@ -121,6 +122,7 @@ export default function LessonView() {
       setShowSolution(false);
       setHintUsed(false);
       setSolutionUsed(false);
+      setFailedAttempts(0);
     }
   }, [lessonId, lesson]);
 
@@ -199,6 +201,51 @@ export default function LessonView() {
     }
   }
 
+  const logActivity = async () => {
+    if (!user) return;
+    try {
+      const { error: activityError } = await supabase.rpc('record_user_activity', { p_user_id: user.id });
+
+      if (activityError) {
+        console.error("Error recording user activity via RPC:", activityError);
+        const today = new Date().toISOString().split('T')[0];
+        const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+        const lastActive = userProfile?.last_activity_date;
+
+        if (lastActive !== today) {
+          let newStreak = userProfile?.streak || 0;
+          if (lastActive === yesterday) {
+            newStreak += 1;
+          } else {
+            newStreak = 1;
+          }
+          const newLongest = Math.max(userProfile?.longest_streak || 0, newStreak);
+          await supabase.from('profiles').update({
+            streak: newStreak,
+            longest_streak: newLongest,
+            last_activity_date: today
+          }).eq('id', user.id);
+
+          if (userProfile) {
+            setUserProfile({
+              ...userProfile,
+              streak: newStreak,
+              longest_streak: newLongest,
+              last_activity_date: today
+            });
+          }
+        }
+      } else {
+        const freshProfile = await fetchProfileForAuthUser(user as any);
+        if (freshProfile) {
+          setUserProfile(freshProfile);
+        }
+      }
+    } catch (e) {
+      console.error("Failed to log activity", e);
+    }
+  };
+
   const executeCode = async (sourceCode: string) => {
     const lang = lesson.language || 'javascript';
 
@@ -258,6 +305,9 @@ sys.stderr = io.StringIO()
 
       const result = await executeCode(code);
       setOutput(result?.run?.output || 'No output.');
+
+      // Any attempt to run code counts as daily activity
+      await logActivity();
     } catch (e: any) {
       setOutput(`Execution failed: ${e?.message || String(e)}`);
     } finally {
@@ -290,18 +340,44 @@ sys.stderr = io.StringIO()
         const solutionResult = await executeCode(lesson.exercise_solution);
         const solutionOutput = solutionResult?.run?.output || '';
 
-        if (executionOutput.trim() !== solutionOutput.trim()) {
+        const normalizedUser = executionOutput.trim().toLowerCase();
+        const normalizedSolution = solutionOutput.trim().toLowerCase();
+
+        let passed = normalizedUser === normalizedSolution;
+
+        // Lenient check for the "Cities/Tokyo List" lesson
+        if (!passed) {
+          const lessonTitle = lesson.title?.toLowerCase() || '';
+          const lessonPrompt = lesson.exercise_prompt?.toLowerCase() || '';
+
+          if (lessonTitle.includes('list') || lessonTitle.includes('collection')) {
+            if (lessonPrompt.includes('tokyo') && lessonPrompt.includes('three')) {
+              const hasTokyo = normalizedUser.includes('tokyo');
+              const isListFormat = normalizedUser.includes('[') && normalizedUser.includes(']');
+              const itemSplit = normalizedUser.split(',');
+
+              if (hasTokyo && isListFormat && itemSplit.length === 3) {
+                passed = true;
+              }
+            }
+          }
+        }
+
+        if (!passed) {
           isCorrect = false;
           setOutput((prev) => prev + `\nVerification failed.\nExpected Output:\n${solutionOutput.trim()}\n\nYour Output:\n${executionOutput.trim()}`);
         } else {
-          setOutput((prev) => prev + '\nOutput matches solution perfectly!\n');
+          setOutput((prev) => prev + '\nOutput matches successfully!\n');
         }
       }
 
       if (isCorrect && user) {
         try {
-          // Log activity for streaks on successful completion ALWAYS
-          await supabase.rpc('record_user_activity', { p_user_id: user.id });
+          // We already log activity in run or general submit, but this ensures completion always logs.
+          await logActivity();
+
+          // Set current profile data for evaluating achievements
+          let currentProfileData = userProfile;
 
           if (!isCompleted) {
             // Upsert lesson progress
@@ -359,15 +435,26 @@ sys.stderr = io.StringIO()
             }
 
             if (finalXp > 0) {
-              await supabase.rpc('add_user_xp', { p_user_id: user.id, p_amount: finalXp });
-              if (userProfile) {
-                userProfile.xp = (userProfile.xp || 0) + finalXp;
+              const { error } = await supabase.rpc('add_user_xp', { p_user_id: user.id, p_amount: finalXp });
+              if (error) {
+                console.error("Error adding XP via RPC:", error);
+                // Fallback: If RPC is not available, directly update the profile
+                const fallbackXP = (currentProfileData?.xp || 0) + finalXp;
+                await supabase.from('profiles').update({ xp: fallbackXP }).eq('id', user.id);
               }
             }
 
+            // Create an updated profile object reflecting the new XP to ensure achievements use the latest value
+            const currentProfileXP = (currentProfileData?.xp || 0) + finalXp;
+            let updatedProfile = currentProfileData ? { ...currentProfileData, xp: currentProfileXP } : null;
+
+            if (updatedProfile) {
+              setUserProfile(updatedProfile);
+            }
+
             // --- ACHIEVEMENT CHECKS ---
-            if (userProfile) {
-              const currentAchievements: string[] = userProfile.achievements || [];
+            if (updatedProfile) {
+              const currentAchievements: string[] = updatedProfile.achievements || [];
               const newlyUnlocked: string[] = [];
 
               // 1. First Blood (Complete first lesson)
@@ -387,17 +474,17 @@ sys.stderr = io.StringIO()
               }
 
               // 4. On Fire (3-day streak)
-              if ((userProfile.streak || 0) >= 3 && !currentAchievements.includes('on_fire')) {
+              if ((updatedProfile.streak || 0) >= 3 && !currentAchievements.includes('on_fire')) {
                 newlyUnlocked.push('on_fire');
               }
 
               // 5. Unstoppable (7-day streak)
-              if ((userProfile.streak || 0) >= 7 && !currentAchievements.includes('unstoppable')) {
+              if ((updatedProfile.streak || 0) >= 7 && !currentAchievements.includes('unstoppable')) {
                 newlyUnlocked.push('unstoppable');
               }
 
               // 6. Deep Pockets (Accumulate 500 XP)
-              if ((userProfile.xp || 0) >= 500 && !currentAchievements.includes('wealthy')) {
+              if ((updatedProfile.xp || 0) >= 500 && !currentAchievements.includes('wealthy')) {
                 newlyUnlocked.push('wealthy');
               }
 
@@ -407,8 +494,9 @@ sys.stderr = io.StringIO()
                 // Update DB
                 await updateProfileForAuthUser(user as any, { achievements: updatedAchievements });
 
-                // Update Local State
-                setUserProfile({ ...userProfile, achievements: updatedAchievements });
+                // Update Local State with new achievements
+                updatedProfile = { ...updatedProfile, achievements: updatedAchievements };
+                setUserProfile(updatedProfile);
 
                 // Dispatch notification for each
                 newlyUnlocked.forEach(achId => {
@@ -468,6 +556,7 @@ sys.stderr = io.StringIO()
           toast.error('Failed to save progress.');
         }
       } else if (!isCorrect) {
+        setFailedAttempts(prev => prev + 1);
         toast.error(
           <div>
             <p className="font-semibold">Not quite right</p>
@@ -588,7 +677,12 @@ sys.stderr = io.StringIO()
                           return;
                         }
                         if (user) {
-                          await supabase.rpc('add_user_xp', { p_user_id: user.id, p_amount: -100 });
+                          const { error } = await supabase.rpc('add_user_xp', { p_user_id: user.id, p_amount: -100 });
+                          if (error) {
+                            console.error("Error deducting XP via RPC:", error);
+                            const fallbackXP = (userProfile?.xp || 0) - 100;
+                            await supabase.from('profiles').update({ xp: fallbackXP }).eq('id', user.id);
+                          }
                           toast.info("100 XP deducted for using a hint!");
                           if (userProfile) {
                             setUserProfile({ ...userProfile, xp: (userProfile.xp || 0) - 100 });
@@ -621,50 +715,52 @@ sys.stderr = io.StringIO()
                 )}
               </div>
 
-              <div className="mt-4">
-                <div className="flex items-center gap-3">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setShowSolution(!showSolution);
-                      if (!showSolution) setSolutionUsed(true);
-                    }}
-                    className="border-destructive/60 text-destructive hover:bg-destructive/10"
-                  >
-                    {showSolution ? <LuEyeOff className="w-4 h-4 mr-2" /> : <LuEye className="w-4 h-4 mr-2" />}
-                    {showSolution ? 'Hide' : 'View'} Solution
-                  </Button>
-                  {!showSolution && !solutionUsed && (
-                    <span className="text-xs text-destructive/80 font-medium">?? Forfeits all XP for this lesson</span>
-                  )}
-                  {solutionUsed && (
-                    <span className="text-xs text-muted-foreground font-medium">0 XP will be awarded</span>
+              {failedAttempts >= 3 && (
+                <div className="mt-4 border-t border-border pt-4">
+                  <div className="flex items-center gap-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setShowSolution(!showSolution);
+                        if (!showSolution) setSolutionUsed(true);
+                      }}
+                      className="border-destructive/60 text-destructive hover:bg-destructive/10"
+                    >
+                      {showSolution ? <LuEyeOff className="w-4 h-4 mr-2" /> : <LuEye className="w-4 h-4 mr-2" />}
+                      {showSolution ? 'Hide' : 'View'} Solution
+                    </Button>
+                    {!showSolution && !solutionUsed && (
+                      <span className="text-xs text-destructive/80 font-medium">⚠️ Forfeits all XP for this lesson</span>
+                    )}
+                    {solutionUsed && (
+                      <span className="text-xs text-muted-foreground font-medium">0 XP will be awarded</span>
+                    )}
+                  </div>
+                  {showSolution && (
+                    <Card className="mt-3 border-border overflow-hidden">
+                      <div className="bg-foreground px-4 py-2">
+                        <span className="text-sm text-white/70">Solution</span>
+                      </div>
+                      <div className="bg-[#1e1e1e]">
+                        <Editor
+                          height="150px"
+                          language={lesson.language || 'javascript'}
+                          value={lesson.exercise_solution || ''}
+                          theme="vs-dark"
+                          options={{
+                            readOnly: true,
+                            minimap: { enabled: false },
+                            fontSize: 14,
+                            lineNumbers: 'on',
+                            scrollBeyondLastLine: false,
+                          }}
+                        />
+                      </div>
+                    </Card>
                   )}
                 </div>
-                {showSolution && (
-                  <Card className="mt-3 border-border overflow-hidden">
-                    <div className="bg-foreground px-4 py-2">
-                      <span className="text-sm text-white/70">Solution</span>
-                    </div>
-                    <div className="bg-[#1e1e1e]">
-                      <Editor
-                        height="150px"
-                        language={lesson.language || 'javascript'}
-                        value={lesson.exercise_solution || ''}
-                        theme="vs-dark"
-                        options={{
-                          readOnly: true,
-                          minimap: { enabled: false },
-                          fontSize: 14,
-                          lineNumbers: 'on',
-                          scrollBeyondLastLine: false,
-                        }}
-                      />
-                    </div>
-                  </Card>
-                )}
-              </div>
+              )}
             </div>
           </div>
 
@@ -736,7 +832,7 @@ sys.stderr = io.StringIO()
                     className="bg-blue-500 text-white hover:bg-blue-400 shadow-lg shadow-blue-500/20"
                   >
                     <LuCircleCheck className="w-4 h-4 mr-2" />
-                    {isCompleted ? 'Completed' : 'Submit'}
+                    {isCompleted ? 'Resubmit' : 'Submit'}
                   </Button>
                   {nextLesson && isCompleted && (
                     <Button

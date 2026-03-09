@@ -2,101 +2,48 @@ import { Link, useNavigate } from 'react-router';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { toast } from 'sonner';
-import { useEffect, useState } from 'react';
-import { getAvatarsByGender, getRandomAvatar, type Gender } from '../../lib/avatars';
-import { LuRocket } from 'react-icons/lu';
+import { useState, useMemo } from 'react';
 import { supabase } from '../../../lib/supabase';
-
-const HUB_LOCATIONS = [
-  'Dzivarasekwa',
-  'Kuwadzana',
-  'Kambuzuma',
-  'Mbare',
-  'Mufakose',
-  'Warren Park',
-  'Bulawayo',
-  'Victoria Falls',
-  'Gwai',
-  'Gokwe',
-];
-
-const SPECIALIZATIONS = [
-  'Digital Marketing',
-  'Product Design',
-  'Software Engineering'
-];
 
 export default function Signup() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [fullName, setFullName] = useState('');
-  const [role, setRole] = useState<'student' | 'instructor'>('student');
-  const [hubLocation, setHubLocation] = useState('');
-  const [specialization, setSpecialization] = useState('');
-  const [gender, setGender] = useState<Gender | ''>('');
-  const [selectedAvatar, setSelectedAvatar] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const availableAvatars = gender ? getAvatarsByGender(gender) : [];
+  const passwordStrength = useMemo(() => {
+    if (!password) return 0;
+    let score = 0;
+    if (password.length >= 8) score += 1;
+    if (password.match(/[a-z]/) && password.match(/[A-Z]/)) score += 1;
+    if (password.match(/\d/)) score += 1;
+    if (password.match(/[^a-zA-Z\d]/)) score += 1;
+    return score; // 0 to 4
+  }, [password]);
 
-  useEffect(() => {
-    if (!gender) {
-      setSelectedAvatar('');
-      return;
-    }
-
-    const pool = getAvatarsByGender(gender);
-    if (pool.length === 0) {
-      setSelectedAvatar('');
-      return;
-    }
-
-    if (selectedAvatar && !pool.includes(selectedAvatar)) {
-      setSelectedAvatar('');
-    }
-  }, [gender, selectedAvatar]);
+  const strengthColor = ['bg-red-500', 'bg-red-400', 'bg-yellow-500', 'bg-green-400', 'bg-green-600'][passwordStrength];
+  const strengthText = ['Very Weak', 'Weak', 'Fair', 'Good', 'Strong'][passwordStrength];
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!hubLocation) {
-      toast.error('Please select a Hub Location');
-      return;
-    }
-
-    if (!gender) {
-      toast.error('Please select a Gender');
-      return;
-    }
-
-    if (availableAvatars.length > 0 && !selectedAvatar) {
-      toast.error('Please choose an avatar');
-      return;
-    }
-
-    if (role === 'instructor' && !specialization) {
-      toast.error('Please select an Area of Specialization');
+    if (password !== confirmPassword) {
+      toast.error('Passwords do not match');
       return;
     }
 
     setIsLoading(true);
 
     try {
-      const avatarUrl = selectedAvatar || getRandomAvatar(gender);
+      const role = email.trim().toLowerCase().endsWith('@uncommon.org') ? 'instructor' : 'student';
 
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
-            full_name: fullName,
             role: role,
-            hub_location: hubLocation,
-            specialization: role === 'instructor' ? specialization : null,
-            gender: gender,
-            avatar_url: avatarUrl,
           },
         },
       });
@@ -107,8 +54,9 @@ export default function Signup() {
       }
 
       if (authData.user) {
-        toast.success('Account created! Welcome to your coding journey!');
-        navigate('/dashboard');
+        await supabase.auth.signOut();
+        toast.success('Account created successfully! Please log in to continue.');
+        navigate('/');
       }
     } catch (err: any) {
       toast.error(err.message || 'An unexpected error occurred during signup.');
@@ -121,9 +69,6 @@ export default function Signup() {
     <div className="min-h-screen bg-gradient-to-br from-[#0747a1]/5 via-white to-[#1D4ED8]/5 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-[#0747a1] to-[#8B5CF6] mb-4">
-            <LuRocket className="w-8 h-8 text-white" />
-          </div>
           <h1 className="text-4xl mb-2 heading-font" style={{ color: '#1a1a2e' }}>
             Start Your Journey
           </h1>
@@ -131,20 +76,7 @@ export default function Signup() {
         </div>
 
         <div className="bg-white rounded-2xl shadow-lg p-8 border border-[rgba(0,0,0,0.08)]">
-          <form onSubmit={handleSignup} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="fullName">Full Name</Label>
-              <Input
-                id="fullName"
-                type="text"
-                placeholder="John Doe"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                required
-                className="h-12 rounded-xl bg-[#F5F5FA] border-0"
-              />
-            </div>
-
+          <form onSubmit={handleSignup} className="space-y-4" autoComplete="off">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -154,133 +86,51 @@ export default function Signup() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                autoComplete="off"
                 className="h-12 rounded-xl bg-[#F5F5FA] border-0"
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Create a strong password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
-                className="h-12 rounded-xl bg-[#F5F5FA] border-0"
-              />
-            </div>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Create a strong password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  autoComplete="new-password"
+                  className="h-12 rounded-xl bg-[#F5F5FA] border-0"
+                />
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="role">I am a</Label>
-              <Select value={role} onValueChange={(value: 'student' | 'instructor') => setRole(value)} required>
-                <SelectTrigger className="w-full h-12 bg-[#F5F5FA] border-0 rounded-xl">
-                  <SelectValue placeholder="Select your role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="student">Student</SelectItem>
-                  <SelectItem value="instructor">Instructor</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="hubLocation">Reporting Hub Location</Label>
-              <Select value={hubLocation} onValueChange={setHubLocation} required>
-                <SelectTrigger className="w-full h-12 bg-[#F5F5FA] border-0 rounded-xl">
-                  <SelectValue placeholder="Select Hub Location" />
-                </SelectTrigger>
-                <SelectContent>
-                  {HUB_LOCATIONS.map((hub) => (
-                    <SelectItem key={hub} value={hub}>{hub}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="gender">Gender</Label>
-              {gender ? (
-                <div className="flex items-center gap-3 rounded-xl bg-[#F5F5FA] p-3">
-                  <p className="flex-1 text-sm text-[#6B7280] capitalize">Selected: {gender}</p>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="rounded-lg"
-                    onClick={() => setGender('')}
-                  >
-                    Change
-                  </Button>
+              {password && (
+                <div className="space-y-1.5">
+                  <div className="flex h-1.5 w-full overflow-hidden rounded-full bg-secondary">
+                    <div className={`h-full ${strengthColor} transition-all duration-300`} style={{ width: `${Math.max(10, passwordStrength * 25)}%` }} />
+                  </div>
+                  <p className="text-right text-[10px] font-medium uppercase tracking-wider text-muted-foreground">{strengthText}</p>
                 </div>
-              ) : (
-                <Select value={gender} onValueChange={(value: Gender) => setGender(value)} required>
-                  <SelectTrigger className="w-full h-12 bg-[#F5F5FA] border-0 rounded-xl">
-                    <SelectValue placeholder="Select gender" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="female">Female</SelectItem>
-                    <SelectItem value="male">Male</SelectItem>
-                  </SelectContent>
-                </Select>
               )}
             </div>
 
-            {gender && (
-              <div className="space-y-2">
-                <Label>Choose Avatar</Label>
-                {availableAvatars.length > 0 ? (
-                  selectedAvatar ? (
-                    <div className="flex items-center gap-3 rounded-xl bg-[#F5F5FA] p-3">
-                      <img src={selectedAvatar} alt="Selected avatar" className="h-16 w-16 rounded-xl object-cover" />
-                      <p className="flex-1 text-sm text-[#6B7280]">Selected avatar</p>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="rounded-lg"
-                        onClick={() => setSelectedAvatar('')}
-                      >
-                        Change
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-4 gap-2 rounded-xl bg-[#F5F5FA] p-3">
-                      {availableAvatars.map((avatar, index) => (
-                        <button
-                          key={`${gender}-avatar-${index}`}
-                          type="button"
-                          onClick={() => setSelectedAvatar(avatar)}
-                          className="aspect-square overflow-hidden rounded-xl border border-transparent transition hover:border-[#0747a1]/40"
-                          aria-label={`Select avatar ${index + 1}`}
-                        >
-                          <img src={avatar} alt={`Avatar option ${index + 1}`} className="h-full w-full object-cover" />
-                        </button>
-                      ))}
-                    </div>
-                  )
-                ) : (
-                  <p className="text-sm text-[#6B7280]">No avatars found for this gender yet.</p>
-                )}
-              </div>
-            )}
-
-            {role === 'instructor' && (
-              <div className="space-y-2">
-                <Label htmlFor="specialization">Area of Specialization</Label>
-                <Select value={specialization} onValueChange={setSpecialization} required={role === 'instructor'}>
-                  <SelectTrigger className="w-full h-12 bg-[#F5F5FA] border-0 rounded-xl">
-                    <SelectValue placeholder="Select your specialization" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {SPECIALIZATIONS.map((spec) => (
-                      <SelectItem key={spec} value={spec}>{spec}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                placeholder="Confirm your password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                minLength={6}
+                autoComplete="new-password"
+                className="h-12 rounded-xl bg-[#F5F5FA] border-0"
+              />
+            </div>
 
             <Button type="submit" disabled={isLoading} className="w-full h-12 rounded-xl text-base mt-2" style={{ backgroundColor: '#0747a1' }}>
               {isLoading ? 'Creating account...' : 'Create Account'}
@@ -298,5 +148,3 @@ export default function Signup() {
     </div>
   );
 }
-
-
