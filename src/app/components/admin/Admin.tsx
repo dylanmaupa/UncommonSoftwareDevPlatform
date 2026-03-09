@@ -272,7 +272,7 @@ export default function Admin() {
           xp: Number(metadata?.['xp'] ?? 0),
           streak: Number(metadata?.['streak'] ?? 0),
           last_activity_date: String(metadata?.['last_activity_date'] ?? ''),
-        }) as UserProfile;
+        }) as unknown as UserProfile;
 
         setProfile(profileData);
 
@@ -426,77 +426,71 @@ export default function Admin() {
       hubSubmissionQueue.length > 0 ? 'Track in submissions table' : 'No hub submission data yet',
   };
 
+  const nickname = profile.full_name;
+  const xp = profile.xp || 0;
+  const level = calculateUserLevel(xp);
+
   return (
     <DashboardLayout>
       <div className="p-3 sm:p-4 lg:p-6">
-        <div className="mb-4 flex flex-wrap items-end justify-between gap-3 sm:mb-6">
-          <div>
-            <Badge variant="secondary" className="rounded-full px-3 py-1 text-[11px] uppercase tracking-wider">
-              Hub: {profile.hub_location || 'Pending Assignment'}
-            </Badge>
-            <h1 className="heading-font mt-2 text-2xl text-foreground sm:text-3xl">Instructor Dashboard</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Optimize teaching efficiency, student visibility, and content control without extra complexity.
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <Button className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90">
-              <LuBell className="mr-2 h-4 w-4" />
-              Send Announcement
-            </Button>
-            <Button
-              variant="outline"
-              onClick={async () => {
-                await supabase.auth.signOut();
-                navigate('/');
-              }}
-              className="rounded-full text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 h-10"
-            >
-              Log out
-            </Button>
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <Card className="rounded-2xl border-border bg-sidebar">
-            <CardHeader className="pb-2">
-              <CardTitle className="heading-font text-base text-foreground">Navigation</CardTitle>
-              <CardDescription>Core sections for an instructor-first workflow</CardDescription>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="overflow-x-auto pb-1">
-                <div className="flex w-max gap-2 lg:w-full lg:flex-wrap">
-                  {instructorSections.map((section) => {
-                    const Icon = section.icon;
-                    const isActive = section.id === selectedSection.id;
-
-                    return (
-                      <button
-                        key={section.id}
-                        type="button"
-                        onClick={() => navigate(`/instructor/${section.id}`)}
-                        className={`flex items-center gap-2 rounded-full border px-3 py-2 text-sm transition-colors ${isActive
-                          ? 'border-primary bg-primary/10 text-foreground'
-                          : 'border-border bg-card text-muted-foreground hover:bg-secondary hover:text-foreground'
-                          }`}
-                      >
-                        <Icon className="h-4 w-4" />
-                        <span>{section.label}</span>
-                        <Badge variant={stageBadgeVariant[section.stage]} className="rounded-full px-2 text-[10px]">
-                          {section.stage}
-                        </Badge>
-                      </button>
-                    );
-                  })}
-                </div>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_280px] xl:grid-cols-[minmax(0,1fr)_300px]">
+          
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-sidebar p-3">
+              <div className="order-1 relative w-full min-w-0 sm:min-w-[220px] sm:flex-1">
+                <LuSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  type="text"
+                  defaultValue=""
+                  placeholder="Search students, courses..."
+                  className="h-10 w-full rounded-full border border-border bg-card pl-9 pr-3 text-sm text-foreground outline-none"
+                />
               </div>
-            </CardContent>
-          </Card>
+              <div className="order-2 flex items-center gap-2">
+                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full border border-border bg-card text-muted-foreground" onClick={() => navigate('/settings')}>
+                  <LuBell className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full border border-border bg-card text-muted-foreground" onClick={() => navigate('/achievements')}>
+                  <LuSparkles className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="order-3 ml-auto flex items-center gap-2 rounded-full border border-border bg-card px-2 py-1">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={dashboardAvatar} alt={nickname} />
+                  <AvatarFallback>{nickname ? nickname[0] : 'U'}</AvatarFallback>
+                </Avatar>
+                <span className="hidden pr-2 text-sm text-foreground sm:block">{nickname}</span>
+                <Button
+                  variant="ghost"
+                  onClick={async () => {
+                    await supabase.auth.signOut();
+                    navigate('/');
+                  }}
+                  className="rounded-full bg-red-100 text-red-600 hover:bg-red-200 hover:text-red-700 h-8 ml-2"
+                >
+                  Log out
+                </Button>
+              </div>
+            </div>
 
-          <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
-            {/* Left Column (Main content area based on section) */}
-            <div className="space-y-4">
-              {activeSection === 'students' && (
+            <Card className="overflow-hidden rounded-2xl border-border bg-primary">
+              <CardContent className="p-4 sm:p-6">
+                <Badge variant="secondary" className="mb-2 rounded-full px-3 py-1 text-[11px] uppercase tracking-wider bg-white/20 text-white hover:bg-white/30 border-none">
+                  Hub: {profile.hub_location || 'Pending Assignment'}
+                </Badge>
+                <h2 className="heading-font mt-1 max-w-md text-2xl leading-tight text-white sm:text-3xl">
+                  Instructor Dashboard
+                </h2>
+                <p className="mt-2 text-sm text-white/80">Optimize teaching efficiency, student visibility, and content control.</p>
+                <Button className="mt-5 rounded-full bg-white text-foreground hover:bg-white/90">
+                  <LuBell className="mr-2 h-4 w-4" />
+                  Send Announcement
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Main content area based on section */}
+            {activeSection === 'students' && (
                 <div className={`grid grid-cols-1 ${selectedStudent ? 'lg:grid-cols-2' : ''} gap-4 items-start`}>
                   <Card className="rounded-2xl border-border bg-card">
                     <CardHeader className="flex flex-row items-center justify-between pb-4">
@@ -918,56 +912,79 @@ export default function Admin() {
                 </Card>
               )}
             </div>
+          {/* Right Column (Sidebar) */}
+          <div className="space-y-4">
+            <Card className="rounded-2xl border-border">
+              <CardContent className="space-y-4 p-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-base text-foreground heading-font">Instructor Profile</h3>
+                  <LuEllipsis className="h-4 w-4 text-muted-foreground" />
+                </div>
+                <div className="flex flex-col items-center">
+                  <Avatar className="h-20 w-20 border border-border">
+                    <AvatarImage src={dashboardAvatar} alt={nickname} />
+                    <AvatarFallback>{nickname ? nickname[0] : 'U'}</AvatarFallback>
+                  </Avatar>
+                  <p className="mt-3 text-base text-foreground">{getGreeting()} {nickname}</p>
+                  <p className="text-xs text-muted-foreground">Hub: {profile.hub_location}</p>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-2 text-xs mt-4">
+                  <div className="rounded-xl bg-sidebar p-2 text-muted-foreground">XP: {xp}</div>
+                  <div className="rounded-xl bg-sidebar p-2 text-muted-foreground">Level: {level}</div>
+                  <div className="col-span-2 rounded-xl bg-sidebar p-2 text-muted-foreground text-center">Students: {totalStudents}</div>
+                </div>
+                <div className="mt-4">
+                  <StreakWidget
+                    streak={profile.streak || 0}
+                    userId={profile.id}
+                    lastActivityDate={profile.last_activity_date}
+                  />
+                </div>
+              </CardContent>
+            </Card>
 
-            {/* Right Column (Sidebar) */}
-            <div className="space-y-4">
-              <Card className="rounded-2xl border-border">
-                <CardHeader>
-                  <CardTitle className="heading-font text-base text-foreground">Progress & Analytics</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <div className="rounded-xl bg-sidebar p-3">
-                    <p className="text-xs text-muted-foreground">Average lesson completion</p>
-                    <p className="mt-1 text-lg text-foreground">{analyticsSnapshot.avgCompletion}%</p>
-                  </div>
-                  <div className="rounded-xl bg-sidebar p-3">
-                    <p className="text-xs text-muted-foreground">Reviewed submissions</p>
-                    <p className="mt-1 text-lg text-foreground">{analyticsSnapshot.reviewedSubmissions}</p>
-                  </div>
-                  <div className="rounded-xl bg-sidebar p-3">
-                    <p className="text-xs text-muted-foreground">Inactive students flagged</p>
-                    <p className="mt-1 text-lg text-foreground">{analyticsSnapshot.inactiveStudents}</p>
-                  </div>
-                  <div className="rounded-xl bg-sidebar p-3">
-                    <p className="text-xs text-muted-foreground">Drop-off point</p>
-                    <p className="mt-1 text-sm text-foreground">{analyticsSnapshot.dropOffPoint}</p>
-                  </div>
-                </CardContent>
-              </Card>
+            <Card className="rounded-2xl border-border">
+              <CardHeader className="pb-2">
+                <CardTitle className="heading-font text-base text-foreground">Progress & Hub Analytics</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="rounded-xl bg-sidebar p-3">
+                  <p className="text-xs text-muted-foreground">Average lesson completion</p>
+                  <p className="mt-1 text-lg text-foreground">{analyticsSnapshot.avgCompletion}%</p>
+                </div>
+                <div className="rounded-xl bg-sidebar p-3">
+                  <p className="text-xs text-muted-foreground">Reviewed submissions</p>
+                  <p className="mt-1 text-lg text-foreground">{analyticsSnapshot.reviewedSubmissions}</p>
+                </div>
+                <div className="rounded-xl bg-sidebar p-3">
+                  <p className="text-xs text-muted-foreground">Drop-off point</p>
+                  <p className="mt-1 text-sm text-foreground">{analyticsSnapshot.dropOffPoint}</p>
+                </div>
+              </CardContent>
+            </Card>
 
-              <Card className="rounded-2xl border-border">
-                <CardHeader>
-                  <CardTitle className="heading-font text-base text-foreground">Recent Student Activity</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  {hubRecentActivity.length > 0 ? (
-                    hubRecentActivity.map((item) => (
-                      <div key={item} className="rounded-xl bg-sidebar p-3 text-sm text-foreground">
-                        {item}
-                      </div>
-                    ))
-                  ) : (
-                    <div className="rounded-xl bg-sidebar p-3 text-sm text-muted-foreground">
-                      No recent activity recorded for your hub yet.
+            <Card className="rounded-2xl border-border">
+              <CardHeader className="pb-2">
+                <CardTitle className="heading-font text-base text-foreground">Recent Student Activity</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {hubRecentActivity.length > 0 ? (
+                  hubRecentActivity.map((item) => (
+                    <div key={item} className="rounded-xl bg-sidebar p-3 text-sm text-foreground">
+                      {item}
                     </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
+                  ))
+                ) : (
+                  <div className="rounded-xl bg-sidebar p-3 text-sm text-muted-foreground">
+                    No recent activity recorded for your hub yet.
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
-    </DashboardLayout >
+    </DashboardLayout>
   );
 }
-
