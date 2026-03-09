@@ -15,6 +15,7 @@ import Settings from './components/settings/Settings';
 import InstructorLayoutPage from './features/instructor-dashboard/pages/InstructorLayoutPage';
 import InstructorHomePage from './features/instructor-dashboard/pages/InstructorHomePage';
 import InstructorLearnersPage from './features/instructor-dashboard/pages/InstructorLearnersPage';
+import InstructorLearnerProfilePage from './features/instructor-dashboard/pages/InstructorLearnerProfilePage';
 import InstructorAssessmentsPage from './features/instructor-dashboard/pages/InstructorAssessmentsPage';
 import InstructorProjectsInsightsPage from './features/instructor-dashboard/pages/InstructorProjectsInsightsPage';
 import InstructorSubmissionReviewPage from './features/instructor-dashboard/pages/InstructorSubmissionReviewPage';
@@ -58,6 +59,7 @@ export const router = createBrowserRouter([
         children: [
           { index: true, Component: InstructorHomePage },
           { path: 'students', Component: InstructorLearnersPage },
+          { path: 'students/:studentId', Component: InstructorLearnerProfilePage },
           { path: 'assessments', Component: InstructorAssessmentsPage },
           { path: 'assessments/:exerciseId', Component: InstructorSubmissionReviewPage },
           { path: 'projects', Component: InstructorProjectsInsightsPage },

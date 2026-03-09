@@ -118,8 +118,8 @@ export default function InstructorLearnersPage() {
                 )}
 
                 <Button asChild size="sm" variant="ghost" className="h-8 rounded-lg border border-border bg-card text-xs">
-                  <Link to={`/instructor/students/${row.id}`}>
-                    View profile
+                  <Link to={`/instructor/students/${row.id}`} target="_blank" rel="noopener noreferrer">
+                    View student
                   </Link>
                 </Button>
 
