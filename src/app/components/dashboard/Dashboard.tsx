@@ -156,35 +156,7 @@ function DashboardMain({
             </CardContent>
           </Card>
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            <Card className="rounded-2xl border-border bg-sidebar">
-              <CardContent className="flex items-center justify-between p-4">
-                <div>
-                  <p className="text-xs text-muted-foreground">24 watched</p>
-                  <p className="text-sm text-foreground">UI/UX Design</p>
-                </div>
-                <LuTarget className="h-4 w-4 text-muted-foreground" />
-              </CardContent>
-            </Card>
-            <Card className="rounded-2xl border-border bg-sidebar">
-              <CardContent className="flex items-center justify-between p-4">
-                <div>
-                  <p className="text-xs text-muted-foreground">24 watched</p>
-                  <p className="text-sm text-foreground">Branding</p>
-                </div>
-                <LuFlame className="h-4 w-4 text-muted-foreground" />
-              </CardContent>
-            </Card>
-            <Card className="rounded-2xl border-border bg-sidebar">
-              <CardContent className="flex items-center justify-between p-4">
-                <div>
-                  <p className="text-xs text-muted-foreground">40 watched</p>
-                  <p className="text-sm text-foreground">Front End</p>
-                </div>
-                <LuBookOpen className="h-4 w-4 text-muted-foreground" />
-              </CardContent>
-            </Card>
-          </div>
+
 
           {inProgressCourses.length > 0 && (
             <div>
@@ -420,9 +392,6 @@ function DashboardMain({
                     <p className="text-sm text-foreground">{instructor.full_name}</p>
                     <p className="text-xs text-muted-foreground">{instructor.specialization || 'Instructor'}</p>
                   </div>
-                  <Button variant="ghost" size="sm" className="h-8 rounded-full border border-border text-xs text-muted-foreground">
-                    Follow
-                  </Button>
                 </div>
               )) : (
                 <p className="text-xs text-muted-foreground">No instructors available yet in {profile.hub_location}.</p>
