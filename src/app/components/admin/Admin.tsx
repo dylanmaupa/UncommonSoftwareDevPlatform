@@ -91,7 +91,7 @@ const instructorSections = [
   {
     id: 'analytics',
     label: 'Analytics',
-    icon: LuZap,
+    icon: LuActivity,
     stage: 'Intermediate',
     purpose: 'Use data to improve teaching outcomes.',
     features: ['Completion rates', 'Average scores', 'Drop-off detection'],
