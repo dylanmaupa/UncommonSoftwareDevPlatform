@@ -1,5 +1,11 @@
 import { useMemo, useState, useEffect } from 'react';
 import DashboardLayout from '../layout/DashboardLayout';
+import StreakWidget from '../dashboard/StreakWidget';
+// @ts-ignore
+import dashboardAvatar from '../../../assets/avatar2.png';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { calculateUserLevel } from '../../../lib/gamificationUtils';
+import { getGreeting } from '../../lib/timeUtils';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
@@ -8,9 +14,11 @@ import {
   LuBookOpen,
   LuCircleCheck,
   LuClock3,
+  LuEllipsis,
   LuFolderKanban,
   LuKey,
   LuLayoutDashboard,
+  LuSearch,
   LuSettings,
   LuSparkles,
   LuTarget,
@@ -220,6 +228,9 @@ interface UserProfile {
   full_name: string;
   role: 'student' | 'instructor';
   hub_location: string;
+  streak?: number;
+  xp?: number;
+  last_activity_date?: string;
 }
 
 export default function Admin() {
@@ -258,6 +269,9 @@ export default function Admin() {
           role: String(metadata?.['role'] ?? metadata?.['user_role'] ?? 'student'),
           hub_location: String(metadata?.['hub_location'] ?? ''),
           full_name: String(metadata?.['full_name'] ?? user.email?.split('@')[0] ?? 'Instructor'),
+          xp: Number(metadata?.['xp'] ?? 0),
+          streak: Number(metadata?.['streak'] ?? 0),
+          last_activity_date: String(metadata?.['last_activity_date'] ?? ''),
         }) as UserProfile;
 
         setProfile(profileData);
