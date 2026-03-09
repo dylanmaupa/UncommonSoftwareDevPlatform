@@ -24,13 +24,21 @@ import {
   LuSettings,
   LuSparkles,
   LuTarget,
-  LuTriangleAlert,
+  LuTriangle,
   LuUsers,
-  LuZap,
+  LuActivity,
 } from 'react-icons/lu';
 import { useNavigate, useParams } from 'react-router';
 import { supabase } from '../../../lib/supabase';
 import { fetchProfileForAuthUser } from '../../lib/profileAccess';
+
+// Import new page components
+import OverviewPage from '../../features/instructor-dashboard/pages/OverviewPage';
+import StudentsPage from '../../features/instructor-dashboard/pages/StudentsPage';
+import ExercisesPage from '../../features/instructor-dashboard/pages/ExercisesPage';
+import SubmissionsPage from '../../features/instructor-dashboard/pages/SubmissionsPage';
+import AnalyticsPage from '../../features/instructor-dashboard/pages/AnalyticsPage';
+import AnnouncementsPage from '../../features/instructor-dashboard/pages/AnnouncementsPage';
 
 import { Link } from 'react-router';
 
