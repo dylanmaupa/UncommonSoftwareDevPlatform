@@ -237,6 +237,49 @@ export default function Admin() {
     }
   };
 
+  // Create Exercise Modal State
+  const [showCreateExerciseModal, setShowCreateExerciseModal] = useState(false);
+  const [newExerciseTitle, setNewExerciseTitle] = useState('');
+  const [newExerciseType, setNewExerciseType] = useState('code');
+  const [newExerciseDifficulty, setNewExerciseDifficulty] = useState('beginner');
+  const [newExerciseXP, setNewExerciseXP] = useState(100);
+  const [newExerciseDescription, setNewExerciseDescription] = useState('');
+
+  const handleCreateExercise = () => {
+    if (newExerciseTitle.trim()) {
+      const newExercise = {
+        id: Date.now().toString(),
+        title: newExerciseTitle,
+        type: newExerciseType,
+        difficulty_level: newExerciseDifficulty,
+        xp_reward: newExerciseXP,
+        description: newExerciseDescription,
+        created_at: new Date().toISOString(),
+      };
+      setActiveAssignments([newExercise, ...activeAssignments]);
+      
+      // If it's a code exercise, add a mock submission to the queue
+      if (newExerciseType === 'code' && students.length > 0) {
+        const mockSubmission = {
+          id: `sub_${Date.now()}`,
+          studentId: students[0].id,
+          student: students[0].full_name,
+          assignment: newExerciseTitle,
+          status: 'Pending' as SubmissionStatus,
+          submitted: 'Just now',
+        };
+        setHubSubmissionQueue([mockSubmission, ...hubSubmissionQueue]);
+      }
+      
+      setNewExerciseTitle('');
+      setNewExerciseType('code');
+      setNewExerciseDifficulty('beginner');
+      setNewExerciseXP(100);
+      setNewExerciseDescription('');
+      setShowCreateExerciseModal(false);
+    }
+  };
+
   useEffect(() => {
     async function loadData() {
       try {
@@ -871,41 +914,141 @@ export default function Admin() {
               )}
 
               {activeSection === 'assignments' && (
-                <Card className="rounded-2xl border-border bg-card">
-                  <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <div>
-                      <CardTitle className="heading-font text-xl text-foreground">Exercises & Projects</CardTitle>
-                      <CardDescription>Build interactive validation and practical tasks.</CardDescription>
-                    </div>
-                    <Button size="sm" className="rounded-full">
-                      <LuTarget className="mr-2 h-4 w-4" /> Add Exercise
-                    </Button>
-                  </CardHeader>
-                  <CardContent>
-                    {activeAssignments.length > 0 ? (
-                      <div className="space-y-2">
-                        {activeAssignments.map(exercise => (
-                          <div key={exercise.id} className="flex items-center justify-between p-3 rounded-xl border border-border bg-sidebar hover:bg-secondary/50 transition">
-                            <div className="flex items-center gap-3">
-                              <div className="bg-accent/10 text-accent p-2 rounded-lg">
-                                <LuKey className="h-4 w-4" />
+                <>
+                  <Card className="rounded-2xl border-border bg-card">
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                      <div>
+                        <CardTitle className="heading-font text-xl text-foreground">Exercises & Projects</CardTitle>
+                        <CardDescription>Build interactive validation and practical tasks.</CardDescription>
+                      </div>
+                      <Button size="sm" className="rounded-full" onClick={() => setShowCreateExerciseModal(true)}>
+                        <LuTarget className="mr-2 h-4 w-4" /> Add Exercise
+                      </Button>
+                    </CardHeader>
+                    <CardContent>
+                      {activeAssignments.length > 0 ? (
+                        <div className="space-y-2">
+                          {activeAssignments.map(exercise => (
+                            <div key={exercise.id} className="flex items-center justify-between p-3 rounded-xl border border-border bg-sidebar hover:bg-secondary/50 transition">
+                              <div className="flex items-center gap-3">
+                                <div className="bg-accent/10 text-accent p-2 rounded-lg">
+                                  <LuKey className="h-4 w-4" />
+                                </div>
+                                <div>
+                                  <p className="font-medium text-sm text-foreground">{exercise.title}</p>
+                                  <p className="text-xs text-muted-foreground">Type: <span className="uppercase text-foreground">{exercise.type || 'Standard'}</span> • Points: {exercise.xp_reward || 0}</p>
+                                </div>
                               </div>
-                              <div>
-                                <p className="font-medium text-sm text-foreground">{exercise.title}</p>
-                                <p className="text-xs text-muted-foreground">Type: <span className="uppercase text-foreground">{exercise.type || 'Standard'}</span> • Points: {exercise.xp_reward || 0}</p>
-                              </div>
+                              <Badge variant="outline" className="text-[10px] rounded-full">Configured</Badge>
                             </div>
-                            <Badge variant="outline" className="text-[10px] rounded-full">Configured</Badge>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="p-8 text-center bg-sidebar/50 rounded-xl border border-dashed border-border text-muted-foreground">
+                          No exercises found.
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Create Exercise Modal */}
+                  {showCreateExerciseModal && (
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                      <Card className="rounded-2xl border-border bg-card w-full max-w-lg">
+                        <CardHeader className="flex flex-row items-center justify-between pb-4">
+                          <div>
+                            <CardTitle className="heading-font text-xl text-foreground">Create New Exercise</CardTitle>
+                            <CardDescription>Add a new exercise or project assignment</CardDescription>
                           </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="p-8 text-center bg-sidebar/50 rounded-xl border border-dashed border-border text-muted-foreground">
-                        No exercises found.
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 rounded-full"
+                            onClick={() => setShowCreateExerciseModal(false)}
+                          >
+                            <LuX className="h-4 w-4" />
+                          </Button>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div>
+                            <label className="text-sm font-medium text-foreground mb-1 block">Exercise Title *</label>
+                            <input
+                              type="text"
+                              placeholder="e.g., Build a To-Do App"
+                              value={newExerciseTitle}
+                              onChange={(e) => setNewExerciseTitle(e.target.value)}
+                              className="h-10 w-full rounded-xl border border-border bg-sidebar px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary"
+                            />
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="text-sm font-medium text-foreground mb-1 block">Type</label>
+                              <select
+                                value={newExerciseType}
+                                onChange={(e) => setNewExerciseType(e.target.value)}
+                                className="h-10 w-full rounded-xl border border-border bg-sidebar px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary"
+                              >
+                                <option value="code">Code Exercise</option>
+                                <option value="quiz">Quiz</option>
+                                <option value="project">Project</option>
+                                <option value="essay">Essay</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="text-sm font-medium text-foreground mb-1 block">Difficulty</label>
+                              <select
+                                value={newExerciseDifficulty}
+                                onChange={(e) => setNewExerciseDifficulty(e.target.value)}
+                                className="h-10 w-full rounded-xl border border-border bg-sidebar px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary"
+                              >
+                                <option value="beginner">Beginner</option>
+                                <option value="intermediate">Intermediate</option>
+                                <option value="advanced">Advanced</option>
+                              </select>
+                            </div>
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium text-foreground mb-1 block">XP Reward</label>
+                            <input
+                              type="number"
+                              min="10"
+                              max="1000"
+                              value={newExerciseXP}
+                              onChange={(e) => setNewExerciseXP(Number(e.target.value))}
+                              className="h-10 w-full rounded-xl border border-border bg-sidebar px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium text-foreground mb-1 block">Description</label>
+                            <textarea
+                              placeholder="Exercise instructions and requirements..."
+                              value={newExerciseDescription}
+                              onChange={(e) => setNewExerciseDescription(e.target.value)}
+                              className="min-h-[100px] w-full rounded-xl border border-border bg-sidebar px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary resize-none"
+                            />
+                          </div>
+                          <div className="flex gap-2 pt-4 border-t border-border">
+                            <Button 
+                              className="flex-1 rounded-full"
+                              onClick={handleCreateExercise}
+                              disabled={!newExerciseTitle.trim()}
+                            >
+                              <LuTarget className="mr-2 h-4 w-4" />
+                              Create Exercise
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              className="rounded-full"
+                              onClick={() => setShowCreateExerciseModal(false)}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  )}
+                </>
               )}
 
               {activeSection === 'submissions' && (
