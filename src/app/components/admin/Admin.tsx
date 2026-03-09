@@ -515,8 +515,10 @@ export default function Admin() {
                                   </td>
                                   <td className="px-4 py-3 capitalize">{student.role}</td>
                                   <td className="px-4 py-3">
-                                    <Button size="sm" variant={selectedStudent?.id === student.id ? 'default' : 'outline'} className="rounded-full text-xs h-8" onClick={() => setSelectedStudent(selectedStudent?.id === student.id ? null : student)}>
-                                      {selectedStudent?.id === student.id ? 'Close' : 'View Profile'}
+                                    <Button size="sm" variant="outline" className="rounded-full text-xs h-8" asChild>
+                                      <Link to={`/admin/students/${student.id}`} target="_blank">
+                                        View Profile
+                                      </Link>
                                     </Button>
                                   </td>
                                 </tr>
