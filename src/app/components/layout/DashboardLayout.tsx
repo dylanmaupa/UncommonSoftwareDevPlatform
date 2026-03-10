@@ -265,10 +265,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             onClick={handleLogout}
             className="w-full justify-start gap-3 text-[#6B7280] hover:bg-[#F5F5FA] hover:text-[#1a1a2e] mt-2"
           >
-            <LogOut className="w-5 h-5" />
+            <LuLogOut className="w-5 h-5" />
             <span className="heading-font">Logout</span>
           </Button>
         </nav>
+        </div>
       </aside>
 
         <main className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto">{children}</main>
