@@ -534,7 +534,7 @@ export default function Admin() {
                 <Badge variant="secondary" className="mb-2 rounded-full px-3 py-1 text-[11px] uppercase tracking-wider bg-white/20 text-white hover:bg-white/30 border-none">
                   Hub: {profile.hub_location || 'Pending Assignment'}
                 </Badge>
-                <h2 className="heading-font mt-1 max-w-md text-2xl leading-tight text-white sm:text-3xl">
+                <h2 className="heading-font lowercase mt-1 max-w-md text-2xl leading-tight text-white sm:text-3xl">
                   Instructor Dashboard
                 </h2>
                 <p className="mt-2 text-sm text-white/80">Optimize teaching efficiency, student visibility, and content control.</p>
@@ -551,7 +551,7 @@ export default function Admin() {
                 <Card className="rounded-2xl border-border bg-card">
                   <CardHeader className="flex flex-row items-center justify-between pb-4">
                     <div>
-                      <CardTitle className="heading-font text-xl text-foreground">
+                      <CardTitle className="heading-font lowercase text-xl text-foreground">
                         Student Directory ({profile.hub_location || 'All'})
                       </CardTitle>
                       <CardDescription>
@@ -606,7 +606,7 @@ export default function Admin() {
                   <Card className="rounded-2xl border-border bg-card animate-in fade-in slide-in-from-right-4">
                     <CardHeader className="flex flex-row items-center justify-between pb-4">
                       <div>
-                        <CardTitle className="heading-font text-xl text-foreground">
+                        <CardTitle className="heading-font lowercase text-xl text-foreground">
                           {selectedStudent.full_name}
                         </CardTitle>
                         <CardDescription>{selectedStudent.email}</CardDescription>
@@ -704,7 +704,7 @@ export default function Admin() {
 
                 <Card className="rounded-2xl border-border">
                   <CardHeader className="pb-2">
-                    <CardTitle className="heading-font text-lg text-foreground">Active Submissions (Hub Overview)</CardTitle>
+                    <CardTitle className="heading-font lowercase text-lg text-foreground">Active Submissions (Hub Overview)</CardTitle>
                     <CardDescription>Recent submissions from learners at {profile.hub_location}.</CardDescription>
                   </CardHeader>
                   <CardContent className="p-0">
@@ -763,7 +763,7 @@ export default function Admin() {
                 <div className="pointer-events-none select-none opacity-60 blur-[1px]">
                   <CardHeader className="flex flex-row items-center justify-between pb-2">
                     <div>
-                      <CardTitle className="heading-font text-xl text-foreground">Course Catalog</CardTitle>
+                      <CardTitle className="heading-font lowercase text-xl text-foreground">Course Catalog</CardTitle>
                       <CardDescription>Manage curriculum structure and module organization.</CardDescription>
                     </div>
                     <Button size="sm" className="rounded-full" disabled>
@@ -815,7 +815,7 @@ export default function Admin() {
                   <div className="pointer-events-none select-none opacity-60 blur-[1px]">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
                       <div>
-                        <CardTitle className="heading-font text-xl text-foreground">Lesson Content Editor</CardTitle>
+                        <CardTitle className="heading-font lowercase text-xl text-foreground">Lesson Content Editor</CardTitle>
                         <CardDescription>Author and organize individual lesson structures.</CardDescription>
                       </div>
                       <Button size="sm" className="rounded-full" disabled>
@@ -858,7 +858,7 @@ export default function Admin() {
                     <Card className="rounded-2xl border-border bg-card w-full max-w-lg">
                       <CardHeader className="flex flex-row items-center justify-between pb-4">
                         <div>
-                          <CardTitle className="heading-font text-xl text-foreground">Create New Lesson</CardTitle>
+                          <CardTitle className="heading-font lowercase text-xl text-foreground">Create New Lesson</CardTitle>
                           <CardDescription>Add a new lesson to your curriculum</CardDescription>
                         </div>
                         <Button
@@ -932,7 +932,7 @@ export default function Admin() {
                 <Card className="rounded-2xl border-border bg-card">
                   <CardHeader className="flex flex-row items-center justify-between pb-2">
                     <div>
-                      <CardTitle className="heading-font text-xl text-foreground">Exercises & Projects</CardTitle>
+                      <CardTitle className="heading-font lowercase text-xl text-foreground">Exercises & Projects</CardTitle>
                       <CardDescription>Build interactive validation and practical tasks.</CardDescription>
                     </div>
                     <Button size="sm" className="rounded-full" onClick={() => setShowCreateExerciseModal(true)}>
@@ -971,7 +971,7 @@ export default function Admin() {
                     <Card className="rounded-2xl border-border bg-card w-full max-w-lg">
                       <CardHeader className="flex flex-row items-center justify-between pb-4">
                         <div>
-                          <CardTitle className="heading-font text-xl text-foreground">Create New Exercise</CardTitle>
+                          <CardTitle className="heading-font lowercase text-xl text-foreground">Create New Exercise</CardTitle>
                           <CardDescription>Add a new exercise or project assignment</CardDescription>
                         </div>
                         <Button
@@ -1069,7 +1069,7 @@ export default function Admin() {
               <Card className="rounded-2xl border-border">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <div>
-                    <CardTitle className="heading-font text-xl text-foreground">Full Review Queue</CardTitle>
+                    <CardTitle className="heading-font lowercase text-xl text-foreground">Full Review Queue</CardTitle>
                     <CardDescription>Review process for {profile.hub_location} submissions.</CardDescription>
                   </div>
                   <div className="flex items-center gap-2">
@@ -1132,7 +1132,7 @@ export default function Admin() {
             {activeSection === 'analytics' && (
               <Card className="rounded-2xl border-border bg-card">
                 <CardHeader>
-                  <CardTitle className="heading-font text-xl text-foreground">Teaching Analytics</CardTitle>
+                  <CardTitle className="heading-font lowercase text-xl text-foreground">Teaching Analytics</CardTitle>
                   <CardDescription>Metrics based on user events and submission velocity.</CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -1148,7 +1148,7 @@ export default function Admin() {
             {activeSection === 'settings' && (
               <Card className="rounded-2xl border-border bg-card">
                 <CardHeader>
-                  <CardTitle className="heading-font text-xl text-foreground">Instructor Preferences</CardTitle>
+                  <CardTitle className="heading-font lowercase text-xl text-foreground">Instructor Preferences</CardTitle>
                   <CardDescription>Configure notifications and assignment validation rules.</CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -1177,7 +1177,7 @@ export default function Admin() {
             <Card className="rounded-2xl border-border">
               <CardContent className="space-y-4 p-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-base text-foreground heading-font">Instructor Profile</h3>
+                  <h3 className="text-base text-foreground heading-font lowercase">Instructor Profile</h3>
                   <LuEllipsis className="h-4 w-4 text-muted-foreground" />
                 </div>
                 <div className="flex flex-col items-center">
@@ -1208,7 +1208,7 @@ export default function Admin() {
 
             <Card className="rounded-2xl border-border">
               <CardHeader className="pb-2">
-                <CardTitle className="heading-font text-base text-foreground">Review Velocity</CardTitle>
+                <CardTitle className="heading-font lowercase text-base text-foreground">Review Velocity</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
                 <div className="rounded-xl bg-sidebar p-3 flex justify-between items-center">
@@ -1246,7 +1246,7 @@ export default function Admin() {
 
             <Card className="rounded-2xl border-border">
               <CardHeader className="pb-2">
-                <CardTitle className="heading-font text-base text-foreground">Recent Student Activity</CardTitle>
+                <CardTitle className="heading-font lowercase text-base text-foreground">Recent Student Activity</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
                 {hubRecentActivity.length > 0 ? (

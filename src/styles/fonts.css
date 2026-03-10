@@ -16,4 +16,5 @@ h6,
 .heading-font {
   font-family: 'Chillax', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   font-weight: 600;
+  text-transform: lowercase;
 }

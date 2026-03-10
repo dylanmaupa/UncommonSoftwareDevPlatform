@@ -145,7 +145,7 @@ function DashboardMain({
           <Card className="overflow-hidden rounded-2xl border-border bg-primary">
             <CardContent className="p-4 sm:p-6">
               <p className="text-xs uppercase tracking-wider text-white/80">Online Course</p>
-              <h2 className="heading-font mt-2 max-w-md text-2xl leading-tight text-white sm:text-3xl">
+              <h2 className="heading-font lowercase mt-2 max-w-md text-2xl leading-tight text-white sm:text-3xl">
                 Sharpen Your Skills with Professional Online Courses
               </h2>
               <p className="mt-2 text-sm text-white/80">Continue with: {nextCourse.title}</p>
@@ -161,7 +161,7 @@ function DashboardMain({
           {inProgressCourses.length > 0 && (
             <div>
               <div className="mb-3 flex items-center justify-between">
-                <h3 className="text-lg text-foreground heading-font">Timeline</h3>
+                <h3 className="text-lg text-foreground heading-font lowercase">Timeline</h3>
                 <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground" onClick={() => navigate('/courses')}>
                   <LuChevronRight className="h-4 w-4" />
                 </Button>
@@ -197,7 +197,7 @@ function DashboardMain({
             <Card className="rounded-2xl border-border">
               <CardContent className="p-0">
                 <div className="flex items-center justify-between border-b border-border px-4 py-3">
-                  <h3 className="text-lg text-foreground heading-font">Instructor Exercises</h3>
+                  <h3 className="text-lg text-foreground heading-font lowercase">Instructor Exercises</h3>
                   <Link to="/sandbox" className="text-xs text-muted-foreground hover:text-foreground">Open sandbox</Link>
                 </div>
 
@@ -259,7 +259,7 @@ function DashboardMain({
           <Card className="rounded-2xl border-border">
             <CardContent className="p-0">
               <div className="flex items-center justify-between border-b border-border px-4 py-3">
-                <h3 className="text-lg text-foreground heading-font">
+                <h3 className="text-lg text-foreground heading-font lowercase">
                   {profile.role === 'instructor' ? 'Student Directory' : 'Your Lesson'}
                 </h3>
                 <Link to="/courses" className="text-xs text-muted-foreground hover:text-foreground">See all</Link>
@@ -337,7 +337,7 @@ function DashboardMain({
           <Card className="rounded-2xl border-border">
             <CardContent className="space-y-4 p-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-base text-foreground heading-font">Profile Overview</h3>
+                <h3 className="text-base text-foreground heading-font lowercase">Profile Overview</h3>
                 <LuEllipsis className="h-4 w-4 text-muted-foreground" />
               </div>
               <div className="flex flex-col items-center">
@@ -381,7 +381,7 @@ function DashboardMain({
           <Card className="rounded-2xl border-border">
             <CardContent className="space-y-3 p-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-base text-foreground heading-font">
+                <h3 className="text-base text-foreground heading-font lowercase">
                   {profile.role === 'instructor' ? 'Other Instructors' : 'Your Instructors'}
                 </h3>
                 <LuUsers className="h-4 w-4 text-muted-foreground" />
@@ -579,3 +579,4 @@ export default function Dashboard() {
   );
 }
 
+         

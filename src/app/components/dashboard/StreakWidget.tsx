@@ -58,7 +58,7 @@ export default function StreakWidget({ streak, userId, lastActivityDate }: Strea
                             <LuFlame className={`h-6 w-6 ${isActiveToday ? 'fill-blue-500 text-blue-500 drop-shadow-[0_0_8px_rgba(59,130,246,0.5)]' : 'text-muted-foreground'}`} />
                         </div>
                         <div>
-                            <h3 className="text-xl font-bold heading-font text-foreground flex items-center gap-2">
+                            <h3 className="text-xl font-bold heading-font lowercase text-foreground flex items-center gap-2">
                                 {streak} {streak === 1 ? 'Day' : 'Days'}
                             </h3>
                             <p className="text-xs text-muted-foreground font-medium">Current Streak</p>
