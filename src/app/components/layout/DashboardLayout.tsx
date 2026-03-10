@@ -245,45 +245,31 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 const Icon = item.icon;
                 const isActive = isNavItemActive(item.path);
 
-                return (
-                  <Link
-                    key={`${item.label}-${item.path}`}
-                    to={item.path}
-                    className={`flex items-center gap-2 rounded-lg px-2 py-2 text-sm transition-colors ${isActive ? 'text-foreground' : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
-                      }`}
-                  >
-                    <Icon className="h-4 w-4" />
-                    <span>{item.label}</span>
-                  </Link>
-                );
-              })}
-            </nav>
-          </div>
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${isActive
+                  ? 'bg-[#0747a1] text-white'
+                  : 'text-[#6B7280] hover:bg-[#F5F5FA]'
+                  }`}
+              >
+                <Icon className="w-5 h-5" />
+                <span className="font-medium heading-font">{item.label}</span>
+              </Link>
+            );
+          })}
 
-          <div className="mt-auto space-y-1 pt-8">
-            <p className="px-2 pb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
-              Settings
-            </p>
-            <Link
-              to="/settings"
-              className={`flex items-center gap-2 rounded-lg px-2 py-2 text-sm transition-colors ${location.pathname === '/settings'
-                ? 'text-foreground'
-                : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
-                }`}
-            >
-              <LuSettings className="h-4 w-4" />
-              <span>Settings</span>
-            </Link>
-            <Button
-              variant="ghost"
-              onClick={handleLogout}
-              className="mt-1 w-full justify-start gap-2 rounded-lg px-2 py-2 text-sm text-[#FF6B35] hover:bg-secondary hover:text-[#FF6B35]"
-            >
-              <LuLogOut className="h-4 w-4" />
-              Logout
-            </Button>
-          </div>
-        </aside>
+          <Button
+            variant="ghost"
+            onClick={handleLogout}
+            className="w-full justify-start gap-3 text-[#6B7280] hover:bg-[#F5F5FA] hover:text-[#1a1a2e] mt-2"
+          >
+            <LogOut className="w-5 h-5" />
+            <span className="heading-font">Logout</span>
+          </Button>
+        </nav>
+      </aside>
 
         <main className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto">{children}</main>
       </div>
