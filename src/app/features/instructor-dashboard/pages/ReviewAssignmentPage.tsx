@@ -101,6 +101,10 @@ export default function ReviewAssignmentPage({
   const [lastRunMs, setLastRunMs] = useState<number | null>(null);
   const terminalEndRef = useRef<HTMLDivElement>(null);
 
+  // ── Code editing state ────────────────────────────────────────────────────
+  const [isEditingCode, setIsEditingCode] = useState(false);
+  const [currentCode, setCurrentCode] = useState<string>(submission.submissionContent);
+
   // ── Quick comments dropdown close on outside click ────────────────────────
   const quickCommentsRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -152,7 +156,7 @@ export default function ReviewAssignmentPage({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          code: submission.submissionContent,
+          code: currentCode,
           language: submission.language ?? 'python',
         }),
       });
@@ -299,15 +303,26 @@ export default function ReviewAssignmentPage({
               </div>
 
               {isCodeSubmission && (
-                <Button
-                  size="sm"
-                  className="rounded-full h-7 text-xs bg-emerald-600 hover:bg-emerald-500 gap-1"
-                  onClick={handleRunCode}
-                  disabled={isRunning}
-                >
-                  {isRunning ? <LuLoader className="h-3 w-3 animate-spin" /> : <LuPlay className="h-3 w-3" />}
-                  Run Student Code
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant={isEditingCode ? "outline" : "secondary"}
+                    className={`rounded-full h-7 text-xs gap-1 ${isEditingCode ? 'border-amber-200 text-amber-700 bg-amber-50 hover:bg-amber-100' : 'bg-slate-200 text-slate-700 hover:bg-slate-300'}`}
+                    onClick={() => setIsEditingCode(!isEditingCode)}
+                  >
+                    {isEditingCode ? <LuX className="h-3 w-3" /> : <LuCode className="h-3 w-3" />}
+                    {isEditingCode ? 'Exit Edit Mode' : 'Edit Code'}
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="rounded-full h-7 text-xs bg-emerald-600 hover:bg-emerald-500 gap-1"
+                    onClick={handleRunCode}
+                    disabled={isRunning}
+                  >
+                    {isRunning ? <LuLoader className="h-3 w-3 animate-spin" /> : <LuPlay className="h-3 w-3" />}
+                    Run Student Code
+                  </Button>
+                </div>
               )}
             </div>
 
@@ -317,10 +332,11 @@ export default function ReviewAssignmentPage({
                 <Editor
                   height="100%"
                   language={submission.language ?? 'python'}
-                  value={submission.submissionContent}
+                  value={currentCode}
+                  onChange={(val) => setCurrentCode(val ?? '')}
                   theme="vs-dark"
                   options={{
-                    readOnly: true,
+                    readOnly: !isEditingCode,
                     fontSize: 14,
                     fontFamily: '"JetBrains Mono", "Fira Code", monospace',
                     minimap: { enabled: false },
