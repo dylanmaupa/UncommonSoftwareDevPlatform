@@ -20,6 +20,7 @@ import {
   LuChevronRight,
   LuRotateCcw,
   LuMaximize,
+  LuFileText,
 } from 'react-icons/lu';
 import { supabase } from '../../../../lib/supabase';
 import ReviewAssignmentPage from './ReviewAssignmentPage';
@@ -180,346 +181,339 @@ export default function SubmissionsPage() {
 
   return (
     <>
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-7xl mx-auto">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Submissions & Grading</h1>
-          <p className="text-slate-500 mt-1">Review student submissions and provide feedback</p>
+          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 heading-font">Submissions</h1>
+          <p className="text-slate-500 mt-1 max-w-2xl">Manage and review student work, provide feedback, and track progress.</p>
         </div>
-        <div className="flex items-center gap-3">
-          <Badge className="bg-blue-100 text-blue-700 rounded-full px-3 py-1">
-            <LuFileCheck className="h-3 w-3 mr-1" />
-            {submissions.filter(s => s.status === 'pending').length} Pending
-          </Badge>
-          <Badge className="bg-emerald-100 text-emerald-700 rounded-full px-3 py-1">
-            <LuCircleCheck className="h-3 w-3 mr-1" />
-            {submissions.filter(s => s.status === 'approved').length} Approved
-          </Badge>
+        <div className="flex items-center gap-3 bg-white p-1.5 rounded-full border border-slate-200 shadow-sm">
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 rounded-full border border-amber-100">
+            <div className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+            <span className="text-xs font-semibold text-amber-700">{submissions.filter(s => s.status === 'pending').length} Pending</span>
+          </div>
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 rounded-full border border-emerald-100">
+            <LuCircleCheck className="h-3.5 w-3.5 text-emerald-500" />
+            <span className="text-xs font-semibold text-emerald-700">{submissions.filter(s => s.status === 'approved').length} Approved</span>
+          </div>
         </div>
       </div>
 
-      {/* Filter */}
-      <Card className="rounded-2xl border-blue-200/60 bg-white">
-        <CardContent className="p-4">
-          <div className="flex items-center gap-2">
-            <LuFilter className="h-4 w-4 text-slate-400" />
-            <select 
-              value={statusFilter}
-              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setStatusFilter(e.target.value)}
-              className="h-10 rounded-full border border-slate-200 bg-white px-4 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="all">All Submissions</option>
-              <option value="pending">Pending Review</option>
-              <option value="reviewed">Reviewed</option>
-              <option value="approved">Approved</option>
-              <option value="rejected">Needs Revision</option>
-            </select>
+      {/* Main Content Layout */}
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
+        
+        {/* Left Column: Submissions List & Filters */}
+        <div className="xl:col-span-8 flex flex-col gap-4">
+          
+          {/* Filter Bar */}
+          <div className="flex items-center justify-between bg-white px-4 py-3 rounded-2xl border border-slate-200 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-slate-50 rounded-lg border border-slate-100">
+                <LuFilter className="h-4 w-4 text-slate-500" />
+              </div>
+              <span className="text-sm font-medium text-slate-700">Filter Status:</span>
+              <select 
+                value={statusFilter}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setStatusFilter(e.target.value)}
+                className="h-9 px-3 text-sm font-medium text-slate-800 bg-transparent border-none appearance-none focus:ring-0 cursor-pointer outline-none"
+              >
+                <option value="all">All Submissions</option>
+                <option value="pending">Pending Review</option>
+                <option value="reviewed">Reviewed</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Needs Revision</option>
+              </select>
+            </div>
+            
+            <div className="text-sm text-slate-400 font-medium">
+              Showing {filteredSubmissions.length} result{filteredSubmissions.length !== 1 ? 's' : ''}
+            </div>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Submissions List */}
-        <Card className="rounded-2xl border-blue-200/60 bg-white lg:col-span-2">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-lg font-semibold text-slate-900">Review Queue</CardTitle>
-            <CardDescription>Student submissions awaiting your review</CardDescription>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-slate-100 text-xs text-slate-500 bg-slate-50/50">
-                    <th className="px-4 py-3 font-medium text-left">Student</th>
-                    <th className="px-4 py-3 font-medium text-left">Exercise</th>
-                    <th className="px-4 py-3 font-medium text-left">Status</th>
-                    <th className="px-4 py-3 font-medium text-left">Submitted</th>
-                    <th className="px-4 py-3 font-medium text-left">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredSubmissions.map((submission) => (
-                    <tr 
-                      key={submission.id} 
-                      className={`border-b border-slate-50 last:border-b-0 hover:bg-blue-50/30 transition-colors cursor-pointer ${
-                        selectedSubmission?.id === submission.id ? 'bg-blue-50/50' : ''
-                      }`}
-                      onClick={() => {
-                        setSelectedSubmission(submission);
-                        setFeedback(submission.feedback || '');
-                        setGrade(submission.grade ? submission.grade.toString() : '');
-                      }}
-                    >
-                      <td className="px-4 py-4">
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-10 w-10">
-                            <AvatarFallback className="bg-blue-100 text-blue-700 font-medium">
-                              {submission.studentName.split(' ').map(n => n[0]).join('')}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-medium text-sm text-slate-900">{submission.studentName}</p>
-                            <p className="text-xs text-slate-500">{submission.studentEmail}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4">
-                        <p className="text-sm font-medium text-slate-900">{submission.exerciseTitle}</p>
-                        <p className="text-xs text-slate-500 capitalize">{submission.exerciseType}</p>
-                      </td>
-                      <td className="px-4 py-4">{getStatusBadge(submission.status)}</td>
-                      <td className="px-4 py-4 text-sm text-slate-500">
-                        <div className="flex items-center gap-1">
-                          <LuClock className="h-3 w-3" />
-                          {submission.submittedAt}
-                        </div>
-                      </td>
-                      <td className="px-4 py-4">
-                        <Button 
-                          size="sm" 
-                          className={`rounded-full h-8 text-xs ${
-                            submission.status === 'pending' 
-                              ? 'bg-blue-600 hover:bg-blue-700 text-white' 
-                              : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                          }`}
-                          onClick={(e) => {
-                            e.stopPropagation();
+          {/* Submissions Table List */}
+          <Card className="rounded-2xl border-slate-200 bg-white overflow-hidden shadow-sm">
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="border-b border-slate-100 text-[11px] font-semibold text-slate-400 uppercase tracking-wider bg-slate-50/50">
+                      <th className="px-5 py-4">Student</th>
+                      <th className="px-5 py-4">Exercise</th>
+                      <th className="px-5 py-4">Status</th>
+                      <th className="px-5 py-4">Submitted</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {filteredSubmissions.map((submission) => {
+                      const isSelected = selectedSubmission?.id === submission.id;
+                      return (
+                        <tr 
+                          key={submission.id} 
+                          className={`transition-all duration-200 cursor-pointer group
+                            ${isSelected ? 'bg-blue-50/40 relative' : 'hover:bg-slate-50'}
+                          `}
+                          onClick={() => {
                             setSelectedSubmission(submission);
                             setFeedback(submission.feedback || '');
                             setGrade(submission.grade ? submission.grade.toString() : '');
                           }}
                         >
-                          {submission.status === 'pending' ? 'Review' : 'View'}
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            {filteredSubmissions.length === 0 && (
-              <div className="text-center py-12 text-slate-500">
-                <LuFileCheck className="h-12 w-12 mx-auto mb-3 text-slate-300" />
-                <p>No submissions found matching your criteria.</p>
+                          {/* Active Indicator Line */}
+                          {isSelected && (
+                            <td className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 rounded-r-full" />
+                          )}
+                          
+                          <td className="px-5 py-4">
+                            <div className="flex items-center gap-3">
+                              <Avatar className={`h-9 w-9 border-2 transition-colors ${isSelected ? 'border-blue-200' : 'border-transparent group-hover:border-slate-200'}`}>
+                                <AvatarFallback className={`${isSelected ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600'} text-xs font-semibold`}>
+                                  {submission.studentName.split(' ').map(n => n[0]).join('')}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className={`text-sm font-semibold ${isSelected ? 'text-blue-900' : 'text-slate-900'}`}>{submission.studentName}</p>
+                                <p className="text-xs text-slate-500 font-medium">{submission.studentEmail}</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-5 py-4">
+                            <div className="flex items-center gap-2">
+                              {submission.exerciseType === 'coding' ? (
+                                <LuCode className="h-4 w-4 text-indigo-400" />
+                              ) : (
+                                <LuFileText className="h-4 w-4 text-emerald-400" />
+                              )}
+                              <p className={`text-sm font-medium ${isSelected ? 'text-blue-900' : 'text-slate-700'}`}>{submission.exerciseTitle}</p>
+                            </div>
+                          </td>
+                          <td className="px-5 py-4">{getStatusBadge(submission.status)}</td>
+                          <td className="px-5 py-4">
+                            {submission.status === 'pending' && !isSelected ? (
+                              <Button 
+                                size="sm" 
+                                className="h-8 rounded-full bg-slate-900 text-white hover:bg-slate-800 text-xs shadow-sm font-medium px-4"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedSubmission(submission);
+                                  setFeedback(submission.feedback || '');
+                                  setGrade(submission.grade ? submission.grade.toString() : '');
+                                }}
+                              >
+                                Grade Now
+                              </Button>
+                            ) : (
+                              <div className="flex items-center gap-1.5 text-xs font-medium text-slate-400">
+                                <LuClock className="h-3.5 w-3.5" />
+                                {submission.submittedAt}
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
-            )}
-          </CardContent>
-        </Card>
+              
+              {/* Empty State */}
+              {filteredSubmissions.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
+                  <div className="h-16 w-16 rounded-full bg-slate-50 flex items-center justify-center mb-4 border border-slate-100 shadow-sm">
+                    <LuCheck className="h-8 w-8 text-slate-300" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-slate-900">All caught up!</h3>
+                  <p className="text-sm text-slate-500 max-w-sm mt-1">
+                    There are no submissions matching your current filters. Great job staying on top of the queue.
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
 
-        {/* Review Panel */}
-        <div className="space-y-6">
+        {/* Right Column: Sticky Review Panel */}
+        <div className="xl:col-span-4 sticky top-6">
           {selectedSubmission ? (
-            <>
-              <Card className="rounded-2xl border-blue-200/60 bg-white">
-                <CardHeader className="pb-4">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg font-semibold text-slate-900">Review Submission</CardTitle>
+            <Card className="rounded-2xl border-slate-200 shadow-sm bg-white overflow-hidden flex flex-col h-[calc(100vh-120px)] xl:h-auto">
+              {/* Panel Header */}
+              <div className="bg-slate-50 px-5 py-4 border-b border-slate-100 flex flex-col gap-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-10 w-10 border border-slate-200 shadow-sm bg-white">
+                      <AvatarFallback className="bg-transparent text-slate-700 font-bold text-sm">
+                        {selectedSubmission.studentName.split(' ').map(n => n[0]).join('')}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <h3 className="text-sm font-bold text-slate-900 leading-none">{selectedSubmission.studentName}</h3>
+                      <p className="text-[11px] text-slate-500 font-medium mt-1 pr-2 truncate max-w-[180px]" title={selectedSubmission.exerciseTitle}>
+                        {selectedSubmission.exerciseTitle}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
                     <Button 
                       size="icon" 
                       variant="ghost" 
-                      className="h-8 w-8 rounded-full"
+                      className="h-8 w-8 rounded-full text-blue-600 hover:text-blue-700 hover:bg-blue-100 bg-blue-50 transition-colors"
+                      title="Open Full Review Environment"
+                      onClick={() => {
+                        setFullReviewSubmission({
+                          id: selectedSubmission.id,
+                          studentName: selectedSubmission.studentName,
+                          studentEmail: selectedSubmission.studentEmail,
+                          exerciseTitle: selectedSubmission.exerciseTitle,
+                          exerciseDescription: selectedSubmission.exerciseTitle,
+                          exerciseModule: '',
+                          exerciseType: (selectedSubmission.exerciseType === 'coding' ? 'coding' : 'written') as any,
+                          language: selectedSubmission.exerciseType === 'coding' ? 'python' : undefined,
+                          submittedAt: selectedSubmission.submittedAt,
+                          submissionContent: selectedSubmission.code || '',
+                          existingGrade: selectedSubmission.grade,
+                          existingFeedback: selectedSubmission.feedback,
+                          status: selectedSubmission.status,
+                        });
+                      }}
+                    >
+                      <LuMaximize className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      size="icon" 
+                      variant="ghost" 
+                      className="h-8 w-8 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-200 bg-slate-100 transition-colors"
                       onClick={() => setSelectedSubmission(null)}
                     >
                       <LuX className="h-4 w-4" />
                     </Button>
                   </div>
-                  <CardDescription>
-                    {selectedSubmission.exerciseTitle} by {selectedSubmission.studentName}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Open Full Review Button */}
-                  <Button
-                    variant="outline"
-                    className="w-full rounded-full border-blue-200 text-blue-600 hover:bg-blue-50 h-9 gap-2 text-xs"
-                    onClick={() => {
-                      setFullReviewSubmission({
-                        id: selectedSubmission.id,
-                        studentName: selectedSubmission.studentName,
-                        studentEmail: selectedSubmission.studentEmail,
-                        exerciseTitle: selectedSubmission.exerciseTitle,
-                        exerciseDescription: selectedSubmission.exerciseTitle,
-                        exerciseModule: '',
-                        exerciseType: (selectedSubmission.exerciseType === 'coding' ? 'coding' : 'written') as any,
-                        language: selectedSubmission.exerciseType === 'coding' ? 'python' : undefined,
-                        submittedAt: selectedSubmission.submittedAt,
-                        submissionContent: selectedSubmission.code || '',
-                        existingGrade: selectedSubmission.grade,
-                        existingFeedback: selectedSubmission.feedback,
-                        status: selectedSubmission.status,
-                      });
-                    }}
-                  >
-                    <LuMaximize className="h-3.5 w-3.5" />
-                    Open Full Review
-                  </Button>
+                </div>
+              </div>
 
-                  {/* Student Info */}
-                  <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50">
-                    <Avatar className="h-12 w-12">
-                      <AvatarFallback className="bg-blue-100 text-blue-700 font-medium text-lg">
-                        {selectedSubmission.studentName.split(' ').map(n => n[0]).join('')}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-medium text-slate-900">{selectedSubmission.studentName}</p>
-                      <p className="text-sm text-slate-500">{selectedSubmission.studentEmail}</p>
-                      <p className="text-xs text-slate-400">Submitted {selectedSubmission.submittedAt}</p>
+              {/* Panel Content (Scrollable) */}
+              <div className="p-5 flex-1 overflow-y-auto space-y-6 custom-scrollbar bg-white">
+                
+                {/* Status & Timing */}
+                <div className="flex items-center justify-between text-xs font-medium text-slate-500 bg-slate-50 px-3 py-2.5 rounded-lg border border-slate-100">
+                  <div className="flex items-center gap-1.5">
+                    <LuClock className="h-4 w-4 text-slate-400" />
+                    {selectedSubmission.submittedAt}
+                  </div>
+                  {getStatusBadge(selectedSubmission.status)}
+                </div>
+
+                {/* Code Preview (for coding exercises) */}
+                {selectedSubmission.exerciseType === 'coding' && selectedSubmission.code && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <LuCode className="h-4 w-4 text-indigo-500" />
+                      <h4 className="font-bold text-[11px] text-slate-700 uppercase tracking-wider">
+                        Code Snapshot
+                      </h4>
+                    </div>
+                    <div className="bg-[#0d1117] rounded-xl p-4 overflow-x-auto max-h-[160px] shadow-sm custom-scrollbar relative group border border-slate-800">
+                      <pre className="text-[11px] leading-relaxed text-slate-300 font-mono">
+                        <code>{selectedSubmission.code}</code>
+                      </pre>
                     </div>
                   </div>
+                )}
 
-                  {/* Code Preview (for coding exercises) */}
-                  {selectedSubmission.code && (
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-medium text-sm text-slate-900 flex items-center gap-2">
-                          <LuCode className="h-4 w-4 text-blue-600" />
-                          Code Submission
-                        </h4>
-                        <Button size="sm" variant="outline" className="rounded-full h-8 text-xs">
-                          <LuPlay className="mr-1 h-3 w-3" />
-                          Run Tests
-                        </Button>
-                      </div>
-                      <div className="bg-slate-900 rounded-xl p-4 overflow-x-auto">
-                        <pre className="text-sm text-slate-300 font-mono">
-                          <code>{selectedSubmission.code}</code>
-                        </pre>
-                      </div>
-                    </div>
-                  )}
+                <div className="h-px w-full bg-slate-100" />
 
-                  {/* Test Results */}
-                  {selectedSubmission.testResults && (
-                    <div className="p-4 rounded-xl bg-slate-50">
-                      <h4 className="font-medium text-sm text-slate-900 mb-3">Test Results</h4>
-                      <div className="space-y-2">
-                        {Array.from({ length: selectedSubmission.testResults.total }).map((_, i) => (
-                          <div key={i} className="flex items-center gap-2">
-                            {i < selectedSubmission.testResults!.passed ? (
-                              <LuCheck className="h-4 w-4 text-emerald-500" />
-                            ) : (
-                              <LuX className="h-4 w-4 text-rose-500" />
-                            )}
-                            <span className="text-sm text-slate-700">Test {i + 1}</span>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="mt-3 pt-3 border-t border-slate-200">
-                        <p className="text-sm text-slate-600">
-                          {selectedSubmission.testResults.passed}/{selectedSubmission.testResults.total} tests passed
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Grade Display */}
-                  {selectedSubmission.grade !== undefined && (
-                    <div className="p-4 rounded-xl bg-blue-50 border border-blue-100">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm text-blue-700 font-medium">Grade</p>
-                          <p className="text-2xl font-bold text-blue-900">{selectedSubmission.grade}%</p>
-                        </div>
-                        <div className="h-12 w-12 rounded-full bg-blue-200 flex items-center justify-center text-blue-700">
-                          <LuCircleCheck className="h-6 w-6" />
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Feedback */}
-                  <div>
-                    <h4 className="font-medium text-sm text-slate-900 mb-2 flex items-center gap-2">
-                      <LuMessageSquare className="h-4 w-4 text-blue-600" />
-                      Instructor Feedback
-                    </h4>
-                    <Textarea 
-                      placeholder="Provide feedback to the student..."
-                      value={feedback}
-                      onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setFeedback(e.target.value)}
-                      className="min-h-[80px] rounded-xl border-slate-200"
-                      disabled={selectedSubmission.status !== 'pending'}
-                    />
-                  </div>
-
-                  {/* Grade Input */}
-                  <div>
-                    <h4 className="font-medium text-sm text-slate-900 mb-2 flex items-center gap-2">
-                       <LuCheck className="h-4 w-4 text-blue-600" />
-                       Final Grade (Out of 100)
-                    </h4>
+                {/* Quick Grade */}
+                <div className="space-y-2.5">
+                  <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block">Score (0-100)</label>
+                  <div className="relative">
                     <Input 
-                      type="number"
-                      placeholder="e.g. 95"
+                      type="number" 
+                      min="0" 
+                      max="100"
+                      placeholder="Enter grade..."
                       value={grade}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setGrade(e.target.value)}
-                      className="rounded-xl border-slate-200"
-                      disabled={selectedSubmission.status !== 'pending'}
+                      onChange={(e) => setGrade(e.target.value)}
+                      className="h-12 pl-4 pr-12 rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500 font-bold text-slate-900 text-base shadow-sm"
                     />
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-lg select-none pointer-events-none">%</div>
                   </div>
+                </div>
 
-                  {/* Action Buttons */}
-                  {selectedSubmission.status === 'pending' && (
-                    <div className="flex gap-2">
-                      <Button 
-                        className="flex-1 rounded-full bg-emerald-600 hover:bg-emerald-700"
-                        onClick={handleApprove}
-                      >
-                        <LuCircleCheck className="mr-2 h-4 w-4" />
-                        Approve
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        className="flex-1 rounded-full border-rose-200 text-rose-600 hover:bg-rose-50"
-                        onClick={handleRequestRevision}
-                      >
-                        <LuRotateCcw className="mr-2 h-4 w-4" />
-                        Request Revision
-                      </Button>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </>
-          ) : (
-            <Card className="rounded-2xl border-blue-200/60 bg-white">
-              <CardContent className="p-8 text-center">
-                <LuFileCheck className="h-12 w-12 mx-auto mb-3 text-slate-300" />
-                <p className="text-slate-500">Select a submission to review</p>
-              </CardContent>
+                {/* Quick Feedback */}
+                <div className="space-y-2.5">
+                  <label className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">Instructor Feedback</span>
+                  </label>
+                  <Textarea 
+                    placeholder="Write detailed feedback here..."
+                    className="min-h-[140px] rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500 resize-none text-sm placeholder:text-slate-400 leading-relaxed shadow-sm p-4"
+                    value={feedback}
+                    onChange={(e) => setFeedback(e.target.value)}
+                  />
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-3 pt-2 pb-2">
+                  <Button 
+                    className="flex-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all text-sm font-bold h-12"
+                    onClick={handleApprove}
+                    disabled={!grade || !feedback}
+                  >
+                    <LuCircleCheck className="h-5 w-5 mr-2 opacity-90" />
+                    Approve
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="flex-1 rounded-xl border-rose-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700 shadow-sm transition-all text-sm font-bold h-12"
+                    onClick={handleRequestRevision}
+                    disabled={!feedback}
+                  >
+                    <LuRotateCcw className="h-5 w-5 mr-2 opacity-90" />
+                    Revise
+                  </Button>
+                </div>
+
+              </div>
             </Card>
-          )}
+            ) : (
+              /* Empty Right Column */
+              <div className="h-[300px] xl:h-[600px] border-2 border-dashed border-slate-200 rounded-3xl flex flex-col items-center justify-center text-center p-6 bg-slate-50/50">
+                <div className="h-16 w-16 bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center mb-4 transform -rotate-6">
+                  <LuFileCheck className="h-7 w-7 text-slate-300" />
+                </div>
+                <h3 className="text-base font-semibold text-slate-800">Select a submission</h3>
+                <p className="text-sm text-slate-500 mt-1 max-w-[200px]">
+                  Click on any row in the queue to view quick grading options.
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
 
-    {/* Full Review Page */}
-    {fullReviewSubmission && (
-      <ReviewAssignmentPage
-        submission={fullReviewSubmission!}
-        onClose={() => {
-          setFullReviewSubmission(null);
-          loadSubmissions();
-        }}
-        onSubmitReview={async (payload) => {
-          try {
-            await supabase
-              .from('instructor_exercises')
-              .update({
-                status: payload.action === 'approve' ? 'approved' : 'rejected',
-                feedback: payload.feedback,
-                grade: payload.grade,
-              })
-              .eq('id', payload.submissionId);
-          } catch (err) {
-            console.error('Error submitting review', err);
-          }
-        }}
-      />
-    )}
-  </>
+      {/* Full Review Page */}
+      {fullReviewSubmission && (
+        <ReviewAssignmentPage
+          submission={fullReviewSubmission!}
+          onClose={() => {
+            setFullReviewSubmission(null);
+            loadSubmissions();
+          }}
+          onSubmitReview={async (payload) => {
+            try {
+              await supabase
+                .from('instructor_exercises')
+                .update({
+                  status: payload.action === 'approve' ? 'approved' : 'rejected',
+                  feedback: payload.feedback,
+                  grade: payload.grade,
+                })
+                .eq('id', payload.submissionId);
+            } catch (err) {
+              console.error('Error submitting review', err);
+            }
+          }}
+        />
+      )}
+    </>
   );
 }
