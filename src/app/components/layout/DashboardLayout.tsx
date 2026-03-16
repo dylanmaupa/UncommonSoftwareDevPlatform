@@ -46,6 +46,26 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const checkUser = async () => {
     setIsAuthLoading(true);
+
+    // Bypass check: skip Supabase auth for admin/instructor testing bypass
+    const isAdminBypass = localStorage.getItem('admin_bypass') === 'true';
+    const isInstructorBypass = localStorage.getItem('instructor_bypass') === 'true';
+
+    if (isAdminBypass || isInstructorBypass) {
+      const mockUser = {
+        id: 'bypass-user',
+        email: isAdminBypass ? 'admin@uncommon.org' : 'instructor@uncommon.org',
+        email_confirmed_at: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+        user_metadata: { full_name: isAdminBypass ? 'Admin' : 'Instructor' },
+      };
+      setUser(mockUser);
+      setProfile({ full_name: isAdminBypass ? 'Admin' : 'Instructor', hub_location: 'bypass', role: 'instructor' });
+      setProfileRole('instructor');
+      setIsAuthLoading(false);
+      return;
+    }
+
     const { data: { user } } = await supabase.auth.getUser();
     setUser(user);
 
@@ -65,6 +85,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     }
     setIsAuthLoading(false);
   };
+
 
   useEffect(() => {
     loadPyodideEnvironment().catch(console.error);

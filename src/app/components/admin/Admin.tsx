@@ -283,6 +283,26 @@ export default function Admin() {
   useEffect(() => {
     async function loadData() {
       try {
+        // Bypass check: admin or instructor testing bypass
+        const isAdminBypass = localStorage.getItem('admin_bypass') === 'true';
+        const isInstructorBypass = localStorage.getItem('instructor_bypass') === 'true';
+
+        if (isAdminBypass || isInstructorBypass) {
+          const bypassProfile: UserProfile = {
+            id: 'bypass-user',
+            email: isAdminBypass ? 'admin@uncommon.org' : 'instructor@uncommon.org',
+            full_name: isAdminBypass ? 'Admin' : 'Instructor',
+            role: 'instructor',
+            hub_location: '',
+            xp: 0,
+            streak: 0,
+            last_activity_date: '',
+          };
+          setProfile(bypassProfile);
+          setIsLoading(false);
+          return;
+        }
+
         const { data: { user }, error: authError } = await supabase.auth.getUser();
 
         if (authError || !user) {

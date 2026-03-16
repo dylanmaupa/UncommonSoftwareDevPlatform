@@ -1,4 +1,4 @@
-﻿import { Link, useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -23,6 +23,15 @@ export default function Login() {
       if (email.toLowerCase() === 'instructor@uncommon.org') {
         localStorage.setItem('instructor_bypass', 'true');
         toast.success('Instructor Bypass Activated');
+        navigate('/instructor');
+        return;
+      }
+
+      // Admin bypass for testing
+      if (email.toLowerCase() === 'admin@uncommon.org') {
+        localStorage.setItem('admin_bypass', 'true');
+        localStorage.setItem('instructor_bypass', 'true');
+        toast.success('Admin Bypass Activated');
         navigate('/instructor');
         return;
       }
