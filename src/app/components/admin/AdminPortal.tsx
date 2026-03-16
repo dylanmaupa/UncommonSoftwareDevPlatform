@@ -73,16 +73,16 @@ const fmt = (date: string | null) => {
 };
 
 const roleBadge = (role: string | null) => {
-  if (role === 'instructor') return 'bg-blue-100 text-blue-700';
-  if (role === 'student') return 'bg-green-100 text-green-700';
-  return 'bg-gray-100 text-gray-500';
+  if (role === 'instructor') return 'bg-blue-200 text-blue-800';
+  if (role === 'student') return 'bg-blue-100 text-blue-700';
+  return 'bg-blue-50 text-blue-400';
 };
 
 const statusBadge = (status: string) => {
-  if (status === 'approved') return 'bg-green-100 text-green-700';
-  if (status === 'reviewed') return 'bg-blue-100 text-blue-700';
-  if (status === 'submitted') return 'bg-yellow-100 text-yellow-700';
-  return 'bg-gray-100 text-gray-500';
+  if (status === 'approved') return 'bg-blue-700 text-white';
+  if (status === 'reviewed') return 'bg-blue-400 text-white';
+  if (status === 'submitted') return 'bg-blue-200 text-blue-800';
+  return 'bg-blue-50 text-blue-500';
 };
 
 // ─── Stat Card ────────────────────────────────────────────────────────────────
@@ -291,7 +291,7 @@ export default function AdminPortal() {
       <aside className="hidden lg:flex flex-col w-60 shrink-0 border-r border-border bg-card h-full">
         {/* Brand */}
         <div className="flex items-center gap-3 px-5 py-5 border-b border-border">
-          <div className="h-9 w-9 rounded-xl bg-red-600 flex items-center justify-center flex-shrink-0">
+          <div className="h-9 w-9 rounded-xl bg-blue-700 flex items-center justify-center flex-shrink-0">
             <LuShieldCheck className="h-5 w-5 text-white" />
           </div>
           <div>
@@ -312,7 +312,7 @@ export default function AdminPortal() {
                 onClick={() => { setActiveTab(tab.id); setSearch(''); }}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
                   active
-                    ? 'bg-red-50 text-red-600'
+                    ? 'bg-blue-50 text-blue-700'
                     : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
                 }`}
               >
@@ -320,7 +320,7 @@ export default function AdminPortal() {
                 <span className="flex-1 text-left">{tab.label}</span>
                 {tab.count !== undefined && (
                   <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums ${
-                    active ? 'bg-red-100 text-red-600' : 'bg-secondary text-muted-foreground'
+                    active ? 'bg-blue-100 text-blue-700' : 'bg-secondary text-muted-foreground'
                   }`}>
                     {tab.count}
                   </span>
@@ -338,7 +338,7 @@ export default function AdminPortal() {
           </div>
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-blue-800 hover:bg-blue-50 transition-colors"
           >
             <LuLogOut className="h-4 w-4" />
             Log out
@@ -353,7 +353,7 @@ export default function AdminPortal() {
         <header className="sticky top-0 z-20 flex items-center gap-3 px-6 py-3 border-b border-border bg-card/95 backdrop-blur shrink-0">
           {/* Mobile brand */}
           <div className="flex items-center gap-2 lg:hidden">
-            <div className="h-7 w-7 rounded-lg bg-red-600 flex items-center justify-center">
+            <div className="h-7 w-7 rounded-lg bg-blue-700 flex items-center justify-center">
               <LuShieldCheck className="h-3.5 w-3.5 text-white" />
             </div>
             <span className="text-sm font-bold text-foreground">Admin</span>
@@ -367,7 +367,7 @@ export default function AdminPortal() {
               placeholder={`Search ${activeTab}…`}
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="h-9 w-full rounded-full border border-border bg-sidebar pl-9 pr-3 text-sm text-foreground outline-none focus:border-red-400 focus:ring-1 focus:ring-red-300"
+              className="h-9 w-full rounded-full border border-border bg-sidebar pl-9 pr-3 text-sm text-foreground outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-200"
             />
           </div>
 
@@ -383,7 +383,7 @@ export default function AdminPortal() {
           {/* Mobile logout */}
           <button
             onClick={handleLogout}
-            className="lg:hidden flex items-center gap-1.5 h-9 px-3 rounded-full bg-red-50 text-red-600 hover:bg-red-100 text-sm font-medium border border-red-200"
+            className="lg:hidden flex items-center gap-1.5 h-9 px-3 rounded-full bg-blue-50 text-blue-700 hover:bg-blue-100 text-sm font-medium border border-blue-200"
           >
             <LuLogOut className="h-4 w-4" />
           </button>
@@ -399,7 +399,7 @@ export default function AdminPortal() {
                 key={tab.id}
                 onClick={() => { setActiveTab(tab.id); setSearch(''); }}
                 className={`flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium border-b-2 whitespace-nowrap transition-colors ${
-                  active ? 'border-red-600 text-red-600' : 'border-transparent text-muted-foreground'
+                  active ? 'border-blue-700 text-blue-700' : 'border-transparent text-muted-foreground'
                 }`}
               >
                 <Icon className="h-3.5 w-3.5" />
@@ -422,12 +422,12 @@ export default function AdminPortal() {
 
             {/* KPI row 1 */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-              <StatCard label="Total Users" value={profiles.length} icon={LuUsers} color="bg-blue-100 text-blue-600" sub="All roles" />
-              <StatCard label="Students" value={students.length} icon={LuGraduationCap} color="bg-green-100 text-green-600" sub="Enrolled" />
-              <StatCard label="Instructors" value={instructors.length} icon={LuShieldCheck} color="bg-purple-100 text-purple-600" sub={`${hubs.length} hubs`} />
-              <StatCard label="Courses" value={courses.length} icon={LuBookOpen} color="bg-orange-100 text-orange-600" sub="Published" />
-              <StatCard label="Submissions" value={submissions.length} icon={LuClipboardList} color="bg-yellow-100 text-yellow-600" sub={`${pendingCount} pending`} />
-              <StatCard label="Activity Logs" value={activityLogs.length} icon={LuActivity} color="bg-red-100 text-red-600" sub="Last 200" />
+              <StatCard label="Total Users" value={profiles.length} icon={LuUsers} color="bg-blue-700 text-white" sub="All roles" />
+              <StatCard label="Students" value={students.length} icon={LuGraduationCap} color="bg-blue-500 text-white" sub="Enrolled" />
+              <StatCard label="Instructors" value={instructors.length} icon={LuShieldCheck} color="bg-blue-400 text-white" sub={`${hubs.length} hubs`} />
+              <StatCard label="Courses" value={courses.length} icon={LuBookOpen} color="bg-blue-300 text-blue-900" sub="Published" />
+              <StatCard label="Submissions" value={submissions.length} icon={LuClipboardList} color="bg-blue-200 text-blue-800" sub={`${pendingCount} pending`} />
+              <StatCard label="Activity Logs" value={activityLogs.length} icon={LuActivity} color="bg-blue-100 text-blue-700" sub="Last 200" />
             </div>
 
             {/* Submission breakdown */}
@@ -436,21 +436,21 @@ export default function AdminPortal() {
                 <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Assigned (Not started)</p>
                 <p className="text-3xl font-bold text-foreground mt-2">{pendingCount}</p>
                 <div className="mt-3 h-2 rounded-full bg-secondary overflow-hidden">
-                  <div className="h-full bg-gray-400 rounded-full" style={{ width: submissions.length ? `${(pendingCount / submissions.length) * 100}%` : '0%' }} />
+                  <div className="h-full bg-blue-200 rounded-full" style={{ width: submissions.length ? `${(pendingCount / submissions.length) * 100}%` : '0%' }} />
                 </div>
               </div>
               <div className="rounded-2xl border border-border bg-card p-5">
                 <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Submitted (Awaiting review)</p>
                 <p className="text-3xl font-bold text-foreground mt-2">{submittedCount}</p>
                 <div className="mt-3 h-2 rounded-full bg-secondary overflow-hidden">
-                  <div className="h-full bg-yellow-400 rounded-full" style={{ width: submissions.length ? `${(submittedCount / submissions.length) * 100}%` : '0%' }} />
+                  <div className="h-full bg-blue-400 rounded-full" style={{ width: submissions.length ? `${(submittedCount / submissions.length) * 100}%` : '0%' }} />
                 </div>
               </div>
               <div className="rounded-2xl border border-border bg-card p-5">
                 <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Reviewed / Approved</p>
                 <p className="text-3xl font-bold text-foreground mt-2">{reviewedCount}</p>
                 <div className="mt-3 h-2 rounded-full bg-secondary overflow-hidden">
-                  <div className="h-full bg-green-500 rounded-full" style={{ width: submissions.length ? `${(reviewedCount / submissions.length) * 100}%` : '0%' }} />
+                  <div className="h-full bg-blue-700 rounded-full" style={{ width: submissions.length ? `${(reviewedCount / submissions.length) * 100}%` : '0%' }} />
                 </div>
               </div>
             </div>
@@ -495,8 +495,8 @@ export default function AdminPortal() {
                         <p className="text-xs text-muted-foreground">{s.email}</p>
                       </Td>
                       <Td><span className="capitalize text-xs">{s.hub_location || '—'}</span></Td>
-                      <Td><span className="font-semibold text-orange-600">{(s.xp ?? 0).toLocaleString()}</span></Td>
-                      <Td><span className="font-semibold text-primary">🔥 {s.streak ?? 0}</span></Td>
+                      <Td><span className="font-semibold text-blue-700">{(s.xp ?? 0).toLocaleString()}</span></Td>
+                      <Td><span className="font-semibold text-blue-500">🔥 {s.streak ?? 0}</span></Td>
                       <Td className="text-muted-foreground text-xs">{fmt(s.last_activity_date)}</Td>
                     </tr>
                   ))}
@@ -536,7 +536,7 @@ export default function AdminPortal() {
                       </span>
                     </Td>
                     <Td className="capitalize text-xs text-muted-foreground">{p.hub_location || '—'}</Td>
-                    <Td className="font-semibold text-orange-600">{(p.xp ?? 0).toLocaleString()}</Td>
+                    <Td className="font-semibold text-blue-700">{(p.xp ?? 0).toLocaleString()}</Td>
                     <Td>🔥 {p.streak ?? 0}</Td>
                     <Td>{p.longest_streak ?? 0}</Td>
                     <Td>{(p.achievements ?? []).length}</Td>
@@ -573,12 +573,12 @@ export default function AdminPortal() {
                       <Td className="text-xs text-muted-foreground">{i.email}</Td>
                       <Td>
                         {i.hub_location
-                          ? <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-700 capitalize">{i.hub_location}</span>
+                          ? <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 capitalize">{i.hub_location}</span>
                           : <span className="text-xs text-muted-foreground">Not assigned</span>}
                       </Td>
                       <Td>🔥 {i.streak ?? 0}</Td>
                       <Td>
-                        <span className="font-semibold text-primary">{assigned}</span>
+                        <span className="font-semibold text-blue-700">{assigned}</span>
                         <span className="text-xs text-muted-foreground ml-1">exercise{assigned !== 1 ? 's' : ''}</span>
                       </Td>
                       <Td className="text-xs text-muted-foreground whitespace-nowrap">{fmt(i.last_activity_date)}</Td>
@@ -607,9 +607,9 @@ export default function AdminPortal() {
                     <div className="flex items-start justify-between gap-2">
                       <p className="font-semibold text-foreground truncate">{c.title}</p>
                       <span className={`flex-shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold ${
-                        c.difficulty === 'Beginner' ? 'bg-green-100 text-green-700' :
-                        c.difficulty === 'Intermediate' ? 'bg-yellow-100 text-yellow-700' :
-                        'bg-red-100 text-red-600'
+                        c.difficulty === 'Beginner' ? 'bg-blue-100 text-blue-700' :
+                        c.difficulty === 'Intermediate' ? 'bg-blue-300 text-blue-800' :
+                        'bg-blue-700 text-white'
                       }`}>{c.difficulty || '—'}</span>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{c.description}</p>
