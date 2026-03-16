@@ -19,7 +19,7 @@ import {
   LuTarget,
   LuUsers,
 } from 'react-icons/lu';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { calculateUserLevel } from '../../../lib/gamificationUtils';
 import { supabase } from '../../../lib/supabase';
 import { fetchProfileForAuthUser } from '../../lib/profileAccess';
@@ -35,6 +35,7 @@ interface UserProfile {
   streak?: number;
   xp?: number;
   last_activity_date?: string;
+  avatar_url?: string;
 }
 
 interface InstructorExercise {
@@ -63,6 +64,7 @@ interface DashboardMainProps {
   nextCourse: any;
   inProgressCourses: any[];
   assignedExercises: InstructorExercise[];
+  userProgress: any[];
 }
 
 function DashboardMain({
@@ -77,6 +79,7 @@ function DashboardMain({
   nextCourse,
   inProgressCourses,
   assignedExercises,
+  userProgress,
 }: DashboardMainProps) {
   const navigate = useNavigate();
   const getCourseImage = (title: string) => {
@@ -100,6 +103,68 @@ function DashboardMain({
 
   const featuredCourses = courses.slice(0, 3);
   const nickname = profile.full_name;
+
+  const activityData = useMemo(() => {
+    const buckets = [0, 0, 0, 0, 0];
+    const labels = ['', '', '']; 
+    
+    // Split last 30 days into 5 chunks of 6 days each.
+    // Bucket 0: oldest (Day -30 to -24), ..., Bucket 4: newest (Day -6 to Now)
+    const now = new Date();
+    const msPerDay = 1000 * 60 * 60 * 24;
+
+    // Filter progress that is completed
+    const completedProgress = userProgress?.filter(p => p.status === 'completed' && p.updated_at) || [];
+
+    completedProgress.forEach(p => {
+      const updatedDate = new Date(p.updated_at);
+      const diffDays = Math.floor((now.getTime() - updatedDate.getTime()) / msPerDay);
+      
+      if (diffDays >= 0 && diffDays < 30) {
+        // Map 0-5 to bucket 4, 6-11 to bucket 3... 24-29 to bucket 0
+        const bucketIndex = 4 - Math.floor(diffDays / 6);
+        if (bucketIndex >= 0 && bucketIndex < 5) {
+          buckets[bucketIndex]++;
+        }
+      }
+    });
+
+    // Formatting labels corresponding roughly to Bucket 0, Bucket 2, Bucket 4
+    const formatDateObj = (dateObj: Date) => {
+      return dateObj.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+    };
+
+    const d30 = new Date(now.getTime() - 30 * msPerDay);
+    const d24 = new Date(now.getTime() - 24 * msPerDay);
+    
+    const d18 = new Date(now.getTime() - 18 * msPerDay);
+    const d12 = new Date(now.getTime() - 12 * msPerDay);
+    
+    const d6 = new Date(now.getTime() - 6 * msPerDay);
+
+    labels[0] = `${formatDateObj(d30)} - ${formatDateObj(d24)}`;
+    labels[1] = `${formatDateObj(d18)} - ${formatDateObj(d12)}`;
+    labels[2] = `${formatDateObj(d6)} - ${formatDateObj(now)}`;
+
+    const maxCount = Math.max(...buckets, 1); // Avoid div by 0
+    // Possible heights from small ticks to full size based on granular completion milestones
+    const heightClasses = ['h-2', 'h-3', 'h-4', 'h-5', 'h-6', 'h-7', 'h-8', 'h-10', 'h-12', 'h-14'];
+    
+    const mappedBuckets = buckets.map(count => {
+      if (count === 0) return { height: 'h-0', opacity: 'bg-transparent' };
+      const ratio = count / maxCount;
+      const classIndex = Math.min(Math.floor(ratio * heightClasses.length), heightClasses.length - 1);
+      
+      let opacity = 'bg-primary/50';
+      if (ratio > 0.8) opacity = 'bg-primary';
+      else if (ratio > 0.5) opacity = 'bg-primary/70';
+      else if (ratio > 0.2) opacity = 'bg-primary/40';
+
+      return { height: heightClasses[classIndex], opacity };
+    });
+
+    return { bars: mappedBuckets, labels };
+  }, [userProgress]);
 
   return (
     <div className="p-3 sm:p-4 lg:p-6">
@@ -125,7 +190,7 @@ function DashboardMain({
             </div>
             <div className="order-3 ml-auto flex items-center gap-2 rounded-full border border-border bg-card px-2 py-1">
               <Avatar className="h-8 w-8">
-                <AvatarImage src={dashboardAvatar} alt={nickname} />
+                <AvatarImage src={profile.avatar_url || dashboardAvatar} alt={nickname} />
                 <AvatarFallback>{nickname ? nickname[0] : 'U'}</AvatarFallback>
               </Avatar>
               <span className="hidden pr-2 text-sm text-foreground sm:block">{nickname}</span>
@@ -210,18 +275,27 @@ function DashboardMain({
                           ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
                           : 'bg-blue-100 text-blue-800 border-blue-200';
 
+                    const isLate = exercise.due_date && (
+                      exercise.status === 'assigned'
+                        ? new Date() > new Date(exercise.due_date)
+                        : (exercise.submitted_at && new Date(exercise.submitted_at) > new Date(exercise.due_date))
+                    );
+
                     return (
-                      <div key={exercise.id} className="relative rounded-xl border border-border bg-sidebar p-3">
+                      <div key={exercise.id} className={`relative rounded-xl border ${isLate ? 'border-red-500/50 bg-red-500/5' : 'border-border bg-sidebar'} p-3`}>
                         <div className={exercise.language === 'javascript' ? 'blur-[2px] pointer-events-none select-none' : ''}>
                           <div className="flex flex-wrap items-start justify-between gap-2">
                             <div>
                               <p className="text-sm text-foreground">{exercise.title}</p>
-                              <p className="mt-1 text-xs text-muted-foreground">From {exercise.instructor_name}</p>
-                              <p className="text-xs text-muted-foreground">
+                              <p className="mt-1 text-xs text-muted-foreground">From {exercise.instructor_name} • Uploaded {new Date(exercise.created_at).toLocaleDateString()}</p>
+                              <p className={`text-xs ${isLate ? 'text-red-500 font-medium' : 'text-muted-foreground'}`}>
                                 {exercise.due_date ? `Due ${new Date(exercise.due_date).toLocaleDateString()}` : 'No due date'}
+                                {isLate && ' (Late)'}
                               </p>
                             </div>
-                            <Badge className={`border ${statusTone}`}>{exercise.status}</Badge>
+                            <div className="flex flex-col gap-1 items-end">
+                              <Badge className={`border ${statusTone}`}>{exercise.status}</Badge>
+                            </div>
                           </div>
 
                           <div className="mt-3 flex items-center justify-between gap-2">
@@ -342,24 +416,22 @@ function DashboardMain({
               </div>
               <div className="flex flex-col items-center">
                 <Avatar className="h-20 w-20 border border-border">
-                  <AvatarImage src={dashboardAvatar} alt={nickname} />
+                  <AvatarImage src={profile.avatar_url || dashboardAvatar} alt={nickname} />
                   <AvatarFallback>{nickname ? nickname[0] : 'U'}</AvatarFallback>
                 </Avatar>
                 <p className="mt-3 text-base text-foreground">{getGreeting()} {nickname}</p>
                 <p className="text-xs text-muted-foreground">{profile.role === 'instructor' ? `Hub: ${profile.hub_location}` : 'Continue your journey to your target'}</p>
               </div>
               <div className="rounded-2xl bg-secondary p-3">
-                <div className="mb-2 flex items-end gap-2">
-                  <div className="h-8 w-8 rounded-md bg-primary/30" />
-                  <div className="h-12 w-8 rounded-md bg-primary/70" />
-                  <div className="h-9 w-8 rounded-md bg-primary/40" />
-                  <div className="h-14 w-8 rounded-md bg-primary" />
-                  <div className="h-8 w-8 rounded-md bg-primary/30" />
+                <div className="mb-2 flex items-end justify-between gap-2 h-14">
+                  {activityData.bars.map((bar: { height: string, opacity: string }, i: number) => (
+                    <div key={i} className={`w-8 rounded-md ${bar.height} ${bar.opacity} transition-all duration-300`} />
+                  ))}
                 </div>
-                <div className="flex justify-between text-[10px] text-muted-foreground">
-                  <span>10-10 Aug</span>
-                  <span>11-20 Aug</span>
-                  <span>21-30 Aug</span>
+                <div className="flex justify-between text-[10px] text-muted-foreground whitespace-nowrap">
+                  <span>{activityData.labels[0]}</span>
+                  <span>{activityData.labels[1]}</span>
+                  <span>{activityData.labels[2]}</span>
                 </div>
               </div>
 
@@ -427,16 +499,32 @@ export default function Dashboard() {
         const profileRow = await fetchProfileForAuthUser(user as any);
         const metadata = (user.user_metadata as Record<string, unknown> | undefined) ?? undefined;
 
-        const profileData = (profileRow ?? {
+        const dbXp = Number(profileRow?.xp || 0);
+        const mdXp = Number(metadata?.['xp'] || 0);
+        const xp = dbXp > 0 ? dbXp : mdXp;
+
+        const dbStreak = Number(profileRow?.streak || 0);
+        const mdStreak = Number(metadata?.['streak'] || 0);
+        const streak = dbStreak > 0 ? dbStreak : mdStreak;
+
+        const dbLastAct = String(profileRow?.last_activity_date || '');
+        const mdLastAct = String(metadata?.['last_activity_date'] || '');
+        const last_activity_date = dbLastAct ? dbLastAct : mdLastAct;
+
+        const avatar_url = String(profileRow?.avatar_url || metadata?.['avatar_url'] || '');
+
+        const profileData = {
+          ...profileRow,
           id: user.id,
-          email: user.email ?? '',
-          full_name: String(metadata?.['full_name'] ?? user.email?.split('@')[0] ?? 'Learner'),
-          role: String(metadata?.['role'] ?? metadata?.['user_role'] ?? 'student'),
-          hub_location: String(metadata?.['hub_location'] ?? ''),
-          xp: Number(metadata?.['xp'] ?? 0),
-          streak: Number(metadata?.['streak'] ?? 0),
-          last_activity_date: String(metadata?.['last_activity_date'] ?? ''),
-        }) as unknown as UserProfile;
+          email: user.email ?? profileRow?.email ?? '',
+          full_name: String(profileRow?.full_name || metadata?.['full_name'] || user.email?.split('@')[0] || 'Learner'),
+          role: String(profileRow?.role || metadata?.['role'] || metadata?.['user_role'] || 'student'),
+          hub_location: String(profileRow?.hub_location || metadata?.['hub_location'] || ''),
+          xp,
+          streak,
+          last_activity_date,
+          avatar_url,
+        } as unknown as UserProfile;
 
         setProfile(profileData);
 
@@ -574,9 +662,9 @@ export default function Dashboard() {
         nextCourse={nextCourse}
         inProgressCourses={inProgressCourses}
         assignedExercises={assignedExercises}
+        userProgress={userProgress}
       />
     </DashboardLayout>
   );
 }
 
-         

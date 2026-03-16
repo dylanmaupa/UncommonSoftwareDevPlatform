@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../../components/ui/card';
 import { Badge } from '../../../components/ui/badge';
 import { Button } from '../../../components/ui/button';
 import { Avatar, AvatarFallback } from '../../../components/ui/avatar';
 import { Textarea } from '../../../components/ui/textarea';
+import { Input } from '../../../components/ui/input';
 import { 
   LuFileCheck, 
   LuFilter,
@@ -19,6 +20,7 @@ import {
   LuChevronRight,
   LuRotateCcw
 } from 'react-icons/lu';
+import { supabase } from '../../../../lib/supabase';
 
 interface Submission {
   id: string;
@@ -38,100 +40,74 @@ interface Submission {
   feedback?: string;
 }
 
-const mockSubmissions: Submission[] = [
-  {
-    id: '1',
-    studentName: 'John Anderson',
-    studentEmail: 'john@example.com',
-    exerciseTitle: 'React Hooks Challenge',
-    exerciseType: 'coding',
-    submittedAt: '2 hours ago',
-    status: 'pending',
-    code: `function useFetch(url) {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    fetch(url)
-      .then(res => res.json())
-      .then(data => {
-        setData(data);
-        setLoading(false);
-      })
-      .catch(err => {
-        setError(err);
-        setLoading(false);
-      });
-  }, [url]);
-
-  return { data, loading, error };
-}`,
-    testResults: {
-      passed: 3,
-      failed: 1,
-      total: 4
-    }
-  },
-  {
-    id: '2',
-    studentName: 'Sarah Mitchell',
-    studentEmail: 'sarah@example.com',
-    exerciseTitle: 'JavaScript Basics Quiz',
-    exerciseType: 'quiz',
-    submittedAt: '4 hours ago',
-    status: 'reviewed',
-    grade: 85,
-    feedback: 'Great work! Review question 3 about closures.'
-  },
-  {
-    id: '3',
-    studentName: 'Michael Chen',
-    studentEmail: 'michael@example.com',
-    exerciseTitle: 'API Integration Task',
-    exerciseType: 'coding',
-    submittedAt: '5 hours ago',
-    status: 'approved',
-    grade: 92,
-    feedback: 'Excellent implementation with proper error handling.'
-  },
-  {
-    id: '4',
-    studentName: 'Emily Rodriguez',
-    studentEmail: 'emily@example.com',
-    exerciseTitle: 'CSS Grid Layout',
-    exerciseType: 'coding',
-    submittedAt: '6 hours ago',
-    status: 'pending',
-    code: `.container {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
-}`,
-    testResults: {
-      passed: 2,
-      failed: 2,
-      total: 4
-    }
-  },
-  {
-    id: '5',
-    studentName: 'David Kim',
-    studentEmail: 'david@example.com',
-    exerciseTitle: 'State Management',
-    exerciseType: 'coding',
-    submittedAt: '8 hours ago',
-    status: 'rejected',
-    grade: 45,
-    feedback: 'Please review Redux fundamentals and resubmit.'
-  },
-];
-
 export default function SubmissionsPage() {
-  const [submissions, setSubmissions] = useState<Submission[]>(mockSubmissions);
+  const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [feedback, setFeedback] = useState('');
+  const [grade, setGrade] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(true);
+
+  const loadSubmissions = async () => {
+    try {
+      setIsLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: exercises, error } = await supabase
+        .from('instructor_exercises')
+        .select('*')
+        .eq('instructor_id', user.id)
+        .neq('status', 'assigned')
+        .order('submitted_at', { ascending: false });
+
+      if (error) {
+        throw error;
+      }
+
+      const formattedSubmissions: Submission[] = [];
+
+      if (exercises && exercises.length > 0) {
+        // Fetch student profiles for names/emails
+        const studentIds = Array.from(new Set(exercises.map((e: any) => e.student_id)));
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, full_name, email')
+          .in('id', studentIds);
+
+        const profileMap = new Map();
+        if (profiles) {
+          profiles.forEach((p: any) => profileMap.set(p.id, p));
+        }
+
+        for (const ex of exercises) {
+          const studentProfile = profileMap.get(ex.student_id);
+          formattedSubmissions.push({
+            id: ex.id,
+            studentName: studentProfile?.full_name || 'Unknown Student',
+            studentEmail: studentProfile?.email || 'unknown@example.com',
+            exerciseTitle: ex.title,
+            exerciseType: ex.language || 'coding',
+            submittedAt: new Date(ex.submitted_at).toLocaleDateString() + ' ' + new Date(ex.submitted_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+            status: ex.status === 'submitted' ? 'pending' : (ex.status as any), // Map DB 'submitted' to UI 'pending'
+            code: ex.submission_code,
+            grade: ex.grade,
+            feedback: ex.feedback
+          });
+        }
+      }
+
+      setSubmissions(formattedSubmissions);
+    } catch (err) {
+      console.error("Failed to load submissions", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadSubmissions();
+  }, []);
 
   const filteredSubmissions = submissions.filter(sub => {
     return statusFilter === 'all' || sub.status === statusFilter;
@@ -152,27 +128,49 @@ export default function SubmissionsPage() {
     }
   };
 
-  const handleApprove = () => {
+  const handleApprove = async () => {
     if (selectedSubmission) {
-      setSubmissions(prev => prev.map(sub => 
-        sub.id === selectedSubmission.id 
-          ? { ...sub, status: 'approved', feedback }
-          : sub
-      ));
-      setSelectedSubmission(null);
-      setFeedback('');
+      try {
+        const numericGrade = parseInt(grade) || null;
+        await supabase
+          .from('instructor_exercises')
+          .update({ 
+            status: 'approved', 
+            feedback,
+            grade: numericGrade
+          })
+          .eq('id', selectedSubmission.id);
+        
+        setSelectedSubmission(null);
+        setFeedback('');
+        setGrade('');
+        loadSubmissions();
+      } catch (err) {
+        console.error("Error approving submission", err);
+      }
     }
   };
 
-  const handleRequestRevision = () => {
+  const handleRequestRevision = async () => {
     if (selectedSubmission) {
-      setSubmissions(prev => prev.map(sub => 
-        sub.id === selectedSubmission.id 
-          ? { ...sub, status: 'rejected', feedback }
-          : sub
-      ));
-      setSelectedSubmission(null);
-      setFeedback('');
+      try {
+        const numericGrade = parseInt(grade) || null;
+        await supabase
+          .from('instructor_exercises')
+          .update({ 
+            status: 'rejected', 
+            feedback,
+            grade: numericGrade
+          })
+          .eq('id', selectedSubmission.id);
+        
+        setSelectedSubmission(null);
+        setFeedback('');
+        setGrade('');
+        loadSubmissions();
+      } catch (err) {
+        console.error("Error rejecting submission", err);
+      }
     }
   };
 
@@ -246,6 +244,7 @@ export default function SubmissionsPage() {
                       onClick={() => {
                         setSelectedSubmission(submission);
                         setFeedback(submission.feedback || '');
+                        setGrade(submission.grade ? submission.grade.toString() : '');
                       }}
                     >
                       <td className="px-4 py-4">
@@ -280,9 +279,11 @@ export default function SubmissionsPage() {
                               ? 'bg-blue-600 hover:bg-blue-700 text-white' 
                               : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                           }`}
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation();
                             setSelectedSubmission(submission);
                             setFeedback(submission.feedback || '');
+                            setGrade(submission.grade ? submission.grade.toString() : '');
                           }}
                         >
                           {submission.status === 'pending' ? 'Review' : 'View'}
@@ -408,7 +409,24 @@ export default function SubmissionsPage() {
                       placeholder="Provide feedback to the student..."
                       value={feedback}
                       onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setFeedback(e.target.value)}
-                      className="min-h-[100px] rounded-xl border-slate-200"
+                      className="min-h-[80px] rounded-xl border-slate-200"
+                      disabled={selectedSubmission.status !== 'pending'}
+                    />
+                  </div>
+
+                  {/* Grade Input */}
+                  <div>
+                    <h4 className="font-medium text-sm text-slate-900 mb-2 flex items-center gap-2">
+                       <LuCheck className="h-4 w-4 text-blue-600" />
+                       Final Grade (Out of 100)
+                    </h4>
+                    <Input 
+                      type="number"
+                      placeholder="e.g. 95"
+                      value={grade}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setGrade(e.target.value)}
+                      className="rounded-xl border-slate-200"
+                      disabled={selectedSubmission.status !== 'pending'}
                     />
                   </div>
 

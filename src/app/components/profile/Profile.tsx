@@ -65,14 +65,32 @@ export default function Profile() {
         const profile = await fetchProfileForAuthUser(user as any);
         const metadata = (user.user_metadata as Record<string, unknown> | undefined) ?? undefined;
 
-        const resolvedProfile = profile ?? {
-          email: user.email ?? '',
-          full_name: String(metadata?.['full_name'] ?? user.email?.split('@')[0] ?? ''),
-          xp: Number(metadata?.['xp'] ?? 0),
-          streak: Number(metadata?.['streak'] ?? 0),
-          achievements: Array.isArray(metadata?.['achievements']) ? metadata?.['achievements'] : [],
-          gender: String(metadata?.['gender'] ?? ''),
-          avatar_url: String(metadata?.['avatar_url'] ?? ''),
+        const dbXp = Number(profile?.xp || 0);
+        const mdXp = Number(metadata?.['xp'] || 0);
+        const xp = dbXp > 0 ? dbXp : mdXp;
+
+        const dbStreak = Number(profile?.streak || 0);
+        const mdStreak = Number(metadata?.['streak'] || 0);
+        const streak = dbStreak > 0 ? dbStreak : mdStreak;
+
+        const dbAchv = Array.isArray(profile?.achievements) ? profile.achievements as string[] : [];
+        const mdAchv = Array.isArray(metadata?.['achievements']) ? metadata['achievements'] as string[] : [];
+        const achievements = dbAchv.length > 0 ? dbAchv : mdAchv;
+
+        const dbLastAct = String(profile?.last_activity_date || '');
+        const mdLastAct = String(metadata?.['last_activity_date'] || '');
+        const last_activity_date = dbLastAct ? dbLastAct : mdLastAct;
+
+        const resolvedProfile = {
+          ...profile,
+          email: user.email ?? profile?.email ?? '',
+          full_name: String(profile?.full_name || metadata?.['full_name'] || user.email?.split('@')[0] || ''),
+          xp,
+          streak,
+          achievements,
+          last_activity_date,
+          gender: String(profile?.gender || metadata?.['gender'] || ''),
+          avatar_url: String(profile?.avatar_url || metadata?.['avatar_url'] || ''),
         };
 
         const role = resolveRole(resolvedProfile as Record<string, unknown>, metadata);
@@ -172,11 +190,13 @@ export default function Profile() {
     const xp = Number(userProfile?.xp ?? 0);
     const streak = Number(userProfile?.streak ?? 0);
     const achievements = Array.isArray(userProfile?.achievements) ? userProfile.achievements : [];
+    const lastActivityDate = String(userProfile?.last_activity_date ?? '');
 
     return {
       xp,
       level: calculateUserLevel(xp),
       streak,
+      lastActivityDate,
       completedLessons: userProgress.filter((p) => p.item_type === 'lesson' && p.status === 'completed'),
       completedProjects: [],
       achievements,
@@ -453,7 +473,7 @@ export default function Profile() {
                   </CardContent>
                 </Card>
 
-                <StreakWidget streak={userStats.streak} userId={authUser.id} />
+                <StreakWidget streak={userStats.streak} userId={authUser.id} lastActivityDate={userStats.lastActivityDate} />
 
                 <Card className="rounded-2xl border-border">
                   <CardHeader className="pb-2">

@@ -214,6 +214,12 @@ export default function LessonView() {
 
         if (lastActive !== today) {
           let newStreak = userProfile?.streak || 0;
+          let brokenStreaks = userProfile?.broken_streaks || 0;
+          
+          if (lastActive && lastActive < yesterday && newStreak > 0) {
+            brokenStreaks += 1;
+          }
+
           if (lastActive === yesterday) {
             newStreak += 1;
           } else {
@@ -223,7 +229,8 @@ export default function LessonView() {
           await supabase.from('profiles').update({
             streak: newStreak,
             longest_streak: newLongest,
-            last_activity_date: today
+            last_activity_date: today,
+            broken_streaks: brokenStreaks
           }).eq('id', user.id);
 
           if (userProfile) {
@@ -231,7 +238,8 @@ export default function LessonView() {
               ...userProfile,
               streak: newStreak,
               longest_streak: newLongest,
-              last_activity_date: today
+              last_activity_date: today,
+              broken_streaks: brokenStreaks
             });
           }
         }
@@ -305,9 +313,6 @@ sys.stderr = io.StringIO()
 
       const result = await executeCode(code);
       setOutput(result?.run?.output || 'No output.');
-
-      // Any attempt to run code counts as daily activity
-      await logActivity();
     } catch (e: any) {
       setOutput(`Execution failed: ${e?.message || String(e)}`);
     } finally {
@@ -557,6 +562,36 @@ sys.stderr = io.StringIO()
         }
       } else if (!isCorrect) {
         setFailedAttempts(prev => prev + 1);
+
+        if (user) {
+          try {
+            // Upsert with incremented failed_attempts
+            const { data: progressData } = await supabase
+              .from('user_progress')
+              .select('failed_attempts')
+              .eq('user_id', user.id)
+              .eq('item_id', lesson.id)
+              .eq('item_type', 'lesson')
+              .single();
+
+            const currentFailed = progressData?.failed_attempts || 0;
+
+            const lessonProgressEntry = {
+              user_id: user.id,
+              item_id: lesson.id,
+              item_type: 'lesson',
+              status: isCompleted ? 'completed' : 'in_progress',
+              progress_percentage: isCompleted ? 100 : 0,
+              failed_attempts: currentFailed + 1,
+              updated_at: new Date().toISOString()
+            };
+
+            await supabase.from('user_progress').upsert(lessonProgressEntry, { onConflict: 'user_id, item_id, item_type' });
+          } catch (e) {
+            console.error('Failed to update failed attempts', e);
+          }
+        }
+
         toast.error(
           <div>
             <p className="font-semibold">Not quite right</p>

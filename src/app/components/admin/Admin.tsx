@@ -240,43 +240,64 @@ export default function Admin() {
   // Create Exercise Modal State
   const [showCreateExerciseModal, setShowCreateExerciseModal] = useState(false);
   const [newExerciseTitle, setNewExerciseTitle] = useState('');
-  const [newExerciseType, setNewExerciseType] = useState('code');
+  const [newExerciseType, setNewExerciseType] = useState('code'); // We map 'code' to language selection now
+  const [newExerciseLanguage, setNewExerciseLanguage] = useState<'python' | 'javascript'>('python');
   const [newExerciseDifficulty, setNewExerciseDifficulty] = useState('beginner');
+  const [newExerciseDueDate, setNewExerciseDueDate] = useState('');
   const [newExerciseXP, setNewExerciseXP] = useState(100);
   const [newExerciseDescription, setNewExerciseDescription] = useState('');
 
-  const handleCreateExercise = () => {
-    if (newExerciseTitle.trim()) {
-      const newExercise = {
+  const handleCreateExercise = async () => {
+    if (!newExerciseTitle.trim() || !profile) return;
+
+    if (students.length === 0) {
+      alert('You have no students in your hub to assign this exercise to.');
+      return;
+    }
+
+    try {
+      const inserts = students.map((student) => ({
+        instructor_id: profile.id,
+        student_id: student.id,
+        title: newExerciseTitle,
+        instructions: newExerciseDescription,
+        language: newExerciseLanguage,
+        due_date: newExerciseDueDate ? new Date(newExerciseDueDate).toISOString() : null,
+        status: 'assigned',
+      }));
+
+      const { error } = await supabase.from('instructor_exercises').insert(inserts);
+
+      if (error) {
+        console.error('Failed to assign exercise:', error);
+        alert('Failed to assign the exercise to your students.');
+        return;
+      }
+
+      // Optimistically add to the assignment view (grouped or individual representation, keeping it simple as a group representation for now)
+      const mockAssignedGroup = {
         id: Date.now().toString(),
         title: newExerciseTitle,
-        type: newExerciseType,
+        type: newExerciseLanguage,
         difficulty_level: newExerciseDifficulty,
         xp_reward: newExerciseXP,
         description: newExerciseDescription,
         created_at: new Date().toISOString(),
       };
-      setActiveAssignments([newExercise, ...activeAssignments]);
 
-      // If it's a code exercise, add a mock submission to the queue
-      if (newExerciseType === 'code' && students.length > 0) {
-        const mockSubmission = {
-          id: `sub_${Date.now()}`,
-          studentId: students[0].id,
-          student: students[0].full_name,
-          assignment: newExerciseTitle,
-          status: 'Pending' as SubmissionStatus,
-          submitted: 'Just now',
-        };
-        setHubSubmissionQueue([mockSubmission, ...hubSubmissionQueue]);
-      }
+      setActiveAssignments([mockAssignedGroup, ...activeAssignments]);
 
       setNewExerciseTitle('');
       setNewExerciseType('code');
+      setNewExerciseLanguage('python');
       setNewExerciseDifficulty('beginner');
+      setNewExerciseDueDate('');
       setNewExerciseXP(100);
       setNewExerciseDescription('');
       setShowCreateExerciseModal(false);
+
+    } catch (err) {
+      console.error('Error in handleCreateExercise', err);
     }
   };
 
@@ -397,44 +418,58 @@ export default function Admin() {
                 .from('user_activity_logs')
                 .select('user_id, active_date')
                 .in('user_id', hubStudentIds)
-                .order('active_date', { ascending: false })
-                .limit(8);
+                .order('active_date', { ascending: false });
 
               if (!activityError && activityData && activityData.length > 0) {
-                const activityFeed = activityData.map((row: any) => {
+                // limit feed to 8
+                const recentLogs = activityData.slice(0, 8);
+                const activityFeed = recentLogs.map((row: any) => {
                   const studentName = studentNameMap.get(String(row.user_id || '')) || 'Student';
                   const activeDate = row.active_date ? new Date(String(row.active_date)).toLocaleDateString() : 'recently';
                   return `${studentName} was active on ${activeDate}`;
                 });
 
                 setHubRecentActivity(activityFeed);
+
+                // Calculate "Active Students" (all distinct active students in the hub)
                 setHubActiveStudentsCount(new Set(activityData.map((row: any) => String(row.user_id || ''))).size);
 
-                // Calculate "Active Today" (simple check for today's logs)
+                // Calculate "Active Today"
                 const todayStr = new Date().toLocaleDateString();
-                const activeToday = activityData.filter(row =>
+                const activeToday = new Set(activityData.filter(row =>
                   row.active_date && new Date(String(row.active_date)).toLocaleDateString() === todayStr
-                ).length;
+                ).map(row => String(row.user_id))).size;
+
                 setHubActiveTodayCount(activeToday);
-
-                // Heuristic for "Stuck Students": Inactive for > 4 days in this hub
-                const fourDaysAgo = new Date();
-                fourDaysAgo.setDate(fourDaysAgo.getDate() - 4);
-                const stuckStudents = hubStudents.filter(s => {
-                  const lastActive = s.last_activity_date ? new Date(s.last_activity_date) : null;
-                  return lastActive && lastActive < fourDaysAgo;
-                }).length;
-                setHubStuckStudentsCount(stuckStudents);
-
-                // Exercises completed today
-                const completedToday = hubSubmissionQueue.filter((item: HubSubmissionItem) =>
-                  (item.status === 'Reviewed' || item.status === 'Approved') &&
-                  item.submitted.includes('h ago') // Rough heuristic for today
-                ).length;
-                setExercisesCompletedToday(completedToday);
-
               } else if (activityError?.code !== '42P01') {
                 console.error('Failed to load hub activity', activityError);
+              }
+
+              // Load Progress Data for accurate metrics
+              const { data: progressData, error: progressError } = await supabase
+                .from('user_progress')
+                .select('user_id, item_type, status, failed_attempts, updated_at')
+                .in('user_id', hubStudentIds);
+
+              if (!progressError && progressData) {
+                // Exercises completed today
+                const todayStr2 = new Date().toLocaleDateString();
+                const completedTodayCount = new Set(progressData.filter(row =>
+                  row.status === 'completed' &&
+                  row.updated_at &&
+                  new Date(String(row.updated_at)).toLocaleDateString() === todayStr2
+                ).map(row => String(row.user_id))).size;
+
+                setExercisesCompletedToday(completedTodayCount);
+
+                // Stuck Students (Failed attempts >= 3)
+                const stuckStudentsSet = new Set(progressData.filter(row =>
+                  (row.failed_attempts || 0) >= 3
+                ).map(row => String(row.user_id)));
+
+                setHubStuckStudentsCount(stuckStudentsSet.size);
+              } else if (progressError?.code !== '42P01') {
+                console.error('Failed to load user progress', progressError);
               }
             } else {
               setHubSubmissionQueue([]);
@@ -996,18 +1031,27 @@ export default function Admin() {
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <label className="text-sm font-medium text-foreground mb-1 block">Type</label>
+                            <label className="text-sm font-medium text-foreground mb-1 block">Language</label>
                             <select
-                              value={newExerciseType}
-                              onChange={(e) => setNewExerciseType(e.target.value)}
+                              value={newExerciseLanguage}
+                              onChange={(e) => setNewExerciseLanguage(e.target.value as 'python' | 'javascript')}
                               className="h-10 w-full rounded-xl border border-border bg-sidebar px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary"
                             >
-                              <option value="code">Code Exercise</option>
-                              <option value="quiz">Quiz</option>
-                              <option value="project">Project</option>
-                              <option value="essay">Essay</option>
+                              <option value="python">Python</option>
+                              <option value="javascript">JavaScript</option>
                             </select>
                           </div>
+                          <div>
+                            <label className="text-sm font-medium text-foreground mb-1 block">Due Date</label>
+                            <input
+                              type="date"
+                              value={newExerciseDueDate}
+                              onChange={(e) => setNewExerciseDueDate(e.target.value)}
+                              className="h-10 w-full rounded-xl border border-border bg-sidebar px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary"
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
                           <div>
                             <label className="text-sm font-medium text-foreground mb-1 block">Difficulty</label>
                             <select
@@ -1020,17 +1064,17 @@ export default function Admin() {
                               <option value="advanced">Advanced</option>
                             </select>
                           </div>
-                        </div>
-                        <div>
-                          <label className="text-sm font-medium text-foreground mb-1 block">XP Reward</label>
-                          <input
-                            type="number"
-                            min="10"
-                            max="1000"
-                            value={newExerciseXP}
-                            onChange={(e) => setNewExerciseXP(Number(e.target.value))}
-                            className="h-10 w-full rounded-xl border border-border bg-sidebar px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary"
-                          />
+                          <div>
+                            <label className="text-sm font-medium text-foreground mb-1 block">XP Reward</label>
+                            <input
+                              type="number"
+                              min="10"
+                              max="1000"
+                              value={newExerciseXP}
+                              onChange={(e) => setNewExerciseXP(Number(e.target.value))}
+                              className="h-10 w-full rounded-xl border border-border bg-sidebar px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary"
+                            />
+                          </div>
                         </div>
                         <div>
                           <label className="text-sm font-medium text-foreground mb-1 block">Description</label>

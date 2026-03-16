@@ -62,13 +62,19 @@ export default function Sandbox() {
       if (activityError) {
         console.error("Error recording user activity via RPC:", activityError);
         // Fallback
-        const { data: profile } = await supabase.from('profiles').select('streak, longest_streak, last_activity_date').eq('id', user.id).single();
+        const { data: profile } = await supabase.from('profiles').select('streak, longest_streak, last_activity_date, broken_streaks').eq('id', user.id).single();
         if (profile) {
           const today = new Date().toISOString().split('T')[0];
           const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
           const lastActive = profile.last_activity_date;
           if (lastActive !== today) {
             let newStreak = profile.streak || 0;
+            let brokenStreaks = profile.broken_streaks || 0;
+
+            if (lastActive && lastActive < yesterday && newStreak > 0) {
+              brokenStreaks += 1;
+            }
+
             if (lastActive === yesterday) {
               newStreak += 1;
             } else {
@@ -78,7 +84,8 @@ export default function Sandbox() {
             await supabase.from('profiles').update({
               streak: newStreak,
               longest_streak: newLongest,
-              last_activity_date: today
+              last_activity_date: today,
+              broken_streaks: brokenStreaks
             }).eq('id', user.id);
           }
         }
@@ -251,9 +258,6 @@ sys.stderr = io.StringIO()
 
       const result = await executeCode(code);
       setOutput(result?.run?.output || 'No output.');
-
-      // Log activity for streaks on successful run attempt
-      await logActivity();
     } catch (e: any) {
       setOutput(`Execution failed: ${e?.message || String(e)}`);
     } finally {
@@ -441,9 +445,23 @@ sys.stderr = io.StringIO()
                       <p className="text-sm text-white/75 whitespace-pre-wrap">
                         {assignment?.instructions || 'Open the editor below and complete the assigned task.'}
                       </p>
-                      <p className="text-xs text-white/50">
-                        {assignment?.due_date ? `Due date: ${new Date(assignment.due_date).toLocaleDateString()}` : 'No due date set.'}
-                      </p>
+
+                      {(() => {
+                        const isLate = assignment?.due_date && (
+                          assignment.status === 'assigned'
+                            ? new Date() > new Date(assignment.due_date)
+                            : (assignment.submitted_at && new Date(assignment.submitted_at) > new Date(assignment.due_date))
+                        );
+
+                        return (
+                          <div className="flex gap-4">
+                            <p className={`text-xs ${isLate ? 'text-red-400 font-medium' : 'text-white/50'}`}>
+                              {assignment?.due_date ? `Due date: ${new Date(assignment.due_date).toLocaleDateString()}` : 'No due date set.'}
+                              {isLate && ' (Late)'}
+                            </p>
+                          </div>
+                        );
+                      })()}
                     </>
                   )}
                 </CardContent>

@@ -10,6 +10,7 @@ import { fetchProfileForAuthUser } from '../../lib/profileAccess';
 
 export default function Achievements() {
   const [userProfile, setUserProfile] = useState<any>(null);
+  const [userProgress, setUserProgress] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -22,6 +23,16 @@ export default function Achievements() {
       if (profile) {
         setUserProfile(profile);
       }
+
+      const { data: progressData } = await supabase
+        .from('user_progress')
+        .select('*')
+        .eq('user_id', user.id);
+
+      if (progressData) {
+        setUserProgress(progressData);
+      }
+
       setIsLoading(false);
     }
     fetchAchievements();
@@ -48,6 +59,63 @@ export default function Achievements() {
   const totalCount = achievementsData.length;
   const completionRate = totalCount > 0 ? Math.round((unlockedCount / totalCount) * 100) : 0;
   const lockedAchievements = unlockedAchievements.filter((achievement) => !achievement.unlocked);
+
+  const currentLevel = calculateUserLevel(userProfile.xp);
+  const nextLevel = currentLevel + 1;
+  const levelProgress = calculateUserLevel(userProfile.xp) === 1 ? userProfile.xp || 0 : ((userProfile.xp || 0) % 100);
+
+  // Group user progress by the last 5 days
+  const levelBars = (() => {
+    const buckets = [0, 0, 0, 0, 0];
+    const now = new Date();
+    const msPerDay = 1000 * 60 * 60 * 24;
+
+    const completedProgress = userProgress?.filter((p: any) => p.status === 'completed' && p.updated_at) || [];
+
+    completedProgress.forEach((p: any) => {
+      const updatedDate = new Date(p.updated_at);
+      const diffDays = Math.floor((now.getTime() - updatedDate.getTime()) / msPerDay);
+      
+      // We are checking the last 5 days (Day 0 to Day 4)
+      if (diffDays >= 0 && diffDays < 5) {
+        // Map 0 to bucket 4 (newest), 1 to bucket 3, ..., 4 to bucket 0 (oldest)
+        const bucketIndex = 4 - diffDays;
+        if (bucketIndex >= 0 && bucketIndex < 5) {
+          buckets[bucketIndex]++;
+        }
+      }
+    });
+
+    return buckets.map((count, i) => {
+      if (count === 0) return { height: 'h-0', opacity: 'bg-transparent' }; // No lessons taken on this day
+      
+      const startThreshold = i * 20;
+      const endThreshold = (i + 1) * 20;
+
+      // Cap the height based on how much XP they actually have for this 20-point bracket
+      let maxHeightClass = 'h-14';
+      let maxOpacity = 'bg-primary';
+
+      if (levelProgress <= startThreshold) {
+        return { height: 'h-2', opacity: 'bg-primary/20' }; 
+      } else if (levelProgress < endThreshold) {
+        const fraction = (levelProgress - startThreshold) / 20;
+        if (fraction <= 0.2) maxHeightClass = 'h-6';
+        else if (fraction <= 0.5) maxHeightClass = 'h-8';
+        else if (fraction <= 0.8) maxHeightClass = 'h-12';
+        maxOpacity = 'bg-primary/80';
+      }
+
+      // Constrain by effort: 1 lesson = partial height, 2+ = max allowable XP height
+      if (count === 1) {
+        // Scale down slightly if only 1 lesson was done, but never below h-4 if active
+        const actualHeight = maxHeightClass === 'h-14' ? 'h-10' : 'h-6';
+        return { height: actualHeight, opacity: 'bg-primary/70' };
+      }
+
+      return { height: maxHeightClass, opacity: maxOpacity };
+    });
+  })();
 
   return (
     <DashboardLayout>
@@ -155,16 +223,14 @@ export default function Achievements() {
               <CardContent className="space-y-3 p-4">
                 <h3 className="text-base text-foreground heading-font">Progress Snapshot</h3>
                 <div className="rounded-2xl bg-secondary p-3">
-                  <div className="mb-3 flex items-end gap-2">
-                    <div className="h-8 w-8 rounded-md bg-primary/30" />
-                    <div className="h-10 w-8 rounded-md bg-primary/55" />
-                    <div className="h-12 w-8 rounded-md bg-primary/80" />
-                    <div className="h-14 w-8 rounded-md bg-primary" />
-                    <div className="h-9 w-8 rounded-md bg-primary/40" />
+                  <div className="mb-3 flex items-end gap-2 h-14">
+                    {levelBars.map((bar, i) => (
+                      <div key={i} className={`w-8 rounded-md ${bar.height} ${bar.opacity} transition-all duration-300`} />
+                    ))}
                   </div>
                   <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-                    <span>Locked {totalCount - unlockedCount}</span>
-                    <span>Unlocked {unlockedCount}</span>
+                    <span>Level {currentLevel}</span>
+                    <span>Level {nextLevel}</span>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-xs">
