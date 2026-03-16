@@ -18,9 +18,12 @@ import {
   LuX,
   LuChevronLeft,
   LuChevronRight,
-  LuRotateCcw
+  LuRotateCcw,
+  LuMaximize,
 } from 'react-icons/lu';
 import { supabase } from '../../../../lib/supabase';
+import ReviewAssignmentPage from './ReviewAssignmentPage';
+import type { ReviewSubmission } from './ReviewAssignmentPage';
 
 interface Submission {
   id: string;
@@ -47,6 +50,7 @@ export default function SubmissionsPage() {
   const [feedback, setFeedback] = useState('');
   const [grade, setGrade] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
+  const [fullReviewSubmission, setFullReviewSubmission] = useState<ReviewSubmission | null>(null);
 
   const loadSubmissions = async () => {
     try {
@@ -175,6 +179,7 @@ export default function SubmissionsPage() {
   };
 
   return (
+    <>
     <div className="space-y-6">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -325,6 +330,32 @@ export default function SubmissionsPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                  {/* Open Full Review Button */}
+                  <Button
+                    variant="outline"
+                    className="w-full rounded-full border-blue-200 text-blue-600 hover:bg-blue-50 h-9 gap-2 text-xs"
+                    onClick={() => {
+                      setFullReviewSubmission({
+                        id: selectedSubmission.id,
+                        studentName: selectedSubmission.studentName,
+                        studentEmail: selectedSubmission.studentEmail,
+                        exerciseTitle: selectedSubmission.exerciseTitle,
+                        exerciseDescription: selectedSubmission.exerciseTitle,
+                        exerciseModule: '',
+                        exerciseType: (selectedSubmission.exerciseType === 'coding' ? 'coding' : 'written') as any,
+                        language: selectedSubmission.exerciseType === 'coding' ? 'python' : undefined,
+                        submittedAt: selectedSubmission.submittedAt,
+                        submissionContent: selectedSubmission.code || '',
+                        existingGrade: selectedSubmission.grade,
+                        existingFeedback: selectedSubmission.feedback,
+                        status: selectedSubmission.status,
+                      });
+                    }}
+                  >
+                    <LuMaximize className="h-3.5 w-3.5" />
+                    Open Full Review
+                  </Button>
+
                   {/* Student Info */}
                   <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50">
                     <Avatar className="h-12 w-12">
@@ -464,5 +495,31 @@ export default function SubmissionsPage() {
         </div>
       </div>
     </div>
+
+    {/* Full Review Page */}
+    {fullReviewSubmission && (
+      <ReviewAssignmentPage
+        submission={fullReviewSubmission!}
+        onClose={() => {
+          setFullReviewSubmission(null);
+          loadSubmissions();
+        }}
+        onSubmitReview={async (payload) => {
+          try {
+            await supabase
+              .from('instructor_exercises')
+              .update({
+                status: payload.action === 'approve' ? 'approved' : 'rejected',
+                feedback: payload.feedback,
+                grade: payload.grade,
+              })
+              .eq('id', payload.submissionId);
+          } catch (err) {
+            console.error('Error submitting review', err);
+          }
+        }}
+      />
+    )}
+  </>
   );
 }
