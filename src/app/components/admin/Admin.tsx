@@ -34,6 +34,7 @@ import { supabase } from '../../../lib/supabase';
 import { fetchProfileForAuthUser } from '../../lib/profileAccess';
 
 import { Link } from 'react-router';
+import SubmissionsPage from '../../features/instructor-dashboard/pages/SubmissionsPage';
 
 const instructorSections = [
   {
@@ -483,7 +484,7 @@ export default function Admin() {
               // Load Progress Data for accurate metrics
               const { data: progressData, error: progressError } = await supabase
                 .from('user_progress')
-                .select('user_id, item_type, status, failed_attempts, updated_at')
+                .select('user_id, item_type, status, updated_at')
                 .in('user_id', hubStudentIds);
 
               if (!progressError && progressData) {
@@ -497,12 +498,9 @@ export default function Admin() {
 
                 setExercisesCompletedToday(completedTodayCount);
 
-                // Stuck Students (Failed attempts >= 3)
-                const stuckStudentsSet = new Set(progressData.filter(row =>
-                  (row.failed_attempts || 0) >= 3
-                ).map(row => String(row.user_id)));
-
-                setHubStuckStudentsCount(stuckStudentsSet.size);
+                // Stuck Students is not reliably available without failed_attempts
+                // Provide a placeholder or fallback. For now, 0.
+                setHubStuckStudentsCount(0);
               } else if (progressError?.code !== '42P01') {
                 console.error('Failed to load user progress', progressError);
               }
@@ -1184,67 +1182,9 @@ export default function Admin() {
             )}
 
             {activeSection === 'submissions' && (
-              <Card className="rounded-2xl border-border">
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <div>
-                    <CardTitle className="heading-font lowercase text-xl text-foreground">Full Review Queue</CardTitle>
-                    <CardDescription>Review process for {profile.hub_location} submissions.</CardDescription>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary" className="rounded-full">{assignmentsPendingReview} Pending</Badge>
-                    <Badge variant="outline" className="rounded-full">{reviewedSubmissions} Done</Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <div className="overflow-x-auto">
-                    <table className="w-full min-w-[620px] text-left">
-                      <thead>
-                        <tr className="border-y border-border text-xs text-muted-foreground bg-sidebar/50">
-                          <th className="px-4 py-3 font-medium">Tracking ID</th>
-                          <th className="px-4 py-3 font-medium">Student</th>
-                          <th className="px-4 py-3 font-medium">Assignment Output</th>
-                          <th className="px-4 py-3 font-medium">Current Status</th>
-                          <th className="px-4 py-3 font-medium">Submitted</th>
-                          <th className="px-4 py-3 font-medium">Review Action</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {hubSubmissionQueue.length > 0 ? (
-                          hubSubmissionQueue.map((item) => (
-                            <tr key={item.id} className="border-b border-border text-sm text-foreground last:border-b-0 hover:bg-secondary/30 transition">
-                              <td className="whitespace-nowrap px-4 py-4 font-mono text-xs text-muted-foreground">{item.id.slice(0, 8)}...</td>
-                              <td className="whitespace-nowrap px-4 py-4 font-medium">
-                                <div className="flex items-center gap-2">
-                                  <div className="h-6 w-6 rounded-full bg-primary/20 text-primary flex items-center justify-center text-[10px] uppercase font-bold">
-                                    {item.student.slice(0, 2)}
-                                  </div>
-                                  {item.student}
-                                </div>
-                              </td>
-                              <td className="px-4 py-4 max-w-[200px] truncate" title={item.assignment}>{item.assignment}</td>
-                              <td className="px-4 py-4">
-                                <Badge variant={submissionBadgeVariant[item.status]} className="rounded-full">{item.status}</Badge>
-                              </td>
-                              <td className="whitespace-nowrap px-4 py-4 text-muted-foreground text-xs">{item.submitted}</td>
-                              <td className="px-4 py-4">
-                                <Button size="sm" className="rounded-full h-8 px-4 font-medium" variant={item.status === 'Pending' ? 'default' : 'outline'}>
-                                  {item.status === 'Pending' ? 'Start Review' : 'View Feedback'}
-                                </Button>
-                              </td>
-                            </tr>
-                          ))
-                        ) : (
-                          <tr>
-                            <td colSpan={6} className="px-4 py-8 text-center text-sm text-muted-foreground bg-sidebar/40 border-dashed border-border border-b">
-                              No learner submissions are in the queue for your hub.
-                            </td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <SubmissionsPage />
+              </div>
             )}
 
             {activeSection === 'analytics' && (
