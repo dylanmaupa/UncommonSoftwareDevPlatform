@@ -21,14 +21,17 @@ import {
   LuCircleCheck,
   LuActivity,
   LuX,
-  LuSave
+  LuSave,
+  LuFileText
 } from 'react-icons/lu';
+import WrittenAssignmentEditor from '../components/WrittenAssignmentEditor';
+import CodeAssignmentPortal from '../components/CodeAssignmentPortal';
 
 interface Exercise {
   id: string;
   title: string;
   description: string;
-  type: 'coding' | 'quiz' | 'project' | 'debugging';
+  type: 'coding' | 'quiz' | 'project' | 'debugging' | 'written';
   difficulty: 'beginner' | 'intermediate' | 'advanced';
   module: string;
   deadline: string;
@@ -104,6 +107,19 @@ const mockExercises: Exercise[] = [
     averageScore: 0,
     status: 'draft'
   },
+  {
+    id: '6',
+    title: 'Explain the React Lifecycle',
+    description: 'In your own words, explain the React component lifecycle including mounting, updating, and unmounting phases. Discuss how hooks like useEffect relate to these phases.',
+    type: 'written',
+    difficulty: 'intermediate',
+    module: 'React Fundamentals',
+    deadline: '2024-03-28',
+    xpReward: 80,
+    completions: 12,
+    averageScore: 74,
+    status: 'published'
+  },
 ];
 
 export default function ExercisesPage() {
@@ -124,6 +140,12 @@ export default function ExercisesPage() {
     xpReward: 100,
     status: 'draft'
   });
+
+  // Written assignment editor state
+  const [writtenEditorExercise, setWrittenEditorExercise] = useState<Exercise | null>(null);
+
+  // Code assignment portal state
+  const [codePortalExercise, setCodePortalExercise] = useState<Exercise | null>(null);
 
   const handleCreateExercise = () => {
     if (newExercise.title && newExercise.description && newExercise.module && newExercise.deadline) {
@@ -173,6 +195,8 @@ export default function ExercisesPage() {
         return <LuClipboardList className="h-4 w-4" />;
       case 'debugging':
         return <LuBug className="h-4 w-4" />;
+      case 'written':
+        return <LuFileText className="h-4 w-4" />;
       default:
         return <LuBookOpen className="h-4 w-4" />;
     }
@@ -312,6 +336,7 @@ export default function ExercisesPage() {
                 <option value="quiz">Quiz</option>
                 <option value="project">Project</option>
                 <option value="debugging">Debugging</option>
+                <option value="written">Written</option>
               </select>
               <select 
                 value={difficultyFilter}
@@ -377,10 +402,30 @@ export default function ExercisesPage() {
               )}
 
               <div className="flex gap-2">
-                <Button size="sm" variant="outline" className="flex-1 rounded-full h-9 text-xs border-blue-200 text-blue-600 hover:bg-blue-50">
-                  <LuEye className="mr-1 h-3 w-3" />
-                  Preview
-                </Button>
+                {exercise.type === 'written' ? (
+                  <Button
+                    size="sm"
+                    className="flex-1 rounded-full h-9 text-xs bg-indigo-600 hover:bg-indigo-700 text-white"
+                    onClick={() => setWrittenEditorExercise(exercise)}
+                  >
+                    <LuFileText className="mr-1 h-3 w-3" />
+                    Open Exercise
+                  </Button>
+                ) : (exercise.type === 'coding' || exercise.type === 'debugging') ? (
+                  <Button
+                    size="sm"
+                    className="flex-1 rounded-full h-9 text-xs bg-blue-600 hover:bg-blue-700 text-white"
+                    onClick={() => setCodePortalExercise(exercise)}
+                  >
+                    <LuCode className="mr-1 h-3 w-3" />
+                    Open IDE
+                  </Button>
+                ) : (
+                  <Button size="sm" variant="outline" className="flex-1 rounded-full h-9 text-xs border-blue-200 text-blue-600 hover:bg-blue-50">
+                    <LuEye className="mr-1 h-3 w-3" />
+                    Preview
+                  </Button>
+                )}
                 <Button size="sm" variant="outline" className="flex-1 rounded-full h-9 text-xs border-blue-200 text-blue-600 hover:bg-blue-50">
                   <LuPencil className="mr-1 h-3 w-3" />
                   Edit
@@ -401,6 +446,22 @@ export default function ExercisesPage() {
             <p className="text-slate-500">No exercises found matching your criteria.</p>
           </CardContent>
         </Card>
+      )}
+
+      {/* Written Assignment Editor Modal */}
+      {writtenEditorExercise && (
+        <WrittenAssignmentEditor
+          exercise={writtenEditorExercise}
+          onClose={() => setWrittenEditorExercise(null)}
+        />
+      )}
+
+      {/* Code Assignment Portal Modal */}
+      {codePortalExercise && (
+        <CodeAssignmentPortal
+          exercise={codePortalExercise}
+          onClose={() => setCodePortalExercise(null)}
+        />
       )}
 
       {/* Create Exercise Modal */}
@@ -454,12 +515,13 @@ export default function ExercisesPage() {
                     <option value="quiz">Quiz</option>
                     <option value="project">Project</option>
                     <option value="debugging">Debugging</option>
+                    <option value="written">Written Assignment</option>
                   </select>
                 </div>
-                
+
                 <div>
                   <label className="text-sm font-medium text-slate-700 mb-1 block">Difficulty Level</label>
-                  <select 
+                  <select
                     value={newExercise.difficulty}
                     onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setNewExercise({...newExercise, difficulty: e.target.value as Exercise['difficulty']})}
                     className="w-full h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
