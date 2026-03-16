@@ -15,8 +15,6 @@ import {
   LuBell,
   LuChevronRight,
   LuBuilding2,
-  LuChevronDown,
-  LuChevronUp,
 } from 'react-icons/lu';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
@@ -131,6 +129,7 @@ export default function AdminPortal() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState('');
+  const [selectedHub, setSelectedHub] = useState<string | null>(null);
 
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
@@ -255,7 +254,7 @@ export default function AdminPortal() {
             return (
               <button
                 key={tab.id}
-                onClick={() => { setActiveTab(tab.id); setSearch(''); }}
+                onClick={() => { setActiveTab(tab.id); setSearch(''); setSelectedHub(null); }}
                 className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-colors ${
                   active
                     ? 'bg-primary text-primary-foreground font-medium'
@@ -361,7 +360,7 @@ export default function AdminPortal() {
             return (
               <button
                 key={tab.id}
-                onClick={() => { setActiveTab(tab.id); setSearch(''); }}
+                onClick={() => { setActiveTab(tab.id); setSearch(''); setSelectedHub(null); }}
                 className={`flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium border-b-2 whitespace-nowrap transition-colors ${
                   active ? 'border-primary text-primary' : 'border-transparent text-muted-foreground'
                 }`}
@@ -743,171 +742,230 @@ export default function AdminPortal() {
           {/* ── HUBS ── */}
           {activeTab === 'hubs' && (() => {
             const allHubs = [...new Set(profiles.map(p => p.hub_location).filter(Boolean))] as string[];
-            const searchedHubs = !search
-              ? allHubs
-              : allHubs.filter(h => h.toLowerCase().includes(search.toLowerCase()));
 
+            // ── Hub detail view ────────────────────────────────────────────────
+            if (selectedHub) {
+              const hub = selectedHub;
+              const hubInstructors = instructors.filter(i => i.hub_location === hub);
+              const hubStudents = students.filter(s => s.hub_location === hub);
+              const hubMemberIds = new Set([...hubInstructors, ...hubStudents].map(p => p.id));
+              const hubSubmissions = submissions.filter(s => hubInstructors.some(i => i.id === s.instructor_id));
+              const pendingHub = hubSubmissions.filter(s => s.status === 'assigned').length;
+              const submittedHub = hubSubmissions.filter(s => s.status === 'submitted').length;
+              const reviewedHub = hubSubmissions.filter(s => s.status === 'reviewed' || s.status === 'approved').length;
+              const hubActivity = activityLogs.filter(a => hubMemberIds.has(a.user_id));
+
+              return (
+                <div className="space-y-4">
+                  {/* Back button + title */}
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => { setSelectedHub(null); setSearch(''); }}
+                      className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <LuChevronRight className="h-4 w-4 rotate-180" />
+                      All Hubs
+                    </button>
+                    <span className="text-muted-foreground">/</span>
+                    <h2 className="text-lg text-foreground heading-font lowercase capitalize">{hub}</h2>
+                  </div>
+
+                  {/* Top KPI row */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <Card className="rounded-2xl border-border"><CardContent className="p-4">
+                      <p className="text-2xl font-bold text-foreground">{hubInstructors.length}</p>
+                      <p className="text-xs text-muted-foreground mt-1">Instructors</p>
+                    </CardContent></Card>
+                    <Card className="rounded-2xl border-border"><CardContent className="p-4">
+                      <p className="text-2xl font-bold text-foreground">{hubStudents.length}</p>
+                      <p className="text-xs text-muted-foreground mt-1">Students</p>
+                    </CardContent></Card>
+                    <Card className="rounded-2xl border-border"><CardContent className="p-4">
+                      <p className="text-2xl font-bold text-primary">{hubStudents.reduce((s, p) => s + (p.xp ?? 0), 0).toLocaleString()}</p>
+                      <p className="text-xs text-muted-foreground mt-1">Total XP</p>
+                    </CardContent></Card>
+                    <Card className="rounded-2xl border-border"><CardContent className="p-4">
+                      <p className="text-2xl font-bold text-foreground">{hubSubmissions.length}</p>
+                      <p className="text-xs text-muted-foreground mt-1">Submissions</p>
+                    </CardContent></Card>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_260px]">
+                    {/* Left: instructors + students */}
+                    <div className="space-y-4">
+                      {/* Instructors */}
+                      <Card className="rounded-2xl border-border">
+                        <CardContent className="p-0">
+                          <div className="flex items-center justify-between border-b border-border px-4 py-3">
+                            <h3 className="text-base text-foreground heading-font lowercase">instructors</h3>
+                            <LuShieldCheck className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                          <div className="p-3 space-y-1">
+                            {hubInstructors.length > 0 ? hubInstructors.map(i => (
+                              <div key={i.id} className="flex items-center justify-between rounded-xl bg-sidebar px-3 py-2">
+                                <div>
+                                  <p className="text-sm text-foreground">{i.full_name || '—'}</p>
+                                  <p className="text-xs text-muted-foreground">{i.email}</p>
+                                </div>
+                                <div className="text-right">
+                                  <p className="text-xs font-medium text-foreground">🔥 {i.streak ?? 0}</p>
+                                  <p className="text-xs text-muted-foreground">{fmt(i.last_activity_date)}</p>
+                                </div>
+                              </div>
+                            )) : <p className="text-xs text-muted-foreground px-3 py-2">No instructors in this hub.</p>}
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* Students */}
+                      <Card className="rounded-2xl border-border">
+                        <CardContent className="p-0">
+                          <div className="flex items-center justify-between border-b border-border px-4 py-3">
+                            <h3 className="text-base text-foreground heading-font lowercase">students</h3>
+                            <LuGraduationCap className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                          <div className="overflow-x-auto">
+                            <table className="w-full min-w-[400px] text-left">
+                              <thead>
+                                <tr className="text-xs text-muted-foreground">
+                                  <Th>Name</Th><Th>XP</Th><Th>Streak</Th><Th>Longest Streak</Th><Th>Last Active</Th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {[...hubStudents].sort((a, b) => (b.xp ?? 0) - (a.xp ?? 0)).map(s => (
+                                  <tr key={s.id} className="hover:bg-sidebar/50 transition-colors">
+                                    <Td>
+                                      <p className="font-medium">{s.full_name || '—'}</p>
+                                      <p className="text-xs text-muted-foreground">{s.email}</p>
+                                    </Td>
+                                    <Td className="font-semibold text-primary">{(s.xp ?? 0).toLocaleString()}</Td>
+                                    <Td>🔥 {s.streak ?? 0}</Td>
+                                    <Td>{s.longest_streak ?? 0}</Td>
+                                    <Td className="text-xs text-muted-foreground whitespace-nowrap">{fmt(s.last_activity_date)}</Td>
+                                  </tr>
+                                ))}
+                                {hubStudents.length === 0 && <EmptyRow cols={5} message="No students in this hub." />}
+                              </tbody>
+                            </table>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    {/* Right sidebar: submissions + activity */}
+                    <div className="space-y-4">
+                      {/* Submission status */}
+                      <Card className="rounded-2xl border-border">
+                        <CardContent className="p-4 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <h3 className="text-base text-foreground heading-font lowercase">submissions</h3>
+                            <LuClipboardList className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                          {[
+                            { label: 'Assigned', count: pendingHub, pct: hubSubmissions.length ? (pendingHub / hubSubmissions.length) * 100 : 0 },
+                            { label: 'Submitted', count: submittedHub, pct: hubSubmissions.length ? (submittedHub / hubSubmissions.length) * 100 : 0 },
+                            { label: 'Reviewed', count: reviewedHub, pct: hubSubmissions.length ? (reviewedHub / hubSubmissions.length) * 100 : 0 },
+                          ].map(({ label, count, pct }) => (
+                            <div key={label}>
+                              <div className="flex justify-between text-xs mb-1">
+                                <span className="text-muted-foreground">{label}</span>
+                                <span className="font-semibold text-foreground">{count}</span>
+                              </div>
+                              <div className="h-1.5 rounded-full bg-secondary overflow-hidden">
+                                <div className="h-full bg-primary rounded-full" style={{ width: `${pct}%` }} />
+                              </div>
+                            </div>
+                          ))}
+                          {hubSubmissions.length === 0 && <p className="text-xs text-muted-foreground">No submissions yet.</p>}
+                        </CardContent>
+                      </Card>
+
+                      {/* Activity log */}
+                      <Card className="rounded-2xl border-border">
+                        <CardContent className="p-4 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <h3 className="text-base text-foreground heading-font lowercase">activity</h3>
+                            <LuActivity className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                          {hubActivity.length > 0 ? hubActivity.slice(0, 10).map(a => {
+                            const member = profileMap.get(a.user_id);
+                            return (
+                              <div key={a.id} className="flex items-center justify-between rounded-xl bg-sidebar px-3 py-2">
+                                <div>
+                                  <p className="text-sm text-foreground">{member?.full_name || '—'}</p>
+                                  <p className="text-xs text-muted-foreground capitalize">{member?.role || 'unknown'}</p>
+                                </div>
+                                <p className="text-xs text-muted-foreground whitespace-nowrap">{fmt(a.active_date)}</p>
+                              </div>
+                            );
+                          }) : <p className="text-xs text-muted-foreground">No activity logged yet.</p>}
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+
+            // ── Hub picker grid ────────────────────────────────────────────────
             return (
               <div className="space-y-4">
                 <div>
-                  <h2 className="text-lg text-foreground heading-font lowercase">hubs</h2>
-                  <p className="text-sm text-muted-foreground">{allHubs.length} hub{allHubs.length !== 1 ? 's' : ''} · search to filter</p>
+                  <h2 className="text-lg text-foreground heading-font lowercase">select a hub</h2>
+                  <p className="text-sm text-muted-foreground">Choose a hub to view its activity, members, and submissions.</p>
                 </div>
 
-                {searchedHubs.length === 0 && (
+                {allHubs.length === 0 && (
                   <div className="rounded-2xl border border-dashed border-border bg-sidebar p-8 text-center text-sm text-muted-foreground">
-                    No hubs match your search.
+                    No hubs found. Hubs are assigned via user profiles.
                   </div>
                 )}
 
-                {searchedHubs.map(hub => {
-                  const hubInstructors = instructors.filter(i => i.hub_location === hub);
-                  const hubStudents = students.filter(s => s.hub_location === hub);
-                  const hubMemberIds = new Set([...hubInstructors, ...hubStudents].map(p => p.id));
-
-                  // Submissions where the instructor belongs to this hub
-                  const hubSubmissions = submissions.filter(s =>
-                    hubInstructors.some(i => i.id === s.instructor_id)
-                  );
-                  const pendingHub = hubSubmissions.filter(s => s.status === 'assigned').length;
-                  const submittedHub = hubSubmissions.filter(s => s.status === 'submitted').length;
-                  const reviewedHub = hubSubmissions.filter(s => s.status === 'reviewed' || s.status === 'approved').length;
-
-                  // Activity logs where member belongs to this hub
-                  const hubActivity = activityLogs.filter(a => hubMemberIds.has(a.user_id)).slice(0, 6);
-
-                  return (
-                    <Card key={hub} className="rounded-2xl border-border">
-                      {/* Hub header */}
-                      <CardContent className="p-0">
-                        <div className="flex items-center justify-between px-4 py-4 border-b border-border">
-                          <div className="flex items-center gap-3">
-                            <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
-                              <LuBuilding2 className="h-5 w-5" />
-                            </div>
-                            <div>
-                              <h3 className="text-base font-semibold text-foreground capitalize">{hub}</h3>
-                              <p className="text-xs text-muted-foreground">
-                                {hubInstructors.length} instructor{hubInstructors.length !== 1 ? 's' : ''} · {hubStudents.length} student{hubStudents.length !== 1 ? 's' : ''}
-                              </p>
-                            </div>
-                          </div>
-                          {/* Mini stats */}
-                          <div className="hidden sm:flex items-center gap-4 text-xs text-muted-foreground">
-                            <span className="flex flex-col items-center">
-                              <span className="text-base font-bold text-foreground">{hubSubmissions.length}</span>
-                              submissions
-                            </span>
-                            <span className="flex flex-col items-center">
-                              <span className="text-base font-bold text-foreground">{hubActivity.length}</span>
-                              recent activity
-                            </span>
-                            <span className="flex flex-col items-center">
-                              <span className="text-base font-bold text-primary">{hubStudents.reduce((sum, s) => sum + (s.xp ?? 0), 0).toLocaleString()}</span>
-                              total XP
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Two-col body */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-0 divide-y md:divide-y-0 md:divide-x divide-border">
-
-                          {/* Left: People */}
-                          <div className="p-4 space-y-4">
-                            {/* Instructors */}
-                            <div>
-                              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Instructors</p>
-                              {hubInstructors.length > 0 ? hubInstructors.map(i => (
-                                <div key={i.id} className="flex items-center justify-between rounded-xl bg-sidebar p-2 mb-1">
-                                  <div>
-                                    <p className="text-sm text-foreground">{i.full_name || '—'}</p>
-                                    <p className="text-xs text-muted-foreground">{i.email}</p>
-                                  </div>
-                                  <div className="text-right">
-                                    <p className="text-xs text-muted-foreground">🔥 {i.streak ?? 0}</p>
-                                    <p className="text-xs text-muted-foreground">{fmt(i.last_activity_date)}</p>
-                                  </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {allHubs.map(hub => {
+                    const hi = instructors.filter(i => i.hub_location === hub).length;
+                    const hs = students.filter(s => s.hub_location === hub).length;
+                    const totalXP = students.filter(s => s.hub_location === hub).reduce((sum, s) => sum + (s.xp ?? 0), 0);
+                    const hubSubs = submissions.filter(s => instructors.filter(i => i.hub_location === hub).some(i => i.id === s.instructor_id)).length;
+                    return (
+                      <button
+                        key={hub}
+                        onClick={() => setSelectedHub(hub)}
+                        className="text-left group"
+                      >
+                        <Card className="rounded-2xl border-border group-hover:border-primary/50 transition-colors cursor-pointer">
+                          <CardContent className="p-5 space-y-4">
+                            {/* Hub icon + name */}
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <div className="h-11 w-11 rounded-xl bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
+                                  <LuBuilding2 className="h-6 w-6" />
                                 </div>
-                              )) : <p className="text-xs text-muted-foreground">No instructors.</p>}
-                            </div>
-
-                            {/* Students */}
-                            <div>
-                              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Students</p>
-                              {hubStudents.length > 0 ? (
-                                <div className="overflow-x-auto">
-                                  <table className="w-full min-w-[280px] text-left">
-                                    <thead>
-                                      <tr className="text-xs text-muted-foreground">
-                                        <th className="pb-2 font-medium">Name</th>
-                                        <th className="pb-2 font-medium text-right">XP</th>
-                                        <th className="pb-2 font-medium text-right">Streak</th>
-                                        <th className="pb-2 font-medium text-right">Last Active</th>
-                                      </tr>
-                                    </thead>
-                                    <tbody>
-                                      {[...hubStudents].sort((a, b) => (b.xp ?? 0) - (a.xp ?? 0)).map(s => (
-                                        <tr key={s.id} className="border-t border-border">
-                                          <td className="py-2 text-sm text-foreground pr-2">
-                                            <p>{s.full_name || '—'}</p>
-                                            <p className="text-xs text-muted-foreground">{s.email}</p>
-                                          </td>
-                                          <td className="py-2 text-sm font-semibold text-primary text-right whitespace-nowrap">{(s.xp ?? 0).toLocaleString()}</td>
-                                          <td className="py-2 text-sm text-right whitespace-nowrap">🔥 {s.streak ?? 0}</td>
-                                          <td className="py-2 text-xs text-muted-foreground text-right whitespace-nowrap">{fmt(s.last_activity_date)}</td>
-                                        </tr>
-                                      ))}
-                                    </tbody>
-                                  </table>
+                                <div>
+                                  <p className="font-semibold text-foreground capitalize">{hub}</p>
+                                  <p className="text-xs text-muted-foreground">{hi} instructor{hi !== 1 ? 's' : ''} · {hs} student{hs !== 1 ? 's' : ''}</p>
                                 </div>
-                              ) : <p className="text-xs text-muted-foreground">No students.</p>}
+                              </div>
+                              <LuChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
                             </div>
-                          </div>
 
-                          {/* Right: Submissions + Activity */}
-                          <div className="p-4 space-y-4">
-                            {/* Submission status */}
-                            <div>
-                              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Submissions</p>
-                              <div className="space-y-2">
-                                {[
-                                  { label: 'Assigned', count: pendingHub },
-                                  { label: 'Submitted', count: submittedHub },
-                                  { label: 'Reviewed', count: reviewedHub },
-                                ].map(({ label, count }) => (
-                                  <div key={label} className="flex items-center justify-between rounded-xl bg-sidebar px-3 py-2">
-                                    <span className="text-xs text-muted-foreground">{label}</span>
-                                    <span className="text-sm font-semibold text-foreground">{count}</span>
-                                  </div>
-                                ))}
-                                {hubSubmissions.length === 0 && (
-                                  <p className="text-xs text-muted-foreground">No submissions yet.</p>
-                                )}
+                            {/* Stats row */}
+                            <div className="grid grid-cols-2 gap-2">
+                              <div className="rounded-xl bg-sidebar px-3 py-2">
+                                <p className="text-sm font-semibold text-primary">{totalXP.toLocaleString()}</p>
+                                <p className="text-xs text-muted-foreground">Total XP</p>
+                              </div>
+                              <div className="rounded-xl bg-sidebar px-3 py-2">
+                                <p className="text-sm font-semibold text-foreground">{hubSubs}</p>
+                                <p className="text-xs text-muted-foreground">Submissions</p>
                               </div>
                             </div>
-
-                            {/* Recent activity */}
-                            <div>
-                              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Recent Activity</p>
-                              {hubActivity.length > 0 ? hubActivity.map(a => {
-                                const member = profileMap.get(a.user_id);
-                                return (
-                                  <div key={a.id} className="flex items-center justify-between rounded-xl bg-sidebar px-3 py-2 mb-1">
-                                    <div>
-                                      <p className="text-sm text-foreground">{member?.full_name || '—'}</p>
-                                      <p className="text-xs text-muted-foreground capitalize">{member?.role || 'unknown'}</p>
-                                    </div>
-                                    <p className="text-xs text-muted-foreground">{fmt(a.active_date)}</p>
-                                  </div>
-                                );
-                              }) : <p className="text-xs text-muted-foreground">No recent activity.</p>}
-                            </div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
+                          </CardContent>
+                        </Card>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             );
           })()}
