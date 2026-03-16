@@ -14,6 +14,9 @@ import {
   LuGraduationCap,
   LuBell,
   LuChevronRight,
+  LuBuilding2,
+  LuChevronDown,
+  LuChevronUp,
 } from 'react-icons/lu';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
@@ -66,7 +69,7 @@ interface ActivityLog {
   created_at: string;
 }
 
-type TabId = 'overview' | 'users' | 'instructors' | 'courses' | 'submissions' | 'activity';
+type TabId = 'overview' | 'users' | 'instructors' | 'courses' | 'submissions' | 'activity' | 'hubs';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const fmt = (date: string | null) => {
@@ -199,6 +202,7 @@ export default function AdminPortal() {
 
   const tabs: { id: TabId; label: string; icon: React.ElementType; count?: number }[] = [
     { id: 'overview', label: 'Overview', icon: LuLayoutDashboard },
+    { id: 'hubs', label: 'Hubs', icon: LuBuilding2, count: hubs.length },
     { id: 'users', label: 'All Users', icon: LuUsers, count: profiles.length },
     { id: 'instructors', label: 'Instructors', icon: LuShieldCheck, count: instructors.length },
     { id: 'courses', label: 'Courses', icon: LuBookOpen, count: courses.length },
