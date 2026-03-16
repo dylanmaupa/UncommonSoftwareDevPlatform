@@ -30,6 +30,8 @@ export const router = createBrowserRouter([
       { path: 'dashboard', Component: Dashboard },
       { path: 'instructor', Component: Admin },
       { path: 'instructor/:section', Component: Admin },
+      { path: 'admin', Component: Admin },
+      { path: 'admin/:section', Component: Admin },
       { path: 'sandbox', Component: Sandbox },
       { path: 'courses', Component: Courses },
       { path: 'courses/:courseId', Component: CourseDetail },

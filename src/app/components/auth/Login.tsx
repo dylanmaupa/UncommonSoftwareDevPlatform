@@ -32,7 +32,7 @@ export default function Login() {
         localStorage.setItem('admin_bypass', 'true');
         localStorage.setItem('instructor_bypass', 'true');
         toast.success('Admin Bypass Activated');
-        navigate('/instructor');
+        navigate('/admin');
         return;
       }
 
