@@ -15,6 +15,7 @@ import Achievements from './components/achievements/Achievements';
 import Profile from './components/profile/Profile';
 import Settings from './components/settings/Settings';
 import Admin from './components/admin/Admin';
+import AdminPortal from './components/admin/AdminPortal';
 
 import NotFound from './components/NotFound';
 
@@ -30,8 +31,8 @@ export const router = createBrowserRouter([
       { path: 'dashboard', Component: Dashboard },
       { path: 'instructor', Component: Admin },
       { path: 'instructor/:section', Component: Admin },
-      { path: 'admin', Component: Admin },
-      { path: 'admin/:section', Component: Admin },
+      { path: 'admin', Component: AdminPortal },
+      { path: 'admin/:section', Component: AdminPortal },
       { path: 'sandbox', Component: Sandbox },
       { path: 'courses', Component: Courses },
       { path: 'courses/:courseId', Component: CourseDetail },
