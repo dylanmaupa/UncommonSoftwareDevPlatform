@@ -140,6 +140,14 @@ interface HubSubmissionItem {
   submitted: string;
 }
 
+interface HubAssignedItem {
+  id: string;
+  studentId: string;
+  student: string;
+  assignment: string;
+  assignedAt: string;
+}
+
 const mapExerciseStatusToSubmissionStatus = (status: string): SubmissionStatus => {
   const normalized = String(status || '').toLowerCase();
 
@@ -198,6 +206,7 @@ export default function Admin() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [students, setStudents] = useState<UserProfile[]>([]);
   const [hubSubmissionQueue, setHubSubmissionQueue] = useState<HubSubmissionItem[]>([]);
+  const [hubAssignedExercises, setHubAssignedExercises] = useState<HubAssignedItem[]>([]);
   const [hubRecentActivity, setHubRecentActivity] = useState<string[]>([]);
   const [hubActiveStudentsCount, setHubActiveStudentsCount] = useState(0);
   const [hubActiveTodayCount, setHubActiveTodayCount] = useState(0);
@@ -380,11 +389,20 @@ export default function Admin() {
                 .order('created_at', { ascending: false });
 
               if (!exerciseError && exerciseData) {
-                const hubItems: HubSubmissionItem[] = exerciseData
-                  .filter((row: any) => hubStudentIdSet.has(String(row.student_id)))
+                // Separate: actual submissions (student submitted) vs assigned (not yet submitted)
+                const submittedRows = exerciseData.filter((row: any) =>
+                  hubStudentIdSet.has(String(row.student_id)) &&
+                  String(row.status || '').toLowerCase() !== 'assigned'
+                );
+                const assignedRows = exerciseData.filter((row: any) =>
+                  hubStudentIdSet.has(String(row.student_id)) &&
+                  String(row.status || '').toLowerCase() === 'assigned'
+                );
+
+                // Student submissions
+                const hubItems: HubSubmissionItem[] = submittedRows
                   .map((row: any) => {
                     const studentId = String(row.student_id || '');
-
                     return {
                       id: String(row.id || ''),
                       studentId,
@@ -398,6 +416,22 @@ export default function Admin() {
 
                 setHubSubmissionQueue(hubItems);
 
+                // Assigned exercises (not yet submitted by students)
+                const assignedItems: HubAssignedItem[] = assignedRows
+                  .map((row: any) => {
+                    const studentId = String(row.student_id || '');
+                    return {
+                      id: String(row.id || ''),
+                      studentId,
+                      student: studentNameMap.get(studentId) || 'Student',
+                      assignment: String(row.title || 'Untitled Assignment'),
+                      assignedAt: formatRelativeTime(row.created_at ? String(row.created_at) : null),
+                    };
+                  })
+                  .slice(0, 12);
+
+                setHubAssignedExercises(assignedItems);
+
                 const fallbackActivity = hubItems
                   .map((item) => `${item.student} ${item.status === 'Pending' ? 'submitted' : 'updated'} ${item.assignment}`)
                   .slice(0, 8);
@@ -406,6 +440,7 @@ export default function Admin() {
                 setHubActiveStudentsCount(new Set(hubItems.map((item) => item.studentId)).size);
               } else {
                 setHubSubmissionQueue([]);
+                setHubAssignedExercises([]);
                 setHubRecentActivity([]);
                 setHubActiveStudentsCount(0);
 
@@ -739,15 +774,14 @@ export default function Admin() {
 
                 <Card className="rounded-2xl border-border">
                   <CardHeader className="pb-2">
-                    <CardTitle className="heading-font lowercase text-lg text-foreground">Active Submissions (Hub Overview)</CardTitle>
-                    <CardDescription>Recent submissions from learners at {profile.hub_location}.</CardDescription>
+                    <CardTitle className="heading-font lowercase text-lg text-foreground">Student Submissions</CardTitle>
+                    <CardDescription>Submissions received from learners at {profile.hub_location}.</CardDescription>
                   </CardHeader>
                   <CardContent className="p-0">
                     <div className="overflow-x-auto">
                       <table className="w-full min-w-[620px] text-left">
                         <thead>
                           <tr className="border-y border-border text-xs text-muted-foreground">
-                            <th className="px-4 py-3 font-medium">Submission ID</th>
                             <th className="px-4 py-3 font-medium">Student</th>
                             <th className="px-4 py-3 font-medium">Assignment</th>
                             <th className="px-4 py-3 font-medium">Status</th>
@@ -759,7 +793,6 @@ export default function Admin() {
                           {hubSubmissionQueue.length > 0 ? (
                             hubSubmissionQueue.slice(0, 5).map((item) => (
                               <tr key={item.id} className="border-b border-border text-sm text-foreground last:border-b-0">
-                                <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">#{item.id.slice(0, 8)}</td>
                                 <td className="whitespace-nowrap px-4 py-3 font-medium">{item.student}</td>
                                 <td className="px-4 py-3">{item.assignment}</td>
                                 <td className="px-4 py-3">
@@ -767,7 +800,7 @@ export default function Admin() {
                                 </td>
                                 <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">{item.submitted}</td>
                                 <td className="px-4 py-3">
-                                  <Button size="sm" variant="ghost" className="rounded-full border border-border text-xs">
+                                  <Button size="sm" variant="ghost" className="rounded-full border border-border text-xs" onClick={() => navigate('/instructor/submissions')}>
                                     Review
                                   </Button>
                                 </td>
@@ -775,8 +808,49 @@ export default function Admin() {
                             ))
                           ) : (
                             <tr>
-                              <td colSpan={6} className="px-4 py-6 text-center text-sm text-muted-foreground">
-                                No active submissions from your hub yet.
+                              <td colSpan={5} className="px-4 py-6 text-center text-sm text-muted-foreground">
+                                No submissions from students yet.
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="rounded-2xl border-border">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="heading-font lowercase text-lg text-foreground">Assigned Exercises</CardTitle>
+                    <CardDescription>Exercises sent to learners at {profile.hub_location} — awaiting their submission.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <div className="overflow-x-auto">
+                      <table className="w-full min-w-[520px] text-left">
+                        <thead>
+                          <tr className="border-y border-border text-xs text-muted-foreground">
+                            <th className="px-4 py-3 font-medium">Student</th>
+                            <th className="px-4 py-3 font-medium">Exercise</th>
+                            <th className="px-4 py-3 font-medium">Status</th>
+                            <th className="px-4 py-3 font-medium">Assigned</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {hubAssignedExercises.length > 0 ? (
+                            hubAssignedExercises.slice(0, 5).map((item) => (
+                              <tr key={item.id} className="border-b border-border text-sm text-foreground last:border-b-0">
+                                <td className="whitespace-nowrap px-4 py-3 font-medium">{item.student}</td>
+                                <td className="px-4 py-3">{item.assignment}</td>
+                                <td className="px-4 py-3">
+                                  <Badge variant="outline" className="text-amber-600 border-amber-200 bg-amber-50">Awaiting</Badge>
+                                </td>
+                                <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">{item.assignedAt}</td>
+                              </tr>
+                            ))
+                          ) : (
+                            <tr>
+                              <td colSpan={4} className="px-4 py-6 text-center text-sm text-muted-foreground">
+                                No pending assignments.
                               </td>
                             </tr>
                           )}
