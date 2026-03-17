@@ -77,7 +77,7 @@ interface OutputLine {
 
 // ─── Piston Mapping ─────────────────────────────────────────────────────────
 
-const INTERNAL_RUN_API = '/api/code/run';
+const PISTON_API = '/api/piston/execute';
 
 const LANGUAGE_MAP: Record<string, { language: string; version: string }> = {
   python:     { language: 'python',     version: '3.10.0' },
@@ -177,13 +177,13 @@ export default function ReviewAssignmentPage({
     const startTime = performance.now();
 
     try {
-      const res = await fetch(INTERNAL_RUN_API, {
+      const res = await fetch(PISTON_API, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           language: runtime.language,
           version: runtime.version,
-          code: currentCode,
+          files: [{ content: currentCode }],
         }),
       });
 
@@ -195,24 +195,32 @@ export default function ReviewAssignmentPage({
       }
 
       const data = await res.json();
+      const run = data.run || {};
+      const compile = data.compile || {};
 
       const lines: OutputLine[] = [];
       
-      // Add standard error (which includes compile error from backend proxy)
-      if (data.stderr) {
-        data.stderr.trimEnd().split('\n').forEach((l: string) => lines.push({ kind: 'stderr', text: l }));
+      // Add compile errors if any
+      if (compile.stderr) {
+        compile.stderr.trimEnd().split('\n').forEach((l: string) => lines.push({ kind: 'stderr', text: l }));
       }
-      
-      // Add standard output
-      if (data.stdout) {
-        data.stdout.trimEnd().split('\n').forEach((l: string) => lines.push({ kind: 'stdout', text: l }));
+      if (compile.stdout) {
+        compile.stdout.trimEnd().split('\n').forEach((l: string) => lines.push({ kind: 'stdout', text: l }));
+      }
+
+      // Add run output
+      if (run.stdout) {
+        run.stdout.trimEnd().split('\n').forEach((l: string) => lines.push({ kind: 'stdout', text: l }));
+      }
+      if (run.stderr) {
+        run.stderr.trimEnd().split('\n').forEach((l: string) => lines.push({ kind: 'stderr', text: l }));
       }
 
       if (lines.length === 0) {
         lines.push({ kind: 'info', text: '(No output)' });
       }
 
-      const exitCode = data.exitCode ?? 0;
+      const exitCode = run.code ?? 0;
       lines.push({ 
         kind: exitCode === 0 ? 'info' : 'error', 
         text: `── Exited with code ${exitCode} · ${elapsed}ms ──` 
