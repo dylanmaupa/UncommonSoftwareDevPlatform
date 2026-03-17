@@ -24,7 +24,7 @@ import {
   LuTrash2,
   LuUser,
 } from 'react-icons/lu';
-import { loadPyodideEnvironment } from '../../../lib/pyodide';
+import { loadPyodideEnvironment } from '../../../../lib/pyodide';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
