@@ -25,6 +25,7 @@ import {
   LuUser,
 } from 'react-icons/lu';
 import { loadPyodideEnvironment } from '../../../../lib/pyodide';
+import { supabase } from '../../../../lib/supabase';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -260,27 +261,36 @@ sys.stderr = io.StringIO()
 
     try {
       if (onSubmitReview) {
-        onSubmitReview({
+        // If a parent component passed a handler, use that
+        await onSubmitReview({
           submissionId: submission.id,
           grade: numericGrade,
           feedback,
           action,
         });
+        setSubmitted(true);
       } else {
-        // Fallback: post to API
-        await fetch('/api/submissions/review', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            submissionId: submission.id,
+        // Otherwise, use deep Supabase integration directly (since there's no backend Express server)
+        const newStatus = action === 'approve' ? 'reviewed' : 'assigned'; // 'assigned' sends it back to the student
+        
+        const { error } = await supabase
+          .from('instructor_exercises')
+          .update({
             grade: numericGrade,
-            feedback,
-            action,
-          }),
-        });
+            feedback: feedback,
+            status: newStatus,
+            reviewed_at: new Date().toISOString(),
+          })
+          .eq('id', submission.id);
+
+        if (error) throw error;
+        
+        setSubmitted(true);
       }
-      setSubmitted(true);
-    } catch {
+    } catch (err) {
+      console.error('Failed to submit review:', err);
+      alert('Failed to save the review. Please check your connection and try again.');
+    } finally {
       setIsSubmitting(false);
     }
   };
