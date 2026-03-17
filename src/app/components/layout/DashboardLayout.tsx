@@ -134,6 +134,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const learnerNavItems: NavItem[] = [
     { icon: LuLayoutDashboard, label: 'Dashboard', path: '/dashboard' },
+    { icon: LuTarget, label: 'Assignments', path: '/assignments' },
     { icon: LuTerminal, label: 'Sandbox', path: '/sandbox' },
     { icon: LuBookOpen, label: 'Courses', path: '/courses' },
     { icon: LuFolderKanban, label: 'Projects', path: '/projects' },

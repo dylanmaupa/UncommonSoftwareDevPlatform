@@ -15,6 +15,7 @@ import Achievements from './components/achievements/Achievements';
 import Profile from './components/profile/Profile';
 import Settings from './components/settings/Settings';
 import Admin from './components/admin/Admin';
+import Assignments from './components/assignments/Assignments';
 
 import NotFound from './components/NotFound';
 
@@ -37,6 +38,7 @@ export const router = createBrowserRouter([
       { path: 'projects', Component: Projects },
       { path: 'projects/:projectId', Component: ProjectDetail },
       { path: 'achievements', Component: Achievements },
+      { path: 'assignments', Component: Assignments },
       { path: 'profile', Component: Profile },
       { path: 'settings', Component: Settings },
       { path: '*', Component: NotFound },

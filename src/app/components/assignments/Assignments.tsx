@@ -5,7 +5,7 @@ import { Card, CardContent } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { supabase } from '../../../lib/supabase';
-import { LuTarget, LuCheckCircle, LuClock, LuMessageSquare, LuStar } from 'react-icons/lu';
+import { LuTarget, LuCircleCheck, LuClock, LuMessageSquare, LuStar } from 'react-icons/lu';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui/tabs';
 
 interface InstructorExercise {
@@ -154,7 +154,7 @@ export default function Assignments() {
               {pendingAssignments.length === 0 ? (
                 <Card className="border-dashed shadow-none">
                   <CardContent className="flex flex-col items-center justify-center h-48 text-center">
-                    <LuCheckCircle className="h-8 w-8 text-emerald-500 mb-3" />
+                    <LuCircleCheck className="h-8 w-8 text-emerald-500 mb-3" />
                     <p className="text-slate-600 font-medium tracking-tight">You're all caught up!</p>
                     <p className="text-slate-400 text-sm mt-1">No pending assignments at the moment.</p>
                   </CardContent>
