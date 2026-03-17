@@ -358,18 +358,19 @@ export default function SubmissionsPage() {
             loadSubmissions();
           }}
           onSubmitReview={async (payload) => {
-            try {
-              await supabase
-                .from('instructor_exercises')
-                .update({
-                  status: payload.action === 'approve' ? 'approved' : 'rejected',
-                  feedback: payload.feedback,
-                  grade: payload.grade,
-                  reviewed_at: new Date().toISOString(),
-                })
-                .eq('id', payload.submissionId);
-            } catch (err) {
-              console.error('Error submitting review', err);
+            const { error } = await supabase
+              .from('instructor_exercises')
+              .update({
+                status: payload.action === 'approve' ? 'approved' : 'rejected',
+                feedback: payload.feedback,
+                grade: payload.grade,
+                reviewed_at: new Date().toISOString(),
+              })
+              .eq('id', payload.submissionId);
+
+            if (error) {
+              console.error('Error submitting review:', error);
+              throw error; // Bubble up so the ReviewAssignmentPage catches it and stops loading
             }
           }}
         />
