@@ -75,6 +75,23 @@ interface OutputLine {
   text: string;
 }
 
+// ─── Piston Mapping ─────────────────────────────────────────────────────────
+
+const INTERNAL_RUN_API = '/api/code/run';
+
+const LANGUAGE_MAP: Record<string, { language: string; version: string }> = {
+  python:     { language: 'python',     version: '3.10.0' },
+  javascript: { language: 'javascript', version: '18.15.0' },
+  js:         { language: 'javascript', version: '18.15.0' },
+  typescript: { language: 'typescript', version: '5.0.3' },
+  ts:         { language: 'typescript', version: '5.0.3' },
+  java:       { language: 'java',       version: '15.0.2' },
+  cpp:        { language: 'c++',        version: '10.2.0' },
+  c:          { language: 'c',          version: '10.2.0' },
+  go:         { language: 'go',         version: '1.16.2' },
+  rust:       { language: 'rust',       version: '1.50.0' },
+};
+
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export default function ReviewAssignmentPage({
@@ -143,21 +160,30 @@ export default function ReviewAssignmentPage({
 
   // ── Run Student Code ──────────────────────────────────────────────────────
   const handleRunCode = async () => {
-    if (!isCodeSubmission) return;
+    const langKey = (submission.language ?? 'python').toLowerCase().trim();
+    const runtime = LANGUAGE_MAP[langKey];
+
+    if (!runtime) {
+      setRunOutput([{ kind: 'error', text: `✖ Unsupported language: ${submission.language}` }]);
+      setShowRunModal(true);
+      return;
+    }
+
     setShowRunModal(true);
     setIsRunning(true);
-    setRunOutput([{ kind: 'info', text: `⟳ Running ${submission.language ?? 'code'}…` }]);
+    setRunOutput([{ kind: 'info', text: `⟳ Running ${submission.language ?? 'code'} via Piston…` }]);
     scrollTerminal();
 
     const startTime = performance.now();
 
     try {
-      const res = await fetch('/api/code/run', {
+      const res = await fetch(INTERNAL_RUN_API, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          language: runtime.language,
+          version: runtime.version,
           code: currentCode,
-          language: submission.language ?? 'python',
         }),
       });
 
@@ -165,16 +191,33 @@ export default function ReviewAssignmentPage({
       setLastRunMs(elapsed);
 
       if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`);
+        throw new Error(`Execution service error (HTTP ${res.status})`);
       }
 
-      const data = await res.json() as { stdout: string; stderr: string; exitCode: number };
+      const data = await res.json();
 
       const lines: OutputLine[] = [];
-      if (data.stdout) data.stdout.trimEnd().split('\n').forEach(l => lines.push({ kind: 'stdout', text: l }));
-      if (data.stderr) data.stderr.trimEnd().split('\n').forEach(l => lines.push({ kind: 'stderr', text: l }));
-      if (lines.length === 0) lines.push({ kind: 'info', text: '(No output)' });
-      lines.push({ kind: data.exitCode === 0 ? 'info' : 'error', text: `── Exited with code ${data.exitCode} · ${elapsed}ms ──` });
+      
+      // Add standard error (which includes compile error from backend proxy)
+      if (data.stderr) {
+        data.stderr.trimEnd().split('\n').forEach((l: string) => lines.push({ kind: 'stderr', text: l }));
+      }
+      
+      // Add standard output
+      if (data.stdout) {
+        data.stdout.trimEnd().split('\n').forEach((l: string) => lines.push({ kind: 'stdout', text: l }));
+      }
+
+      if (lines.length === 0) {
+        lines.push({ kind: 'info', text: '(No output)' });
+      }
+
+      const exitCode = data.exitCode ?? 0;
+      lines.push({ 
+        kind: exitCode === 0 ? 'info' : 'error', 
+        text: `── Exited with code ${exitCode} · ${elapsed}ms ──` 
+      });
+      
       setRunOutput(lines);
     } catch (err: unknown) {
       const elapsed = Math.round(performance.now() - startTime);
@@ -302,33 +345,31 @@ export default function ReviewAssignmentPage({
                 )}
               </div>
 
-              {isCodeSubmission && (
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    variant={isEditingCode ? "outline" : "secondary"}
-                    className={`rounded-full h-7 text-xs gap-1 ${isEditingCode ? 'border-amber-200 text-amber-700 bg-amber-50 hover:bg-amber-100' : 'bg-slate-200 text-slate-700 hover:bg-slate-300'}`}
-                    onClick={() => setIsEditingCode(!isEditingCode)}
-                  >
-                    {isEditingCode ? <LuX className="h-3 w-3" /> : <LuCode className="h-3 w-3" />}
-                    {isEditingCode ? 'Exit Edit Mode' : 'Edit Code'}
-                  </Button>
-                  <Button
-                    size="sm"
-                    className="rounded-full h-7 text-xs bg-emerald-600 hover:bg-emerald-500 gap-1"
-                    onClick={handleRunCode}
-                    disabled={isRunning}
-                  >
-                    {isRunning ? <LuLoader className="h-3 w-3 animate-spin" /> : <LuPlay className="h-3 w-3" />}
-                    Run Student Code
-                  </Button>
-                </div>
-              )}
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant={isEditingCode ? "outline" : "secondary"}
+                  className={`rounded-full h-7 text-xs gap-1 ${isEditingCode ? 'border-amber-200 text-amber-700 bg-amber-50 hover:bg-amber-100' : 'bg-slate-200 text-slate-700 hover:bg-slate-300'}`}
+                  onClick={() => setIsEditingCode(!isEditingCode)}
+                >
+                  {isEditingCode ? <LuX className="h-3 w-3" /> : <LuCode className="h-3 w-3" />}
+                  {isEditingCode ? 'Exit Edit Mode' : 'Edit Code'}
+                </Button>
+                <Button
+                  size="sm"
+                  className="rounded-full h-7 text-xs bg-emerald-600 hover:bg-emerald-500 gap-1"
+                  onClick={handleRunCode}
+                  disabled={isRunning}
+                >
+                  {isRunning ? <LuLoader className="h-3 w-3 animate-spin" /> : <LuPlay className="h-3 w-3" />}
+                  Run Student Code
+                </Button>
+              </div>
             </div>
 
             {/* Content area */}
             <div className="flex-1 overflow-hidden">
-              {isCodeSubmission ? (
+              {isCodeSubmission || isEditingCode ? (
                 <Editor
                   height="100%"
                   language={submission.language ?? 'python'}
