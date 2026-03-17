@@ -15,7 +15,7 @@ interface InstructorExercise {
   title: string;
   instructions: string;
   language: 'python' | 'javascript';
-  status: 'assigned' | 'submitted' | 'reviewed';
+  status: 'assigned' | 'submitted' | 'reviewed' | 'approved' | 'rejected';
   due_date: string | null;
   created_at: string;
   submitted_at: string | null;
@@ -82,7 +82,7 @@ export default function Assignments() {
             title: String(row.title || 'Untitled Exercise'),
             instructions: String(row.instructions || ''),
             language: row.language === 'javascript' ? 'javascript' : 'python',
-            status: row.status === 'submitted' || row.status === 'reviewed' ? row.status : 'assigned',
+            status: row.status || 'assigned',
             due_date: row.due_date ? String(row.due_date) : null,
             created_at: String(row.created_at || ''),
             submitted_at: row.submitted_at ? String(row.submitted_at) : null,
@@ -105,8 +105,8 @@ export default function Assignments() {
     return () => { isMounted = false; };
   }, [navigate]);
 
-  const pendingAssignments = assignments.filter((a) => a.status === 'assigned' || a.status === 'submitted');
-  const reviewedAssignments = assignments.filter((a) => a.status === 'reviewed');
+  const pendingAssignments = assignments.filter((a) => ['assigned', 'submitted', 'rejected'].includes(a.status));
+  const reviewedAssignments = assignments.filter((a) => ['reviewed', 'approved'].includes(a.status));
 
   return (
     <DashboardLayout>
@@ -164,7 +164,9 @@ export default function Assignments() {
                   {pendingAssignments.map((assignment) => {
                     const statusTone = assignment.status === 'submitted' 
                       ? 'bg-amber-100 text-amber-700 border-amber-200' 
-                      : 'bg-blue-100 text-blue-700 border-blue-200';
+                      : assignment.status === 'rejected'
+                        ? 'bg-rose-100 text-rose-700 border-rose-200'
+                        : 'bg-blue-100 text-blue-700 border-blue-200';
                       
                     const isLate = assignment.due_date && (
                       assignment.status === 'assigned'
@@ -176,7 +178,9 @@ export default function Assignments() {
                       <Card key={assignment.id} className="flex flex-col h-full hover:shadow-md transition-shadow">
                         <CardContent className="p-5 flex flex-col h-full">
                           <div className="flex justify-between items-start mb-3">
-                            <Badge className={statusTone}>{assignment.status === 'submitted' ? 'Awaiting Review' : 'To Do'}</Badge>
+                            <Badge className={statusTone}>
+                              {assignment.status === 'submitted' ? 'Awaiting Review' : assignment.status === 'rejected' ? 'Needs Revision' : 'To Do'}
+                            </Badge>
                             {assignment.language && (
                               <Badge variant="outline" className="text-[10px] uppercase text-slate-500">
                                 {assignment.language}
@@ -188,7 +192,9 @@ export default function Assignments() {
                           <p className="text-xs text-slate-500 mb-3">From {assignment.instructor_name}</p>
                           
                           <p className="text-sm text-slate-600 line-clamp-2 mb-4 flex-1">
-                            {assignment.instructions || 'No detailed instructions provided. Open the sandbox to start coding.'}
+                            {assignment.status === 'rejected' && assignment.feedback 
+                              ? `Feedback: ${assignment.feedback}` 
+                              : assignment.instructions || 'No detailed instructions provided. Open the sandbox to start coding.'}
                           </p>
                           
                           <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">

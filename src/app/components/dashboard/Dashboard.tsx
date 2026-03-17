@@ -45,7 +45,7 @@ interface InstructorExercise {
   title: string;
   instructions: string;
   language: 'python' | 'javascript';
-  status: 'assigned' | 'submitted' | 'reviewed';
+  status: 'assigned' | 'submitted' | 'reviewed' | 'approved' | 'rejected';
   due_date: string | null;
   created_at: string;
   submitted_at: string | null;
@@ -271,9 +271,11 @@ function DashboardMain({
                     const statusTone =
                       exercise.status === 'submitted'
                         ? 'bg-amber-100 text-amber-800 border-amber-200'
-                        : exercise.status === 'reviewed'
+                        : (exercise.status === 'reviewed' || exercise.status === 'approved')
                           ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
-                          : 'bg-blue-100 text-blue-800 border-blue-200';
+                          : exercise.status === 'rejected'
+                            ? 'bg-rose-100 text-rose-800 border-rose-200'
+                            : 'bg-blue-100 text-blue-800 border-blue-200';
 
                     const isLate = exercise.due_date && (
                       exercise.status === 'assigned'
@@ -294,7 +296,9 @@ function DashboardMain({
                               </p>
                             </div>
                             <div className="flex flex-col gap-1 items-end">
-                              <Badge className={`border ${statusTone}`}>{exercise.status}</Badge>
+                              <Badge className={`border ${statusTone}`}>
+                                {exercise.status === 'rejected' ? 'needs revision' : exercise.status}
+                              </Badge>
                             </div>
                           </div>
 
@@ -589,7 +593,7 @@ export default function Dashboard() {
                 title: String(row.title || 'Untitled Exercise'),
                 instructions: String(row.instructions || ''),
                 language: row.language === 'javascript' ? 'javascript' : 'python',
-                status: row.status === 'submitted' || row.status === 'reviewed' ? row.status : 'assigned',
+                status: row.status || 'assigned',
                 due_date: row.due_date ? String(row.due_date) : null,
                 created_at: String(row.created_at || ''),
                 submitted_at: row.submitted_at ? String(row.submitted_at) : null,

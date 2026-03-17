@@ -271,7 +271,7 @@ sys.stderr = io.StringIO()
         setSubmitted(true);
       } else {
         // Otherwise, use deep Supabase integration directly (since there's no backend Express server)
-        const newStatus = action === 'approve' ? 'reviewed' : 'assigned'; // 'assigned' sends it back to the student
+        const newStatus = action === 'approve' ? 'approved' : 'rejected';
         
         const { error } = await supabase
           .from('instructor_exercises')

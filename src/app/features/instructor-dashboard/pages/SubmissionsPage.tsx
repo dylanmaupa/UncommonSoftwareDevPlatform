@@ -365,6 +365,7 @@ export default function SubmissionsPage() {
                   status: payload.action === 'approve' ? 'approved' : 'rejected',
                   feedback: payload.feedback,
                   grade: payload.grade,
+                  reviewed_at: new Date().toISOString(),
                 })
                 .eq('id', payload.submissionId);
             } catch (err) {
