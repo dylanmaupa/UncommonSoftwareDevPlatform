@@ -24,6 +24,7 @@ import {
   LuTrash2,
   LuUser,
 } from 'react-icons/lu';
+import { loadPyodideEnvironment } from '../../../lib/pyodide';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -74,23 +75,6 @@ interface OutputLine {
   kind: 'stdout' | 'stderr' | 'info' | 'error';
   text: string;
 }
-
-// ─── Piston Mapping ─────────────────────────────────────────────────────────
-
-const PISTON_API = '/api/piston/execute';
-
-const LANGUAGE_MAP: Record<string, { language: string; version: string }> = {
-  python:     { language: 'python',     version: '3.10.0' },
-  javascript: { language: 'javascript', version: '18.15.0' },
-  js:         { language: 'javascript', version: '18.15.0' },
-  typescript: { language: 'typescript', version: '5.0.3' },
-  ts:         { language: 'typescript', version: '5.0.3' },
-  java:       { language: 'java',       version: '15.0.2' },
-  cpp:        { language: 'c++',        version: '10.2.0' },
-  c:          { language: 'c',          version: '10.2.0' },
-  go:         { language: 'go',         version: '1.16.2' },
-  rust:       { language: 'rust',       version: '1.50.0' },
-};
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
@@ -161,72 +145,99 @@ export default function ReviewAssignmentPage({
   // ── Run Student Code ──────────────────────────────────────────────────────
   const handleRunCode = async () => {
     const langKey = (submission.language ?? 'python').toLowerCase().trim();
-    const runtime = LANGUAGE_MAP[langKey];
-
-    if (!runtime) {
-      setRunOutput([{ kind: 'error', text: `✖ Unsupported language: ${submission.language}` }]);
+    
+    // We only support python and javascript locally for now
+    if (!['python', 'javascript', 'js'].includes(langKey)) {
+      setRunOutput([{ kind: 'error', text: `✖ Unsupported language for local execution: ${submission.language}` }]);
       setShowRunModal(true);
       return;
     }
 
     setShowRunModal(true);
     setIsRunning(true);
-    setRunOutput([{ kind: 'info', text: `⟳ Running ${submission.language ?? 'code'} via Piston…` }]);
+    setRunOutput([{ kind: 'info', text: `⟳ Running ${submission.language ?? 'code'} locally…` }]);
     scrollTerminal();
 
     const startTime = performance.now();
+    const isPython = langKey === 'python';
 
     try {
-      const res = await fetch(PISTON_API, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          language: runtime.language,
-          version: runtime.version,
-          files: [{ content: currentCode }],
-        }),
-      });
+      const lines: OutputLine[] = [];
+      let exitCode = 0;
+
+      if (isPython) {
+        try {
+          // Initialize Pyodide
+          // Note: @ts-ignore may be needed if window.pyodideLocal is not typed, but we'll assume loadPyodideEnvironment handles it
+          const pyodide = await loadPyodideEnvironment();
+
+          // Redirect stdout/stderr specifically for this run
+          await pyodide.runPythonAsync(`
+import sys
+import io
+sys.stdout = io.StringIO()
+sys.stderr = io.StringIO()
+`);
+
+          try {
+            await pyodide.runPythonAsync(currentCode);
+            const stdout = await pyodide.runPythonAsync('sys.stdout.getvalue()');
+            const stderr = await pyodide.runPythonAsync('sys.stderr.getvalue()');
+            
+            if (stdout) {
+              stdout.trimEnd().split('\n').forEach((l: string) => lines.push({ kind: 'stdout', text: l }));
+            }
+            if (stderr) {
+              stderr.trimEnd().split('\n').forEach((l: string) => lines.push({ kind: 'stderr', text: l }));
+              exitCode = 1;
+            }
+          } catch (execErr: any) {
+            String(execErr).trimEnd().split('\n').forEach((l: string) => lines.push({ kind: 'stderr', text: l }));
+            exitCode = 1;
+          }
+        } catch (err: any) {
+          lines.push({ kind: 'error', text: 'Failed to load Python environment: \n' + String(err) });
+          exitCode = 1;
+        }
+      } else {
+        // JavaScript execution
+        let stdoutBuffer = '';
+        const originalLog = console.log;
+        console.log = (...args) => {
+          stdoutBuffer += args.map((a) => (typeof a === 'object' ? JSON.stringify(a) : String(a))).join(' ') + '\n';
+        };
+
+        try {
+          const func = new Function(currentCode);
+          func();
+          if (stdoutBuffer) {
+            stdoutBuffer.trimEnd().split('\n').forEach((l: string) => lines.push({ kind: 'stdout', text: l }));
+          }
+        } catch (err: any) {
+          if (stdoutBuffer) {
+            stdoutBuffer.trimEnd().split('\n').forEach((l: string) => lines.push({ kind: 'stdout', text: l }));
+          }
+          String(err).trimEnd().split('\n').forEach((l: string) => lines.push({ kind: 'stderr', text: l }));
+          exitCode = 1;
+        } finally {
+          console.log = originalLog;
+        }
+      }
 
       const elapsed = Math.round(performance.now() - startTime);
       setLastRunMs(elapsed);
 
-      if (!res.ok) {
-        throw new Error(`Execution service error (HTTP ${res.status})`);
-      }
-
-      const data = await res.json();
-      const run = data.run || {};
-      const compile = data.compile || {};
-
-      const lines: OutputLine[] = [];
-      
-      // Add compile errors if any
-      if (compile.stderr) {
-        compile.stderr.trimEnd().split('\n').forEach((l: string) => lines.push({ kind: 'stderr', text: l }));
-      }
-      if (compile.stdout) {
-        compile.stdout.trimEnd().split('\n').forEach((l: string) => lines.push({ kind: 'stdout', text: l }));
-      }
-
-      // Add run output
-      if (run.stdout) {
-        run.stdout.trimEnd().split('\n').forEach((l: string) => lines.push({ kind: 'stdout', text: l }));
-      }
-      if (run.stderr) {
-        run.stderr.trimEnd().split('\n').forEach((l: string) => lines.push({ kind: 'stderr', text: l }));
-      }
-
-      if (lines.length === 0) {
+      if (lines.length === 0 || (lines.length === 1 && lines[0].kind === 'info')) {
         lines.push({ kind: 'info', text: '(No output)' });
       }
 
-      const exitCode = run.code ?? 0;
       lines.push({ 
         kind: exitCode === 0 ? 'info' : 'error', 
         text: `── Exited with code ${exitCode} · ${elapsed}ms ──` 
       });
       
-      setRunOutput(lines);
+      // Remove the initial "Running code locally..." message
+      setRunOutput(lines.filter(l => !l.text.startsWith('⟳ Running')));
     } catch (err: unknown) {
       const elapsed = Math.round(performance.now() - startTime);
       setLastRunMs(elapsed);
