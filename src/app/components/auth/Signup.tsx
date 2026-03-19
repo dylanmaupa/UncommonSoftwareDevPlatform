@@ -1,67 +1,82 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router';
-import { authService } from '../../services/mockData';
+import { Link, useNavigate } from 'react-router';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { toast } from 'sonner';
-import { Code2, Rocket } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { supabase } from '../../../lib/supabase';
 
 export default function Signup() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [nickname, setNickname] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSignup = (e: React.FormEvent) => {
+  const passwordStrength = useMemo(() => {
+    if (!password) return 0;
+    let score = 0;
+    if (password.length >= 8) score += 1;
+    if (password.match(/[a-z]/) && password.match(/[A-Z]/)) score += 1;
+    if (password.match(/\d/)) score += 1;
+    if (password.match(/[^a-zA-Z\d]/)) score += 1;
+    return score; // 0 to 4
+  }, [password]);
+
+  const strengthColor = ['bg-red-500', 'bg-red-400', 'bg-yellow-500', 'bg-green-400', 'bg-green-600'][passwordStrength];
+  const strengthText = ['Very Weak', 'Weak', 'Fair', 'Good', 'Strong'][passwordStrength];
+
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (password !== confirmPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
+
     setIsLoading(true);
 
-    setTimeout(() => {
-      const user = authService.signup(email, password, nickname);
-      if (user) {
-        toast.success('🎉 Account created! Welcome to your coding journey!');
-        navigate('/dashboard');
-      } else {
-        toast.error('Email already exists');
+    try {
+      const role = email.trim().toLowerCase().endsWith('@uncommon.org') ? 'instructor' : 'student';
+
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            role: role,
+          },
+        },
+      });
+
+      if (authError) {
+        toast.error(authError.message);
+        return;
       }
+
+      if (authData.user) {
+        await supabase.auth.signOut();
+        toast.success('Account created successfully! Please log in to continue.');
+        navigate('/');
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'An unexpected error occurred during signup.');
+    } finally {
       setIsLoading(false);
-    }, 500);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0747a1]/5 via-white to-[#FF6B35]/5 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-[#0747a1]/5 via-white to-[#1D4ED8]/5 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        {/* Logo and Header */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-[#0747a1] to-[#8B5CF6] mb-4">
-            <Rocket className="w-8 h-8 text-white" />
-          </div>
+        <div className="text-center mb-6">
           <h1 className="text-4xl mb-2 heading-font" style={{ color: '#1a1a2e' }}>
             Start Your Journey
           </h1>
-          <p className="text-[#6B7280]">
-            Learn to code, completely free
-          </p>
+          <p className="text-[#6B7280]">Learn to code, completely free</p>
         </div>
 
-        {/* Signup Form */}
         <div className="bg-white rounded-2xl shadow-lg p-8 border border-[rgba(0,0,0,0.08)]">
-          <form onSubmit={handleSignup} className="space-y-5">
-            <div className="space-y-2">
-              <Label htmlFor="nickname">Nickname</Label>
-              <Input
-                id="nickname"
-                type="text"
-                placeholder="Choose a cool nickname"
-                value={nickname}
-                onChange={(e) => setNickname(e.target.value)}
-                required
-                className="h-12 rounded-xl bg-[#F5F5FA] border-0"
-              />
-            </div>
-
+          <form onSubmit={handleSignup} className="space-y-4" autoComplete="off">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -71,55 +86,63 @@ export default function Signup() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                autoComplete="off"
                 className="h-12 rounded-xl bg-[#F5F5FA] border-0"
               />
+            </div>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Create a strong password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  autoComplete="new-password"
+                  className="h-12 rounded-xl bg-[#F5F5FA] border-0"
+                />
+              </div>
+
+              {password && (
+                <div className="space-y-1.5">
+                  <div className="flex h-1.5 w-full overflow-hidden rounded-full bg-secondary">
+                    <div className={`h-full ${strengthColor} transition-all duration-300`} style={{ width: `${Math.max(10, passwordStrength * 25)}%` }} />
+                  </div>
+                  <p className="text-right text-[10px] font-medium uppercase tracking-wider text-muted-foreground">{strengthText}</p>
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="confirmPassword">Confirm Password</Label>
               <Input
-                id="password"
+                id="confirmPassword"
                 type="password"
-                placeholder="Create a strong password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Confirm your password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
                 required
                 minLength={6}
+                autoComplete="new-password"
                 className="h-12 rounded-xl bg-[#F5F5FA] border-0"
               />
-              <p className="text-xs text-[#6B7280]">At least 6 characters</p>
             </div>
 
-            <Button
-              type="submit"
-              disabled={isLoading}
-              className="w-full h-12 rounded-xl text-base"
-              style={{ backgroundColor: '#0747a1' }}
-            >
+            <Button type="submit" disabled={isLoading} className="w-full h-12 rounded-xl text-base mt-2" style={{ backgroundColor: '#0747a1' }}>
               {isLoading ? 'Creating account...' : 'Create Account'}
             </Button>
           </form>
 
-          {/* Sign In Link */}
           <div className="mt-6 text-center text-sm text-[#6B7280]">
             Already have an account?{' '}
             <Link to="/" className="text-[#0747a1] hover:underline font-medium">
               Log in
             </Link>
           </div>
-        </div>
-
-        {/* Features */}
-        <div className="mt-6 space-y-2">
-          {[
-            '✨ All courses and content unlocked',
-            '🎯 Interactive coding challenges',
-            '🏆 Earn XP and unlock achievements',
-          ].map((feature, index) => (
-            <div key={index} className="flex items-center gap-2 text-sm text-[#6B7280]">
-              <span>{feature}</span>
-            </div>
-          ))}
         </div>
       </div>
     </div>

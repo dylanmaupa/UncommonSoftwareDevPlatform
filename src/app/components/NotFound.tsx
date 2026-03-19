@@ -1,10 +1,11 @@
 import { Link } from 'react-router';
 import { Button } from './ui/button';
-import { Home, ArrowLeft } from 'lucide-react';
+import { LuArrowLeft, LuHouse } from 'react-icons/lu';
+
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0747a1]/5 via-white to-[#FF6B35]/5 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-[#0747a1]/5 via-white to-[#1D4ED8]/5 flex items-center justify-center p-4">
       <div className="text-center max-w-md">
         <div className="mb-8">
           <h1 className="text-9xl heading-font mb-4" style={{ color: '#0747a1' }}>
@@ -24,7 +25,7 @@ export default function NotFound() {
               className="rounded-xl"
               style={{ backgroundColor: '#0747a1' }}
             >
-              <Home className="w-4 h-4 mr-2" />
+              <LuHouse className="w-4 h-4 mr-2" />
               Go to Dashboard
             </Button>
           </Link>
@@ -33,7 +34,7 @@ export default function NotFound() {
             onClick={() => window.history.back()}
             className="rounded-xl"
           >
-            <ArrowLeft className="w-4 h-4 mr-2" />
+            <LuArrowLeft className="w-4 h-4 mr-2" />
             Go Back
           </Button>
         </div>
@@ -41,3 +42,4 @@ export default function NotFound() {
     </div>
   );
 }
+

@@ -95,6 +95,24 @@ users.set('demo@example.com', {
   },
 });
 
+// Seeded uncommon.org account for direct sign-in
+users.set('vincent@uncommon.org', {
+  password: 'vin12345',
+  user: {
+    id: '2',
+    email: 'vincent@uncommon.org',
+    nickname: 'Vincent',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Vincent',
+    xp: 0,
+    level: 1,
+    streak: 0,
+    completedLessons: [],
+    completedProjects: [],
+    achievements: [],
+    createdAt: new Date().toISOString(),
+  },
+});
+
 // Mock courses data
 export const coursesData: Course[] = [
   {
@@ -310,52 +328,52 @@ let isActive = true;    // boolean`,
 // Mock achievements data
 export const achievementsData: Achievement[] = [
   {
-    id: 'a1',
-    title: 'First Steps',
+    id: 'first_blood',
+    title: 'First Blood',
     description: 'Complete your first lesson',
     icon: '🎯',
     condition: 'Complete 1 lesson',
     unlocked: false,
   },
   {
-    id: 'a2',
-    title: 'Quick Learner',
-    description: 'Complete 5 lessons in one day',
-    icon: '⚡',
-    condition: 'Complete 5 lessons in 24 hours',
+    id: 'night_owl',
+    title: 'Night Owl',
+    description: 'Code between 12 AM and 4 AM',
+    icon: '🦉',
+    condition: 'Complete a lesson late at night',
     unlocked: false,
   },
   {
-    id: 'a3',
-    title: 'Week Warrior',
-    description: 'Maintain a 7-day streak',
+    id: 'on_fire',
+    title: 'On Fire',
+    description: 'Reach a 3-day coding streak',
     icon: '🔥',
+    condition: 'Maintain 3-day streak',
+    unlocked: false,
+  },
+  {
+    id: 'unstoppable',
+    title: 'Unstoppable',
+    description: 'Reach a 7-day coding streak',
+    icon: '⚡',
     condition: 'Maintain 7-day streak',
     unlocked: false,
   },
   {
-    id: 'a4',
-    title: 'Centurion',
-    description: 'Earn 1000 XP',
-    icon: '💯',
-    xpRequired: 1000,
-    condition: 'Earn 1000 XP',
+    id: 'hint_abuser',
+    title: 'Desperate Times',
+    description: 'Use your first hint to solve a problem',
+    icon: '💡',
+    condition: 'Use a hint on a lesson',
     unlocked: false,
   },
   {
-    id: 'a5',
-    title: 'Course Conqueror',
-    description: 'Complete your first course',
-    icon: '🏆',
-    condition: 'Complete 1 course',
-    unlocked: false,
-  },
-  {
-    id: 'a6',
-    title: 'Project Master',
-    description: 'Complete 3 projects',
-    icon: '🚀',
-    condition: 'Complete 3 projects',
+    id: 'wealthy',
+    title: 'Deep Pockets',
+    description: 'Accumulate 500 total XP',
+    icon: '💎',
+    xpRequired: 500,
+    condition: 'Earn 500 XP',
     unlocked: false,
   },
 ];
@@ -450,7 +468,7 @@ export const authService = {
 
   getCurrentUser: (): User | null => {
     if (currentUser) return currentUser;
-    
+
     const stored = localStorage.getItem('currentUser');
     if (stored) {
       currentUser = JSON.parse(stored);
@@ -461,16 +479,16 @@ export const authService = {
 
   updateUser: (updates: Partial<User>): User | null => {
     if (!currentUser) return null;
-    
+
     currentUser = { ...currentUser, ...updates };
     localStorage.setItem('currentUser', JSON.stringify(currentUser));
-    
+
     // Update in users map
     const userData = users.get(currentUser.email);
     if (userData) {
       userData.user = currentUser;
     }
-    
+
     return currentUser;
   },
 
@@ -487,40 +505,40 @@ export const authService = {
 export const progressService = {
   completeLesson: (lessonId: string, xpReward: number) => {
     if (!currentUser) return;
-    
+
     if (!currentUser.completedLessons.includes(lessonId)) {
       currentUser.completedLessons.push(lessonId);
       currentUser.xp += xpReward;
-      
+
       // Level up logic (every 500 XP)
       const newLevel = Math.floor(currentUser.xp / 500) + 1;
       if (newLevel > currentUser.level) {
         currentUser.level = newLevel;
       }
-      
+
       authService.updateUser(currentUser);
     }
   },
 
   completeProject: (projectId: string, xpReward: number) => {
     if (!currentUser) return;
-    
+
     if (!currentUser.completedProjects.includes(projectId)) {
       currentUser.completedProjects.push(projectId);
       currentUser.xp += xpReward;
-      
+
       const newLevel = Math.floor(currentUser.xp / 500) + 1;
       if (newLevel > currentUser.level) {
         currentUser.level = newLevel;
       }
-      
+
       authService.updateUser(currentUser);
     }
   },
 
   unlockAchievement: (achievementId: string) => {
     if (!currentUser) return;
-    
+
     if (!currentUser.achievements.includes(achievementId)) {
       currentUser.achievements.push(achievementId);
       authService.updateUser(currentUser);
@@ -529,36 +547,36 @@ export const progressService = {
 
   getCourseProgress: (courseId: string): number => {
     if (!currentUser) return 0;
-    
+
     const course = coursesData.find(c => c.id === courseId);
     if (!course) return 0;
-    
+
     const totalLessons = course.modules.reduce((sum, module) => sum + module.lessons.length, 0);
     const completedLessons = course.modules
       .flatMap(m => m.lessons)
       .filter(l => currentUser.completedLessons.includes(l.id))
       .length;
-    
+
     return totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
   },
 
   getModuleProgress: (moduleId: string): number => {
     if (!currentUser) return 0;
-    
+
     let module: Module | undefined;
     for (const course of coursesData) {
       module = course.modules.find(m => m.id === moduleId);
       if (module) break;
     }
-    
+
     if (!module) return 0;
-    
-    const completedLessons = module.lessons.filter(l => 
+
+    const completedLessons = module.lessons.filter(l =>
       currentUser.completedLessons.includes(l.id)
     ).length;
-    
-    return module.lessons.length > 0 
-      ? Math.round((completedLessons / module.lessons.length) * 100) 
+
+    return module.lessons.length > 0
+      ? Math.round((completedLessons / module.lessons.length) * 100)
       : 0;
   },
 

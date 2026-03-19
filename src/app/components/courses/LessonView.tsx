@@ -1,30 +1,40 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router';
+import { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router';
 import Editor from '@monaco-editor/react';
-import DashboardLayout from '../layout/DashboardLayout';
-import { coursesData, progressService, authService } from '../../services/mockData';
-import type { Lesson } from '../../services/mockData';
-import { Button } from '../ui/button';
-import { Card, CardContent } from '../ui/card';
-import { Badge } from '../ui/badge';
-import { toast } from 'sonner';
-import { 
-  ArrowLeft, 
-  Play, 
-  CheckCircle2, 
-  Lightbulb, 
-  Eye, 
-  EyeOff,
-  Zap,
-  Trophy,
-  ChevronRight
-} from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { motion } from 'motion/react';
+import { toast } from 'sonner';
+import DashboardLayout from '../layout/DashboardLayout';
+import { Button } from '../ui/button';
+import { Badge } from '../ui/badge';
+import { Card, CardContent } from '../ui/card';
+import {
+  LuArrowLeft,
+  LuCircleCheck,
+  LuChevronRight,
+  LuEye,
+  LuEyeOff,
+  LuLightbulb,
+  LuPlay,
+  LuTrophy,
+  LuZap,
+} from 'react-icons/lu';
+import { supabase } from '../../../lib/supabase';
+import { loadPyodideEnvironment } from '../../../lib/pyodide';
+import { fetchProfileForAuthUser, updateProfileForAuthUser } from '../../lib/profileAccess';
 
 export default function LessonView() {
   const { courseId, moduleId, lessonId } = useParams();
   const navigate = useNavigate();
-  const user = authService.getCurrentUser();
+
+  const [user, setUser] = useState<any>(null);
+  const [userProfile, setUserProfile] = useState<any>(null);
+  const [course, setCourse] = useState<any>(null);
+  const [module, setModule] = useState<any>(null);
+  const [lesson, setLesson] = useState<any>(null);
+  const [userProgress, setUserProgress] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const [code, setCode] = useState('');
   const [output, setOutput] = useState('');
@@ -32,28 +42,152 @@ export default function LessonView() {
   const [showSolution, setShowSolution] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
   const [showXPAnimation, setShowXPAnimation] = useState(false);
+  const [hintUsed, setHintUsed] = useState(false);
+  const [solutionUsed, setSolutionUsed] = useState(false);
+  const [failedAttempts, setFailedAttempts] = useState(0);
 
-  // Find the lesson
-  const course = coursesData.find(c => c.id === courseId);
-  const module = course?.modules.find(m => m.id === moduleId);
-  const lesson = module?.lessons.find(l => l.id === lessonId);
-  
-  const isCompleted = lesson ? progressService.isLessonCompleted(lesson.id) : false;
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        if (!currentUser) return navigate('/');
+        setUser(currentUser);
 
-  // Find next lesson
+        const profileData = await fetchProfileForAuthUser(currentUser as any);
+
+        if (profileData) {
+          setUserProfile(profileData);
+        }
+
+        const { data: cData } = await supabase
+          .from('courses')
+          .select(`
+            *,
+            modules (
+              *,
+              lessons (*)
+            )
+          `)
+          .eq('id', courseId)
+          .single();
+
+        if (cData) {
+          cData.modules.sort((a: any, b: any) => a.order - b.order);
+          cData.modules.forEach((m: any) => {
+            if (m.lessons) {
+              m.lessons.sort((a: any, b: any) => a.order - b.order);
+            } else {
+              m.lessons = [];
+            }
+          });
+          setCourse(cData);
+
+          const foundModule = cData.modules.find((m: any) => m.id === moduleId);
+          setModule(foundModule);
+
+          if (foundModule) {
+            const foundLesson = foundModule.lessons.find((l: any) => l.id === lessonId);
+            setLesson(foundLesson);
+            if (foundLesson) {
+              setCode(foundLesson.starter_code || '');
+            }
+          }
+        }
+
+        const { data: pData } = await supabase
+          .from('user_progress')
+          .select('*')
+          .eq('user_id', currentUser.id);
+
+        if (pData) {
+          setUserProgress(pData);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    if (courseId && moduleId && lessonId) {
+      loadData();
+    }
+  }, [courseId, moduleId, lessonId, navigate]);
+
+  useEffect(() => {
+    if (lesson) {
+      setCode(lesson.starter_code || '');
+      setOutput('');
+      setShowHint(false);
+      setShowSolution(false);
+      setHintUsed(false);
+      setSolutionUsed(false);
+      setFailedAttempts(0);
+    }
+  }, [lessonId, lesson]);
+
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <div className="p-8 text-center text-muted-foreground">Loading lesson...</div>
+      </DashboardLayout>
+    );
+  }
+
+  if (!lesson || !module || !course) {
+    return (
+      <DashboardLayout>
+        <div className="p-8 text-center">
+          <p className="text-muted-foreground">Lesson not found</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  const comingSoonCourseKeywords = ['javascript', 'node', 'data structures', 'data-structures', 'datastructures', 'react fundamentals', 'react-fundamentals'];
+  const courseSearchText = `${course.id || ''} ${course.title || ''} ${course.description || ''}`.toLowerCase();
+  const isJavaScriptLesson = String(lesson.language || '').toLowerCase() === 'javascript';
+  const isComingSoonCourse = comingSoonCourseKeywords.some((keyword) => courseSearchText.includes(keyword));
+  const isComingSoonLesson = isJavaScriptLesson || isComingSoonCourse;
+
+  if (isComingSoonLesson) {
+    return (
+      <DashboardLayout>
+        <div className="p-8 max-w-3xl mx-auto">
+          <Button variant="ghost" size="sm" onClick={() => navigate(`/courses/${courseId}`)}>
+            <LuArrowLeft className="w-4 h-4 mr-2" />
+            Back to Course
+          </Button>
+
+          <Card className="relative mt-4 overflow-hidden rounded-2xl border-border">
+            <CardContent className="p-10 text-center blur-[2px] pointer-events-none select-none">
+              <h2 className="text-2xl heading-font text-foreground mb-2">{lesson.title}</h2>
+              <p className="text-muted-foreground">This lesson is temporarily unavailable.</p>
+            </CardContent>
+            <div className="absolute inset-0 flex items-center justify-center rounded-2xl border border-white/15 bg-black/35 backdrop-blur-sm shadow-[inset_0_0_36px_rgba(255,255,255,0.12)]">
+              <span className="rounded-full border border-white/30 bg-black/60 px-5 py-2 text-[11px] font-semibold uppercase tracking-[0.15em] text-white">
+                Coming Soon
+              </span>
+            </div>
+          </Card>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  const isCompleted = userProgress.some((p: any) => p.item_id === lesson.id && p.item_type === 'lesson' && p.status === 'completed');
+
   let nextLesson: { courseId: string; moduleId: string; lessonId: string } | null = null;
   if (course && module && lesson) {
-    const currentLessonIndex = module.lessons.findIndex(l => l.id === lesson.id);
+    const currentLessonIndex = module.lessons.findIndex((l: any) => l.id === lesson.id);
     if (currentLessonIndex < module.lessons.length - 1) {
-      // Next lesson in same module
       nextLesson = {
         courseId: course.id,
         moduleId: module.id,
         lessonId: module.lessons[currentLessonIndex + 1].id,
       };
     } else {
-      // First lesson of next module
-      const currentModuleIndex = course.modules.findIndex(m => m.id === module.id);
+      const currentModuleIndex = course.modules.findIndex((m: any) => m.id === module.id);
       if (currentModuleIndex < course.modules.length - 1) {
         const nextMod = course.modules[currentModuleIndex + 1];
         if (nextMod.lessons.length > 0) {
@@ -67,83 +201,411 @@ export default function LessonView() {
     }
   }
 
-  useEffect(() => {
-    if (lesson) {
-      setCode(lesson.exercise.starterCode);
-      setOutput('');
-      setShowHint(false);
-      setShowSolution(false);
+  const logActivity = async () => {
+    if (!user) return;
+    try {
+      const { error: activityError } = await supabase.rpc('record_user_activity', { p_user_id: user.id });
+
+      if (activityError) {
+        console.error("Error recording user activity via RPC:", activityError);
+        const today = new Date().toISOString().split('T')[0];
+        const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+        const lastActive = userProfile?.last_activity_date;
+
+        if (lastActive !== today) {
+          let newStreak = userProfile?.streak || 0;
+          let brokenStreaks = userProfile?.broken_streaks || 0;
+          
+          if (lastActive && lastActive < yesterday && newStreak > 0) {
+            brokenStreaks += 1;
+          }
+
+          if (lastActive === yesterday) {
+            newStreak += 1;
+          } else {
+            newStreak = 1;
+          }
+          const newLongest = Math.max(userProfile?.longest_streak || 0, newStreak);
+          await supabase.from('profiles').update({
+            streak: newStreak,
+            longest_streak: newLongest,
+            last_activity_date: today,
+            broken_streaks: brokenStreaks
+          }).eq('id', user.id);
+
+          if (userProfile) {
+            setUserProfile({
+              ...userProfile,
+              streak: newStreak,
+              longest_streak: newLongest,
+              last_activity_date: today,
+              broken_streaks: brokenStreaks
+            });
+          }
+        }
+      } else {
+        const freshProfile = await fetchProfileForAuthUser(user as any);
+        if (freshProfile) {
+          setUserProfile(freshProfile);
+        }
+      }
+    } catch (e) {
+      console.error("Failed to log activity", e);
     }
-  }, [lessonId, lesson]);
-
-  if (!lesson || !module || !course) {
-    return (
-      <DashboardLayout>
-        <div className="p-8 text-center">
-          <p className="text-[#6B7280]">Lesson not found</p>
-        </div>
-      </DashboardLayout>
-    );
-  }
-
-  const handleRun = () => {
-    setIsRunning(true);
-    setOutput('Running code...\n');
-
-    // Simulate code execution
-    setTimeout(() => {
-      setOutput(
-        `✓ Code executed successfully!\n\nOutput:\n-------------------\n` +
-        `// This is a simulated output\n` +
-        `// In a real environment, your ${lesson.language} code would run here\n\n` +
-        `Console output would appear here based on your code.`
-      );
-      setIsRunning(false);
-    }, 800);
   };
 
-  const handleSubmit = () => {
-    if (isCompleted) {
-      toast.info('You already completed this lesson!');
-      return;
+  const executeCode = async (sourceCode: string) => {
+    const lang = lesson.language || 'javascript';
+
+    if (lang === 'python') {
+      try {
+        const pyodide = await loadPyodideEnvironment();
+
+        // Redirect stdout/stderr specifically for this run
+        await pyodide.runPythonAsync(`
+import sys
+import io
+sys.stdout = io.StringIO()
+sys.stderr = io.StringIO()
+`);
+
+        try {
+          await pyodide.runPythonAsync(sourceCode);
+          const stdout = await pyodide.runPythonAsync("sys.stdout.getvalue()");
+          const stderr = await pyodide.runPythonAsync("sys.stderr.getvalue()");
+          return { run: { output: stdout || stderr, code: stderr ? 1 : 0, stderr } };
+        } catch (execErr: any) {
+          return { run: { output: String(execErr), code: 1, stderr: String(execErr) } };
+        }
+      } catch (err: any) {
+        console.error('Pyodide Error:', err);
+        return { run: { output: 'Failed to load Python environment: \n' + String(err), code: 1, stderr: 'Error' } };
+      }
+    } else {
+      // JavaScript
+      let stdout = '';
+      const originalLog = console.log;
+      console.log = (...args) => {
+        stdout += args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ') + '\n';
+      };
+
+      try {
+        const func = new Function(sourceCode);
+        func();
+        return { run: { output: stdout, code: 0, stderr: '' } };
+      } catch (err: any) {
+        return { run: { output: stdout + '\n' + String(err), code: 1, stderr: String(err) } };
+      } finally {
+        console.log = originalLog;
+      }
     }
+  };
 
-    setIsRunning(true);
-    
-    setTimeout(() => {
-      // Simulate checking code
-      const isCorrect = Math.random() > 0.3; // 70% success rate for demo
-      
-      if (isCorrect) {
-        progressService.completeLesson(lesson.id, lesson.xpReward);
-        setShowXPAnimation(true);
-        
-        toast.success(
-          <div>
-            <p className="font-semibold">🎉 Lesson Complete!</p>
-            <p className="text-sm">+{lesson.xpReward} XP earned</p>
-          </div>
-        );
-
-        setTimeout(() => {
-          setShowXPAnimation(false);
-        }, 2000);
+  const handleRun = async () => {
+    try {
+      setIsRunning(true);
+      const lang = lesson?.language || 'javascript';
+      if (lang === 'python' && !window.pyodideLocal) {
+        setOutput('Connecting to Python environment...\n');
       } else {
+        setOutput('Running code...\n');
+      }
+
+      const result = await executeCode(code);
+      setOutput(result?.run?.output || 'No output.');
+    } catch (e: any) {
+      setOutput(`Execution failed: ${e?.message || String(e)}`);
+    } finally {
+      setIsRunning(false);
+    }
+  };
+
+  const handleSubmit = async () => {
+    try {
+      setIsRunning(true);
+      const lang = lesson?.language || 'javascript';
+      if (lang === 'python' && !window.pyodideLocal) {
+        setOutput('Connecting to Python environment...\n');
+      } else {
+        setOutput('Running test cases...\n');
+      }
+
+      const result = await executeCode(code);
+      const executionOutput = result?.run?.output || '';
+      const exitCode = result?.run?.code || 0;
+      const stderr = result?.run?.stderr || '';
+
+      setOutput(executionOutput);
+
+      let isCorrect = exitCode === 0 && !stderr && executionOutput.trim().length > 0;
+
+      // Verify against solution output if a solution exists
+      if (isCorrect && lesson.exercise_solution) {
+        setOutput((prev) => prev + '\nVerifying against solution...\n');
+        const solutionResult = await executeCode(lesson.exercise_solution);
+        const solutionOutput = solutionResult?.run?.output || '';
+
+        const normalizedUser = executionOutput.trim().toLowerCase();
+        const normalizedSolution = solutionOutput.trim().toLowerCase();
+
+        let passed = normalizedUser === normalizedSolution;
+
+        // Lenient check for the "Cities/Tokyo List" lesson
+        if (!passed) {
+          const lessonTitle = lesson.title?.toLowerCase() || '';
+          const lessonPrompt = lesson.exercise_prompt?.toLowerCase() || '';
+
+          if (lessonTitle.includes('list') || lessonTitle.includes('collection')) {
+            if (lessonPrompt.includes('tokyo') && lessonPrompt.includes('three')) {
+              const hasTokyo = normalizedUser.includes('tokyo');
+              const isListFormat = normalizedUser.includes('[') && normalizedUser.includes(']');
+              const itemSplit = normalizedUser.split(',');
+
+              if (hasTokyo && isListFormat && itemSplit.length === 3) {
+                passed = true;
+              }
+            }
+          }
+        }
+
+        if (!passed) {
+          isCorrect = false;
+          setOutput((prev) => prev + `\nVerification failed.\nExpected Output:\n${solutionOutput.trim()}\n\nYour Output:\n${executionOutput.trim()}`);
+        } else {
+          setOutput((prev) => prev + '\nOutput matches successfully!\n');
+        }
+      }
+
+      if (isCorrect && user) {
+        try {
+          // We already log activity in run or general submit, but this ensures completion always logs.
+          await logActivity();
+
+          // Set current profile data for evaluating achievements
+          let currentProfileData = userProfile;
+
+          if (!isCompleted) {
+            // Upsert lesson progress
+            const lessonProgressEntry = {
+              user_id: user.id,
+              item_id: lesson.id,
+              item_type: 'lesson',
+              status: 'completed',
+              progress_percentage: 100,
+              updated_at: new Date().toISOString()
+            };
+
+            await supabase.from('user_progress').upsert(lessonProgressEntry, { onConflict: 'user_id, item_id, item_type' });
+
+            // Calculate and update module progress
+            const updatedProgress = [...userProgress, lessonProgressEntry];
+            const completedInModule = module.lessons.filter((l: any) =>
+              updatedProgress.some((p: any) => p.item_id === l.id && p.item_type === 'lesson' && p.status === 'completed')
+            ).length;
+            const moduleProgressObj = {
+              user_id: user.id,
+              item_id: module.id,
+              item_type: 'module',
+              status: completedInModule === module.lessons.length ? 'completed' : 'in_progress',
+              progress_percentage: Math.round((completedInModule / (module.lessons.length || 1)) * 100),
+              updated_at: new Date().toISOString()
+            };
+            await supabase.from('user_progress').upsert(moduleProgressObj, { onConflict: 'user_id, item_id, item_type' });
+
+            // Calculate and update course progress
+            const totalLessons = course.modules.reduce((sum: number, m: any) => sum + (m.lessons?.length || 0), 0);
+            const completedInCourse = course.modules.reduce((sum: number, m: any) => {
+              return sum + m.lessons.filter((l: any) =>
+                updatedProgress.some((p: any) => p.item_id === l.id && p.item_type === 'lesson' && p.status === 'completed')
+              ).length;
+            }, 0);
+            const courseProgressObj = {
+              user_id: user.id,
+              item_id: course.id,
+              item_type: 'course',
+              status: completedInCourse === totalLessons ? 'completed' : 'in_progress',
+              progress_percentage: Math.round((completedInCourse / (totalLessons || 1)) * 100),
+              updated_at: new Date().toISOString()
+            };
+            await supabase.from('user_progress').upsert(courseProgressObj, { onConflict: 'user_id, item_id, item_type' });
+
+            setUserProgress([...userProgress, lessonProgressEntry, moduleProgressObj, courseProgressObj]);
+            setShowXPAnimation(true);
+
+            let finalXp = lesson.xp_reward;
+            if (solutionUsed) {
+              finalXp = 0;
+            } else if (hintUsed) {
+              finalXp = Math.max(1, Math.floor(lesson.xp_reward * 0.5));
+            }
+
+            if (finalXp > 0) {
+              const { error } = await supabase.rpc('add_user_xp', { p_user_id: user.id, p_amount: finalXp });
+              if (error) {
+                console.error("Error adding XP via RPC:", error);
+                // Fallback: If RPC is not available, directly update the profile
+                const fallbackXP = (currentProfileData?.xp || 0) + finalXp;
+                await supabase.from('profiles').update({ xp: fallbackXP }).eq('id', user.id);
+              }
+            }
+
+            // Create an updated profile object reflecting the new XP to ensure achievements use the latest value
+            const currentProfileXP = (currentProfileData?.xp || 0) + finalXp;
+            let updatedProfile = currentProfileData ? { ...currentProfileData, xp: currentProfileXP } : null;
+
+            if (updatedProfile) {
+              setUserProfile(updatedProfile);
+            }
+
+            // --- ACHIEVEMENT CHECKS ---
+            if (updatedProfile) {
+              const currentAchievements: string[] = updatedProfile.achievements || [];
+              const newlyUnlocked: string[] = [];
+
+              // 1. First Blood (Complete first lesson)
+              if (!currentAchievements.includes('first_blood')) {
+                newlyUnlocked.push('first_blood');
+              }
+
+              // 2. Night Owl (Code between 12 AM and 4 AM)
+              const hour = new Date().getHours();
+              if (hour >= 0 && hour <= 4 && !currentAchievements.includes('night_owl')) {
+                newlyUnlocked.push('night_owl');
+              }
+
+              // 3. Desperate Times (Use hint)
+              if (hintUsed && !currentAchievements.includes('hint_abuser')) {
+                newlyUnlocked.push('hint_abuser');
+              }
+
+              // 4. On Fire (3-day streak)
+              if ((updatedProfile.streak || 0) >= 3 && !currentAchievements.includes('on_fire')) {
+                newlyUnlocked.push('on_fire');
+              }
+
+              // 5. Unstoppable (7-day streak)
+              if ((updatedProfile.streak || 0) >= 7 && !currentAchievements.includes('unstoppable')) {
+                newlyUnlocked.push('unstoppable');
+              }
+
+              // 6. Deep Pockets (Accumulate 500 XP)
+              if ((updatedProfile.xp || 0) >= 500 && !currentAchievements.includes('wealthy')) {
+                newlyUnlocked.push('wealthy');
+              }
+
+              if (newlyUnlocked.length > 0) {
+                const updatedAchievements = [...currentAchievements, ...newlyUnlocked];
+
+                // Update DB
+                await updateProfileForAuthUser(user as any, { achievements: updatedAchievements });
+
+                // Update Local State with new achievements
+                updatedProfile = { ...updatedProfile, achievements: updatedAchievements };
+                setUserProfile(updatedProfile);
+
+                // Dispatch notification for each
+                newlyUnlocked.forEach(achId => {
+                  // We can infer title from id or just show a general message since we lack the full dict here
+                  const titles: Record<string, string> = {
+                    first_blood: 'First Blood',
+                    night_owl: 'Night Owl',
+                    hint_abuser: 'Desperate Times',
+                    on_fire: 'On Fire',
+                    unstoppable: 'Unstoppable',
+                    wealthy: 'Deep Pockets'
+                  };
+                  const achievementColors: Record<string, string> = {
+                    first_blood: 'text-sky-400',
+                    night_owl: 'text-blue-400',
+                    hint_abuser: 'text-cyan-400',
+                    on_fire: 'text-indigo-400',
+                    unstoppable: 'text-blue-500',
+                    wealthy: 'text-sky-500'
+                  };
+                  const colorClass = achievementColors[achId] || 'text-blue-400';
+                  toast(
+                    <div className="flex items-center gap-2">
+                      <LuTrophy className={`w-5 h-5 ${colorClass}`} />
+                      <div>
+                        <p className={`font-bold ${colorClass}`}>Achievement Unlocked!</p>
+                        <p className="text-sm text-blue-100/80">{titles[achId] || 'New Badge Earned'}</p>
+                      </div>
+                    </div>,
+                    { duration: 5000 }
+                  );
+                });
+              }
+            }
+            // --- END CHECKS ---
+
+            toast.success(
+              <div>
+                <p className="font-semibold text-sky-400">{solutionUsed ? 'Lesson Finished' : 'Lesson Complete!'}</p>
+                <p className="text-sm text-blue-200">+{finalXp} XP earned {solutionUsed ? '(Solution used: 0 XP)' : hintUsed ? '(Hint used: -50%)' : ''}</p>
+              </div>
+            );
+
+            setTimeout(() => {
+              setShowXPAnimation(false);
+            }, 2000);
+          } else {
+            toast.success(
+              <div>
+                <p className="font-semibold text-blue-400">Correct!</p>
+                <p className="text-sm text-sky-200">Code executed successfully.</p>
+              </div>
+            );
+          }
+        } catch (e) {
+          console.error('Failed to submit lesson', e);
+          toast.error('Failed to save progress.');
+        }
+      } else if (!isCorrect) {
+        setFailedAttempts(prev => prev + 1);
+
+        if (user) {
+          try {
+            // Upsert with incremented failed_attempts
+            const { data: progressData } = await supabase
+              .from('user_progress')
+              .select('failed_attempts')
+              .eq('user_id', user.id)
+              .eq('item_id', lesson.id)
+              .eq('item_type', 'lesson')
+              .single();
+
+            const currentFailed = progressData?.failed_attempts || 0;
+
+            const lessonProgressEntry = {
+              user_id: user.id,
+              item_id: lesson.id,
+              item_type: 'lesson',
+              status: isCompleted ? 'completed' : 'in_progress',
+              progress_percentage: isCompleted ? 100 : 0,
+              failed_attempts: currentFailed + 1,
+              updated_at: new Date().toISOString()
+            };
+
+            await supabase.from('user_progress').upsert(lessonProgressEntry, { onConflict: 'user_id, item_id, item_type' });
+          } catch (e) {
+            console.error('Failed to update failed attempts', e);
+          }
+        }
+
         toast.error(
           <div>
             <p className="font-semibold">Not quite right</p>
-            <p className="text-sm">Check your code and try again, or view the hint</p>
+            <p className="text-sm">Check your code and any output errors.</p>
           </div>
         );
       }
-      
+    } finally {
       setIsRunning(false);
-    }, 1000);
+    }
   };
 
   return (
     <DashboardLayout>
-      {/* XP Animation */}
       {showXPAnimation && (
         <motion.div
           initial={{ opacity: 0, y: 50, scale: 0.5 }}
@@ -151,12 +613,12 @@ export default function LessonView() {
           exit={{ opacity: 0 }}
           className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50"
         >
-          <div className="bg-gradient-to-br from-[#0747a1] to-[#8B5CF6] text-white px-8 py-6 rounded-2xl shadow-2xl">
+          <div className="bg-gradient-to-br from-primary to-accent text-white px-8 py-6 rounded-2xl shadow-2xl">
             <div className="flex items-center gap-3">
-              <Trophy className="w-12 h-12" />
+              <LuTrophy className="w-12 h-12" />
               <div>
-                <p className="text-2xl font-bold heading-font">+{lesson.xpReward} XP</p>
-                <p className="text-white/90">Level {user?.level}</p>
+                <p className="text-2xl font-bold heading-font">+{solutionUsed ? 0 : hintUsed ? Math.max(1, Math.floor(lesson.xp_reward * 0.5)) : lesson.xp_reward} XP</p>
+                <p className="text-white/90">Level Up!</p>
               </div>
             </div>
           </div>
@@ -164,66 +626,53 @@ export default function LessonView() {
       )}
 
       <div className="flex flex-col h-screen">
-        {/* Top Bar */}
-        <div className="bg-white border-b border-[rgba(0,0,0,0.08)] px-6 py-4">
+        <div className="bg-card border-b border-border px-6 py-4">
           <div className="flex items-center justify-between max-w-[1800px] mx-auto">
             <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate(`/courses/${courseId}`)}
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
+              <Button variant="ghost" size="sm" onClick={() => navigate(`/courses/${courseId}`)}>
+                <LuArrowLeft className="w-4 h-4 mr-2" />
                 Back to Course
               </Button>
-              <div className="h-6 w-px bg-[rgba(0,0,0,0.08)]"></div>
+              <div className="h-6 w-px bg-border" />
               <div>
-                <h2 className="font-semibold text-[#1a1a2e]">{lesson.title}</h2>
-                <p className="text-xs text-[#6B7280]">
-                  {module.title} • {course.title}
-                </p>
+                <h2 className="font-semibold text-foreground">{lesson.title}</h2>
+                <p className="text-xs text-muted-foreground">{module.title} - {course.title}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
               {isCompleted && (
-                <Badge className="bg-[#10B981] text-white">
-                  <CheckCircle2 className="w-3 h-3 mr-1" />
+                <Badge className="bg-success text-success-foreground">
+                  <LuCircleCheck className="w-3 h-3 mr-1" />
                   Completed
                 </Badge>
               )}
-              <Badge variant="outline" className="border-[#0747a1] text-[#0747a1]">
-                <Zap className="w-3 h-3 mr-1" />
-                {lesson.xpReward} XP
+              <Badge variant="outline" className="border-primary text-primary">
+                <LuZap className="w-3 h-3 mr-1" />
+                {lesson.xp_reward} XP
               </Badge>
             </div>
           </div>
         </div>
 
-        {/* Main Content: Split View */}
         <div className="flex-1 flex overflow-hidden">
-          {/* Left: Lesson Content */}
-          <div className="w-1/2 overflow-y-auto bg-white p-8 border-r border-[rgba(0,0,0,0.08)]">
+          <div className="w-1/2 overflow-y-auto bg-card p-8 border-r border-border">
             <div className="max-w-2xl mx-auto">
-              {/* Lesson Content */}
-              <div className="prose prose-slate max-w-none mb-8">
-                <div className="whitespace-pre-wrap text-[#1a1a2e] leading-relaxed">
-                  {lesson.content}
-                </div>
+              <div className="mb-8 lesson-markdown">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {lesson.content || ''}
+                </ReactMarkdown>
               </div>
 
-              {/* Code Example */}
-              <Card className="mb-8 border-[rgba(0,0,0,0.08)] overflow-hidden">
-                <div className="bg-[#1a1a2e] px-4 py-2 flex items-center justify-between">
+              <Card className="mb-8 border-border overflow-hidden bg-[#1e1e1e]">
+                <div className="bg-[#17181b] border-b border-[#24262b] px-4 py-2 flex items-center justify-between">
                   <span className="text-sm text-white/70">Example</span>
-                  <Badge className="bg-white/10 text-white text-xs">
-                    {lesson.language}
-                  </Badge>
+                  <Badge className="bg-white/10 text-white text-xs">{lesson.language || 'code'}</Badge>
                 </div>
                 <div className="bg-[#1e1e1e]">
                   <Editor
                     height="200px"
-                    language={lesson.language}
-                    value={lesson.codeExample}
+                    language={lesson.language || 'javascript'}
+                    value={lesson.code_example || ''}
                     theme="vs-dark"
                     options={{
                       readOnly: true,
@@ -237,144 +686,208 @@ export default function LessonView() {
                 </div>
               </Card>
 
-              {/* Exercise Prompt */}
-              <Card className="border-[rgba(91,79,255,0.2)] bg-[#0747a1]/5">
+              <Card className="border-primary/20 bg-primary/5">
                 <CardContent className="p-6">
                   <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-[#0747a1] flex items-center justify-center flex-shrink-0">
-                      <Trophy className="w-4 h-4 text-white" />
+                    <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
+                      <LuTrophy className="w-4 h-4 text-primary-foreground" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-[#1a1a2e] mb-2">
-                        Your Challenge
-                      </h3>
-                      <p className="text-sm text-[#6B7280]">
-                        {lesson.exercise.prompt}
-                      </p>
+                      <h3 className="font-semibold text-foreground mb-2">Your Challenge</h3>
+                      <p className="text-sm text-muted-foreground">{lesson.exercise_prompt}</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Hint Section */}
               <div className="mt-6">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowHint(!showHint)}
-                  className="border-[#F59E0B] text-[#F59E0B] hover:bg-[#F59E0B]/10"
-                >
-                  <Lightbulb className="w-4 h-4 mr-2" />
-                  {showHint ? 'Hide' : 'Show'} Hint
-                </Button>
+                <div className="flex items-center gap-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      if (!showHint && !hintUsed) {
+                        if (userProfile && (userProfile.xp || 0) < 100) {
+                          toast.error("Not enough XP! You need at least 100 XP to use a hint.");
+                          return;
+                        }
+                        if (user) {
+                          const { error } = await supabase.rpc('add_user_xp', { p_user_id: user.id, p_amount: -100 });
+                          if (error) {
+                            console.error("Error deducting XP via RPC:", error);
+                            const fallbackXP = (userProfile?.xp || 0) - 100;
+                            await supabase.from('profiles').update({ xp: fallbackXP }).eq('id', user.id);
+                          }
+                          toast.info("100 XP deducted for using a hint!");
+                          if (userProfile) {
+                            setUserProfile({ ...userProfile, xp: (userProfile.xp || 0) - 100 });
+                          }
+                        }
+                        setHintUsed(true);
+                      }
+                      setShowHint(!showHint);
+                    }}
+                    className="border-accent text-accent hover:bg-accent/10"
+                  >
+                    <LuLightbulb className="w-4 h-4 mr-2" />
+                    {showHint ? 'Hide' : 'Show'} Hint
+                  </Button>
+                  {!showHint && !hintUsed && (
+                    <span className="text-xs text-accent/80 font-medium">Costs 100 XP</span>
+                  )}
+                  {hintUsed && (
+                    <span className="text-xs text-muted-foreground font-medium">-100 XP applied</span>
+                  )}
+                </div>
                 {showHint && (
-                  <Card className="mt-3 border-[#F59E0B]/20 bg-[#F59E0B]/5">
+                  <Card className="mt-3 border-accent/20 bg-accent/5">
                     <CardContent className="p-4">
-                      <p className="text-sm text-[#6B7280]">
-                        💡 Try breaking down the problem into smaller steps. Make sure to use the correct variable types and syntax.
+                      <p className="text-sm text-muted-foreground">
+                        Try breaking down the problem into smaller steps. Make sure to use the correct variable types and syntax.
                       </p>
                     </CardContent>
                   </Card>
                 )}
               </div>
 
-              {/* Solution Toggle */}
-              <div className="mt-4">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowSolution(!showSolution)}
-                  className="border-[#6B7280] text-[#6B7280]"
-                >
-                  {showSolution ? <EyeOff className="w-4 h-4 mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
-                  {showSolution ? 'Hide' : 'View'} Solution
-                </Button>
-                {showSolution && (
-                  <Card className="mt-3 border-[rgba(0,0,0,0.08)] overflow-hidden">
-                    <div className="bg-[#1a1a2e] px-4 py-2">
-                      <span className="text-sm text-white/70">Solution</span>
-                    </div>
-                    <div className="bg-[#1e1e1e]">
-                      <Editor
-                        height="150px"
-                        language={lesson.language}
-                        value={lesson.exercise.solution}
-                        theme="vs-dark"
-                        options={{
-                          readOnly: true,
-                          minimap: { enabled: false },
-                          fontSize: 14,
-                          lineNumbers: 'on',
-                          scrollBeyondLastLine: false,
-                        }}
-                      />
-                    </div>
-                  </Card>
-                )}
-              </div>
+              {failedAttempts >= 3 && (
+                <div className="mt-4 border-t border-border pt-4">
+                  <div className="flex items-center gap-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setShowSolution(!showSolution);
+                        if (!showSolution) setSolutionUsed(true);
+                      }}
+                      className="border-destructive/60 text-destructive hover:bg-destructive/10"
+                    >
+                      {showSolution ? <LuEyeOff className="w-4 h-4 mr-2" /> : <LuEye className="w-4 h-4 mr-2" />}
+                      {showSolution ? 'Hide' : 'View'} Solution
+                    </Button>
+                    {!showSolution && !solutionUsed && (
+                      <span className="text-xs text-destructive/80 font-medium">⚠️ Forfeits all XP for this lesson</span>
+                    )}
+                    {solutionUsed && (
+                      <span className="text-xs text-muted-foreground font-medium">0 XP will be awarded</span>
+                    )}
+                  </div>
+                  {showSolution && (
+                    <Card className="mt-3 border-border overflow-hidden">
+                      <div className="bg-foreground px-4 py-2">
+                        <span className="text-sm text-white/70">Solution</span>
+                      </div>
+                      <div className="bg-[#1e1e1e]">
+                        <Editor
+                          height="150px"
+                          language={lesson.language || 'javascript'}
+                          value={lesson.exercise_solution || ''}
+                          theme="vs-dark"
+                          options={{
+                            readOnly: true,
+                            minimap: { enabled: false },
+                            fontSize: 14,
+                            lineNumbers: 'on',
+                            scrollBeyondLastLine: false,
+                          }}
+                        />
+                      </div>
+                    </Card>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Right: Code Editor */}
-          <div className="w-1/2 flex flex-col bg-[#1e1e1e]">
-            {/* Editor */}
-            <div className="flex-1 overflow-hidden">
-              <Editor
-                height="100%"
-                language={lesson.language}
-                value={code}
-                onChange={(value) => setCode(value || '')}
-                theme="vs-dark"
-                options={{
-                  minimap: { enabled: false },
-                  fontSize: 14,
-                  lineNumbers: 'on',
-                  scrollBeyondLastLine: false,
-                  automaticLayout: true,
-                  tabSize: 2,
-                }}
-              />
-            </div>
+          <div className="w-1/2 flex flex-col bg-white border-l border-black/10">
+            <div className="flex-1 p-0">
+              <div className="h-full rounded-2xl border border-white/10 bg-[#141518] shadow-[0_0_0_1px_rgba(255,255,255,0.04),0_30px_80px_-40px_rgba(0,0,0,0.9)] overflow-hidden flex flex-col">
+                <div className="px-4 py-3 bg-[#101114] border-b border-white/10 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-red-500/80" />
+                    <span className="h-2 w-2 rounded-full bg-yellow-500/80" />
+                    <span className="h-2 w-2 rounded-full bg-blue-500/80" />
+                  </div>
+                  <span className="text-xs text-white/50 font-mono tracking-wider">
+                    {lesson.language === 'python' ? 'main.py' : 'index.js'}
+                  </span>
+                  <span className="text-[10px] uppercase tracking-[0.2em] text-white/30">Practice</span>
+                </div>
 
-            {/* Action Buttons */}
-            <div className="bg-[#252525] px-6 py-4 border-t border-[#3e3e3e] flex items-center gap-3">
-              <Button
-                onClick={handleRun}
-                disabled={isRunning}
-                variant="outline"
-                className="bg-[#1e1e1e] text-white border-[#3e3e3e] hover:bg-[#2d2d2d]"
-              >
-                <Play className="w-4 h-4 mr-2" />
-                Run Code
-              </Button>
-              <Button
-                onClick={handleSubmit}
-                disabled={isRunning}
-                style={{ backgroundColor: '#0747a1' }}
-              >
-                <CheckCircle2 className="w-4 h-4 mr-2" />
-                {isCompleted ? 'Completed' : 'Submit'}
-              </Button>
-              {nextLesson && isCompleted && (
-                <Button
-                  onClick={() => navigate(`/courses/${nextLesson.courseId}/modules/${nextLesson.moduleId}/lessons/${nextLesson.lessonId}`)}
-                  style={{ backgroundColor: '#10B981' }}
-                  className="ml-auto"
-                >
-                  Next Lesson
-                  <ChevronRight className="w-4 h-4 ml-2" />
-                </Button>
-              )}
-            </div>
+                <div className="flex-1 overflow-hidden bg-[#141518]">
+                  <Editor
+                    height="100%"
+                    language={lesson.language || 'javascript'}
+                    value={code}
+                    onChange={(value) => setCode(value || '')}
+                    theme="vs-dark"
+                    onMount={(editor, monaco) => {
+                      editor.onKeyDown((e: any) => {
+                        // Prevent Ctrl+V or Cmd+V
+                        if ((e.ctrlKey || e.metaKey) && e.keyCode === monaco.KeyCode.KeyV) {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          toast.warning("Pasting is disabled! Typing it out helps you learn.");
+                        }
+                      });
+                      // Prevent native right-click paste
+                      const domNode = editor.getDomNode();
+                      if (domNode) {
+                        domNode.addEventListener('paste', (e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          toast.warning("Pasting is disabled! Typing it out helps you learn.");
+                        }, true);
+                      }
+                    }}
+                    options={{
+                      minimap: { enabled: false },
+                      fontSize: 14,
+                      lineNumbers: 'on',
+                      scrollBeyondLastLine: false,
+                      automaticLayout: true,
+                      tabSize: 2,
+                    }}
+                  />
+                </div>
 
-            {/* Output Console */}
-            <div className="h-48 bg-[#1e1e1e] border-t border-[#3e3e3e] overflow-auto">
-              <div className="px-6 py-3 bg-[#252525] border-b border-[#3e3e3e]">
-                <span className="text-sm text-white/70">Console Output</span>
+                <div className="px-4 py-3 bg-[#111214] border-t border-white/10 flex items-center gap-3">
+                  <Button
+                    onClick={handleRun}
+                    disabled={isRunning}
+                    variant="outline"
+                    className="bg-[#141518] text-white border-white/10 hover:bg-[#1c1f24] hover:border-white/20"
+                  >
+                    <LuPlay className="w-4 h-4 mr-2" />
+                    Run Code
+                  </Button>
+                  <Button
+                    onClick={handleSubmit}
+                    disabled={isRunning}
+                    className="bg-blue-500 text-white hover:bg-blue-400 shadow-lg shadow-blue-500/20"
+                  >
+                    <LuCircleCheck className="w-4 h-4 mr-2" />
+                    {isCompleted ? 'Resubmit' : 'Submit'}
+                  </Button>
+                  {nextLesson && isCompleted && (
+                    <Button
+                      onClick={() => navigate(`/courses/${nextLesson?.courseId}/modules/${nextLesson?.moduleId}/lessons/${nextLesson?.lessonId}`)}
+                      className="ml-auto bg-[#1a2b22] text-emerald-200 hover:bg-[#203528] border border-emerald-500/20"
+                    >
+                      Next Lesson
+                      <LuChevronRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  )}
+                </div>
+
+                <div className="h-52 bg-[#0f1012] border-t border-white/10 overflow-auto">
+                  <div className="px-4 py-2 bg-[#121316] border-b border-white/10 flex items-center justify-between">
+                    <span className="text-xs uppercase tracking-[0.2em] text-white/40">Console</span>
+                    <span className="text-xs text-white/40">Output</span>
+                  </div>
+                  <pre className="p-5 text-sm text-white/90 font-mono">{output || '// Run your code to see output here'}</pre>
+                </div>
               </div>
-              <pre className="p-6 text-sm text-white/90 font-mono">
-                {output || '// Run your code to see output here'}
-              </pre>
             </div>
           </div>
         </div>
@@ -382,3 +895,4 @@ export default function LessonView() {
     </DashboardLayout>
   );
 }
+
