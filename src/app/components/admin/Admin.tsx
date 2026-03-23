@@ -250,12 +250,13 @@ export default function Admin() {
   // Create Exercise Modal State
   const [showCreateExerciseModal, setShowCreateExerciseModal] = useState(false);
   const [newExerciseTitle, setNewExerciseTitle] = useState('');
-  const [newExerciseType, setNewExerciseType] = useState('code'); // We map 'code' to language selection now
+  const [newExerciseType, setNewExerciseType] = useState<'code' | 'document'>('code');
   const [newExerciseLanguage, setNewExerciseLanguage] = useState<'python' | 'javascript'>('python');
   const [newExerciseDifficulty, setNewExerciseDifficulty] = useState('beginner');
   const [newExerciseDueDate, setNewExerciseDueDate] = useState('');
   const [newExerciseXP, setNewExerciseXP] = useState(100);
   const [newExerciseDescription, setNewExerciseDescription] = useState('');
+  const [newExerciseFormattingRequirements, setNewExerciseFormattingRequirements] = useState('');
 
   const handleCreateExercise = async () => {
     if (!newExerciseTitle.trim() || !profile) return;
@@ -271,7 +272,8 @@ export default function Admin() {
         student_id: student.id,
         title: newExerciseTitle,
         instructions: newExerciseDescription,
-        language: newExerciseLanguage,
+        language: newExerciseType === 'document' ? 'document' : newExerciseLanguage,
+        formatting_requirements: newExerciseType === 'document' ? newExerciseFormattingRequirements : null,
         due_date: newExerciseDueDate ? new Date(newExerciseDueDate).toISOString() : null,
         status: 'assigned',
       }));
@@ -288,10 +290,11 @@ export default function Admin() {
       const mockAssignedGroup = {
         id: Date.now().toString(),
         title: newExerciseTitle,
-        type: newExerciseLanguage,
+        type: newExerciseType === 'document' ? 'document' : newExerciseLanguage,
         difficulty_level: newExerciseDifficulty,
         xp_reward: newExerciseXP,
         description: newExerciseDescription,
+        formatting_requirements: newExerciseFormattingRequirements,
         created_at: new Date().toISOString(),
       };
 
@@ -304,6 +307,7 @@ export default function Admin() {
       setNewExerciseDueDate('');
       setNewExerciseXP(100);
       setNewExerciseDescription('');
+      setNewExerciseFormattingRequirements('');
       setShowCreateExerciseModal(false);
 
     } catch (err) {
@@ -1103,14 +1107,14 @@ export default function Admin() {
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <label className="text-sm font-medium text-foreground mb-1 block">Language</label>
+                            <label className="text-sm font-medium text-foreground mb-1 block">Assignment Type</label>
                             <select
-                              value={newExerciseLanguage}
-                              onChange={(e) => setNewExerciseLanguage(e.target.value as 'python' | 'javascript')}
+                              value={newExerciseType}
+                              onChange={(e) => setNewExerciseType(e.target.value as 'code' | 'document')}
                               className="h-10 w-full rounded-xl border border-border bg-sidebar px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary"
                             >
-                              <option value="python">Python</option>
-                              <option value="javascript">JavaScript</option>
+                              <option value="code">Code Exercise</option>
+                              <option value="document">Document Upload</option>
                             </select>
                           </div>
                           <div>
@@ -1125,6 +1129,25 @@ export default function Admin() {
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                           <div>
+                            <label className="text-sm font-medium text-foreground mb-1 block">
+                              {newExerciseType === 'document' ? 'Submission Format' : 'Language'}
+                            </label>
+                            {newExerciseType === 'document' ? (
+                              <div className="rounded-xl border border-border bg-sidebar px-3 py-2 text-sm text-muted-foreground">
+                                Word or PDF upload (`.doc`, `.docx`, `.pdf`)
+                              </div>
+                            ) : (
+                              <select
+                                value={newExerciseLanguage}
+                                onChange={(e) => setNewExerciseLanguage(e.target.value as 'python' | 'javascript')}
+                                className="h-10 w-full rounded-xl border border-border bg-sidebar px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary"
+                              >
+                                <option value="python">Python</option>
+                                <option value="javascript">JavaScript</option>
+                              </select>
+                            )}
+                          </div>
+                          <div>
                             <label className="text-sm font-medium text-foreground mb-1 block">Difficulty</label>
                             <select
                               value={newExerciseDifficulty}
@@ -1136,17 +1159,17 @@ export default function Admin() {
                               <option value="advanced">Advanced</option>
                             </select>
                           </div>
-                          <div>
-                            <label className="text-sm font-medium text-foreground mb-1 block">XP Reward</label>
-                            <input
-                              type="number"
-                              min="10"
-                              max="1000"
-                              value={newExerciseXP}
-                              onChange={(e) => setNewExerciseXP(Number(e.target.value))}
-                              className="h-10 w-full rounded-xl border border-border bg-sidebar px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary"
-                            />
-                          </div>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-foreground mb-1 block">XP Reward</label>
+                          <input
+                            type="number"
+                            min="10"
+                            max="1000"
+                            value={newExerciseXP}
+                            onChange={(e) => setNewExerciseXP(Number(e.target.value))}
+                            className="h-10 w-full rounded-xl border border-border bg-sidebar px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary"
+                          />
                         </div>
                         <div>
                           <label className="text-sm font-medium text-foreground mb-1 block">Description</label>
@@ -1157,6 +1180,17 @@ export default function Admin() {
                             className="min-h-[100px] w-full rounded-xl border border-border bg-sidebar px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary resize-none"
                           />
                         </div>
+                        {newExerciseType === 'document' && (
+                          <div>
+                            <label className="text-sm font-medium text-foreground mb-1 block">Formatting Requirements</label>
+                            <textarea
+                              placeholder="Example: 3-5 pages, Times New Roman 12pt, 1.5 spacing, APA references, include a title page."
+                              value={newExerciseFormattingRequirements}
+                              onChange={(e) => setNewExerciseFormattingRequirements(e.target.value)}
+                              className="min-h-[100px] w-full rounded-xl border border-border bg-sidebar px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary resize-none"
+                            />
+                          </div>
+                        )}
                         <div className="flex gap-2 pt-4 border-t border-border">
                           <Button
                             className="flex-1 rounded-full"

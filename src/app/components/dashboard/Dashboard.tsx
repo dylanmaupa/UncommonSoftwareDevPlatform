@@ -44,12 +44,13 @@ interface InstructorExercise {
   student_id: string;
   title: string;
   instructions: string;
-  language: 'python' | 'javascript';
+  language: 'python' | 'javascript' | 'document';
   status: 'assigned' | 'submitted' | 'reviewed' | 'approved' | 'rejected';
   due_date: string | null;
   created_at: string;
   submitted_at: string | null;
   instructor_name: string;
+  formatting_requirements?: string | null;
 }
 
 interface DashboardMainProps {
@@ -294,6 +295,9 @@ function DashboardMain({
                                 {exercise.due_date ? `Due ${new Date(exercise.due_date).toLocaleDateString()}` : 'No due date'}
                                 {isLate && ' (Late)'}
                               </p>
+                              {exercise.language === 'document' && exercise.formatting_requirements && (
+                                <p className="mt-1 text-xs text-muted-foreground">Formatting: {exercise.formatting_requirements}</p>
+                              )}
                             </div>
                             <div className="flex flex-col gap-1 items-end">
                               <Badge className={`border ${statusTone}`}>
@@ -303,14 +307,18 @@ function DashboardMain({
                           </div>
 
                           <div className="mt-3 flex items-center justify-between gap-2">
-                            <p className="line-clamp-2 text-xs text-muted-foreground">{exercise.instructions || 'Open the sandbox to view full instructions.'}</p>
+                            <p className="line-clamp-2 text-xs text-muted-foreground">{exercise.instructions || 'Open the assignment workspace to view full instructions.'}</p>
                             <Button
                               size="sm"
                               disabled={exercise.language === 'javascript'}
                               className="h-8 rounded-full bg-primary px-3 text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-70"
                               onClick={() => navigate(`/sandbox?exerciseId=${exercise.id}`)}
                             >
-                              {exercise.language === 'javascript' ? 'Coming soon' : exercise.status === 'assigned' ? 'Start' : 'Open'}
+                              {exercise.language === 'javascript'
+                                ? 'Coming soon'
+                                : exercise.language === 'document'
+                                  ? exercise.status === 'assigned' ? 'Upload' : 'Open'
+                                  : exercise.status === 'assigned' ? 'Start' : 'Open'}
                             </Button>
                           </div>
                         </div>
@@ -592,12 +600,13 @@ export default function Dashboard() {
                 student_id: String(row.student_id),
                 title: String(row.title || 'Untitled Exercise'),
                 instructions: String(row.instructions || ''),
-                language: row.language === 'javascript' ? 'javascript' : 'python',
+                language: row.language === 'javascript' ? 'javascript' : row.language === 'document' ? 'document' : 'python',
                 status: row.status || 'assigned',
                 due_date: row.due_date ? String(row.due_date) : null,
                 created_at: String(row.created_at || ''),
                 submitted_at: row.submitted_at ? String(row.submitted_at) : null,
                 instructor_name: instructorNameMap.get(String(row.instructor_id)) || 'Instructor',
+                formatting_requirements: row.formatting_requirements ? String(row.formatting_requirements) : null,
               }))
             );
           } else if (exerciseError?.code !== '42P01') {

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ChangeEvent } from 'react';
 import { useLocation } from 'react-router';
 import Editor from '@monaco-editor/react';
 import { toast } from 'sonner';
@@ -8,9 +8,10 @@ import { Button } from '../ui/button';
 import { Card, CardContent } from '../ui/card';
 import { supabase } from '../../../lib/supabase';
 import { loadPyodideEnvironment } from '../../../lib/pyodide';
-import { LuPlay, LuSend, LuTerminal, LuTrash2 } from 'react-icons/lu';
+import { LuDownload, LuFileText, LuPlay, LuSend, LuTerminal, LuTrash2, LuUpload } from 'react-icons/lu';
 
-type ExerciseStatus = 'assigned' | 'submitted' | 'reviewed';
+type ExerciseLanguage = 'python' | 'javascript' | 'document';
+type ExerciseStatus = 'assigned' | 'submitted' | 'reviewed' | 'approved' | 'rejected';
 
 interface InstructorExerciseAssignment {
   id: string;
@@ -18,24 +19,70 @@ interface InstructorExerciseAssignment {
   student_id: string;
   title: string;
   instructions: string;
-  language: 'python' | 'javascript';
+  language: ExerciseLanguage;
   starter_code: string;
   status: ExerciseStatus;
   due_date: string | null;
+  formatting_requirements: string | null;
   submission_code: string | null;
   submission_output: string | null;
+  submission_document_path: string | null;
+  submission_document_name: string | null;
+  submission_document_size: number | null;
+  submission_document_mime_type: string | null;
   submitted_at: string | null;
 }
 
 const DEFAULT_PYTHON_CODE = '# Try writing some Python code here!\n\ndef greet(name):\n    return f"Hello, {name}!"\n\nprint(greet("World"))\n';
 const DEFAULT_JAVASCRIPT_CODE = '// Try writing some JavaScript code here!\n\nfunction greet(name) {\n  return `Hello, ${name}!`;\n}\n\nconsole.log(greet("World"));\n';
 
-function getDefaultStarterCode(language: 'python' | 'javascript') {
+const DOCUMENT_BUCKET = 'assignment-documents';
+const DOCUMENT_ACCEPT = '.doc,.docx,.pdf';
+const ALLOWED_DOCUMENT_EXTENSIONS = ['doc', 'docx', 'pdf'];
+
+function getDefaultStarterCode(language: ExerciseLanguage) {
   return language === 'javascript' ? DEFAULT_JAVASCRIPT_CODE : DEFAULT_PYTHON_CODE;
 }
 
-function normalizeLanguage(value: unknown): 'python' | 'javascript' {
-  return value === 'javascript' ? 'javascript' : 'python';
+function normalizeLanguage(value: unknown): ExerciseLanguage {
+  if (value === 'javascript') return 'javascript';
+  if (value === 'document') return 'document';
+  return 'python';
+}
+
+function sanitizeFileName(fileName: string) {
+  return fileName.replace(/[^a-zA-Z0-9._-]/g, '-');
+}
+
+function getFileExtension(fileName: string) {
+  const parts = fileName.split('.');
+  return parts.length > 1 ? parts.pop()?.toLowerCase() ?? '' : '';
+}
+
+function formatBytes(bytes: number | null) {
+  if (!bytes) return 'Unknown size';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+async function createDocumentUrl(path: string) {
+  const { data, error } = await supabase.storage.from(DOCUMENT_BUCKET).createSignedUrl(path, 60 * 60);
+  if (error) throw error;
+  return data.signedUrl;
+}
+
+function getDocumentStorageErrorMessage(error: unknown) {
+  const message =
+    error && typeof error === 'object' && 'message' in error
+      ? String((error as { message?: unknown }).message ?? '')
+      : '';
+
+  if (message.toLowerCase().includes('bucket not found')) {
+    return 'Document uploads are not configured in Supabase yet. Run the document assignment SQL migration to create the assignment-documents bucket.';
+  }
+
+  return 'Failed to upload your document.';
 }
 
 export default function Sandbox() {
@@ -48,12 +95,15 @@ export default function Sandbox() {
   const [code, setCode] = useState(DEFAULT_PYTHON_CODE);
   const [output, setOutput] = useState('');
   const [isRunning, setIsRunning] = useState(false);
-  const [language, setLanguage] = useState<'python' | 'javascript'>('python');
+  const [language, setLanguage] = useState<ExerciseLanguage>('python');
   const [assignment, setAssignment] = useState<InstructorExerciseAssignment | null>(null);
   const [assignmentError, setAssignmentError] = useState('');
   const [isLoadingAssignment, setIsLoadingAssignment] = useState(false);
   const [isSubmittingAssignment, setIsSubmittingAssignment] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [selectedDocument, setSelectedDocument] = useState<File | null>(null);
+  const [documentUrl, setDocumentUrl] = useState<string | null>(null);
+  const [isResolvingDocumentUrl, setIsResolvingDocumentUrl] = useState(false);
 
   const logActivity = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -118,11 +168,15 @@ export default function Sandbox() {
         if (!isMounted) return;
         setAssignment(null);
         setAssignmentError('');
+        setSelectedDocument(null);
+        setDocumentUrl(null);
         return;
       }
 
       setIsLoadingAssignment(true);
       setAssignmentError('');
+      setSelectedDocument(null);
+      setDocumentUrl(null);
 
       const { data: { user } } = await supabase.auth.getUser();
       if (!isMounted) return;
@@ -168,10 +222,15 @@ export default function Sandbox() {
         instructions: String(data.instructions || ''),
         language: normalizeLanguage(data.language),
         starter_code: String(data.starter_code || ''),
-        status: data.status === 'submitted' || data.status === 'reviewed' ? data.status : 'assigned',
+        status: ['submitted', 'reviewed', 'approved', 'rejected'].includes(String(data.status)) ? data.status : 'assigned',
         due_date: data.due_date ? String(data.due_date) : null,
+        formatting_requirements: data.formatting_requirements ? String(data.formatting_requirements) : null,
         submission_code: data.submission_code ? String(data.submission_code) : null,
         submission_output: data.submission_output ? String(data.submission_output) : null,
+        submission_document_path: data.submission_document_path ? String(data.submission_document_path) : null,
+        submission_document_name: data.submission_document_name ? String(data.submission_document_name) : null,
+        submission_document_size: typeof data.submission_document_size === 'number' ? data.submission_document_size : null,
+        submission_document_mime_type: data.submission_document_mime_type ? String(data.submission_document_mime_type) : null,
         submitted_at: data.submitted_at ? String(data.submitted_at) : null,
       };
 
@@ -187,6 +246,21 @@ export default function Sandbox() {
       const initialCode = normalized.submission_code || normalized.starter_code || getDefaultStarterCode(normalized.language);
       setCode(initialCode);
       setOutput(normalized.submission_output || '');
+      if (normalized.submission_document_path) {
+        setIsResolvingDocumentUrl(true);
+        try {
+          const signedUrl = await createDocumentUrl(normalized.submission_document_path);
+          if (isMounted) {
+            setDocumentUrl(signedUrl);
+          }
+        } catch (documentError) {
+          console.error('Failed to create signed URL for assignment document', documentError);
+        } finally {
+          if (isMounted) {
+            setIsResolvingDocumentUrl(false);
+          }
+        }
+      }
       setIsLoadingAssignment(false);
     };
 
@@ -247,6 +321,10 @@ sys.stderr = io.StringIO()
       toast.info('JavaScript sandbox is coming soon.');
       return;
     }
+    if (language === 'document') {
+      toast.info('Document assignments do not run in the code sandbox.');
+      return;
+    }
 
     try {
       setIsRunning(true);
@@ -265,11 +343,54 @@ sys.stderr = io.StringIO()
     }
   };
 
-  const handleSubmitAssignment = async () => {
-    if (language === 'javascript') {
-      toast.info('JavaScript sandbox is coming soon.');
+  const handleDocumentSelected = (event: ChangeEvent<HTMLInputElement>) => {
+    const nextFile = event.target.files?.[0] ?? null;
+    if (!nextFile) {
+      setSelectedDocument(null);
       return;
     }
+
+    const extension = getFileExtension(nextFile.name);
+    if (!ALLOWED_DOCUMENT_EXTENSIONS.includes(extension)) {
+      event.target.value = '';
+      setSelectedDocument(null);
+      toast.error('Only .doc, .docx, and .pdf files are allowed.');
+      return;
+    }
+
+    if (nextFile.size > 10 * 1024 * 1024) {
+      event.target.value = '';
+      setSelectedDocument(null);
+      toast.error('Please upload a file smaller than 10MB.');
+      return;
+    }
+
+    setSelectedDocument(nextFile);
+  };
+
+  const openDocument = async () => {
+    if (!assignment?.submission_document_path) {
+      toast.error('No uploaded document found for this assignment.');
+      return;
+    }
+
+    try {
+      let nextUrl = documentUrl;
+      if (!nextUrl) {
+        setIsResolvingDocumentUrl(true);
+        nextUrl = await createDocumentUrl(assignment.submission_document_path);
+        setDocumentUrl(nextUrl);
+      }
+      window.open(nextUrl, '_blank', 'noopener,noreferrer');
+    } catch (error) {
+      console.error('Failed to open document', error);
+      toast.error('Failed to open the uploaded document.');
+    } finally {
+      setIsResolvingDocumentUrl(false);
+    }
+  };
+
+  const handleSubmitAssignment = async () => {
     if (!assignment || !currentUserId) {
       toast.error('Assignment context is missing.');
       return;
@@ -280,13 +401,97 @@ sys.stderr = io.StringIO()
       return;
     }
 
-    if (assignment.status === 'reviewed') {
-      toast.error('This exercise has already been reviewed by your instructor.');
+    if (assignment.status === 'reviewed' || assignment.status === 'approved') {
+      toast.error('This exercise has already been finalized by your instructor.');
       return;
     }
 
     try {
       setIsSubmittingAssignment(true);
+
+      if (assignment.language === 'document') {
+        if (!selectedDocument && !assignment.submission_document_path) {
+          toast.error('Choose a document before submitting.');
+          return;
+        }
+
+        let nextDocumentPath = assignment.submission_document_path;
+        let nextDocumentName = assignment.submission_document_name;
+        let nextDocumentSize = assignment.submission_document_size;
+        let nextDocumentMimeType = assignment.submission_document_mime_type;
+
+        if (selectedDocument) {
+          const uploadPath = `${currentUserId}/${assignment.id}/${Date.now()}-${sanitizeFileName(selectedDocument.name)}`;
+          const { error: uploadError } = await supabase.storage
+            .from(DOCUMENT_BUCKET)
+            .upload(uploadPath, selectedDocument, {
+              cacheControl: '3600',
+              upsert: false,
+            });
+
+          if (uploadError) {
+            console.error('Failed to upload document', uploadError);
+            toast.error(getDocumentStorageErrorMessage(uploadError));
+            return;
+          }
+
+          nextDocumentPath = uploadPath;
+          nextDocumentName = selectedDocument.name;
+          nextDocumentSize = selectedDocument.size;
+          nextDocumentMimeType = selectedDocument.type || null;
+        }
+
+        const payload = {
+          submission_document_path: nextDocumentPath,
+          submission_document_name: nextDocumentName,
+          submission_document_size: nextDocumentSize,
+          submission_document_mime_type: nextDocumentMimeType,
+          submission_code: null,
+          submission_output: nextDocumentName ? `Uploaded document: ${nextDocumentName}` : 'Uploaded document submission.',
+          submitted_at: new Date().toISOString(),
+          status: 'submitted' as ExerciseStatus,
+        };
+
+        const { error } = await supabase
+          .from('instructor_exercises')
+          .update(payload)
+          .eq('id', assignment.id)
+          .eq('student_id', currentUserId);
+
+        if (error) {
+          console.error('Failed to submit document assignment', error);
+          toast.error('Failed to send your document to the instructor.');
+          return;
+        }
+
+        let nextDocumentUrl = documentUrl;
+        if (payload.submission_document_path) {
+          try {
+            nextDocumentUrl = await createDocumentUrl(payload.submission_document_path);
+          } catch (documentError) {
+            console.error('Failed to create signed URL for uploaded document', documentError);
+          }
+        }
+
+        setAssignment((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            ...payload,
+          };
+        });
+        setDocumentUrl(nextDocumentUrl);
+        setSelectedDocument(null);
+        await logActivity();
+        toast.success('Document submitted to your instructor.');
+        return;
+      }
+
+      if (language === 'javascript') {
+        toast.info('JavaScript sandbox is coming soon.');
+        return;
+      }
+
       setIsRunning(true);
 
       if (language === 'python' && !window.pyodideLocal) {
@@ -337,7 +542,11 @@ sys.stderr = io.StringIO()
       toast.success('Exercise submitted to your instructor.');
     } catch (error) {
       console.error('Submission error', error);
-      toast.error('Failed to submit exercise.');
+      toast.error(
+        assignment?.language === 'document'
+          ? getDocumentStorageErrorMessage(error)
+          : 'Failed to submit exercise.'
+      );
     } finally {
       setIsSubmittingAssignment(false);
       setIsRunning(false);
@@ -350,12 +559,14 @@ sys.stderr = io.StringIO()
 
   const isAssignmentMode = Boolean(assignment || exerciseId);
   const isLanguageLocked = Boolean(assignment);
+  const isDocumentAssignment = language === 'document';
   const isJavaScriptBlocked = language === 'javascript';
   const canSubmitAssignment = Boolean(
     assignment &&
     currentUserId &&
     assignment.student_id === currentUserId &&
-    assignment.status !== 'reviewed'
+    assignment.status !== 'reviewed' &&
+    assignment.status !== 'approved'
   );
 
   return (
@@ -369,44 +580,52 @@ sys.stderr = io.StringIO()
           <div className="border-b border-white/10 bg-[#0f0f10]/90 backdrop-blur px-6 py-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/15 text-blue-300 ring-1 ring-blue-500/30">
-                <LuTerminal className="h-5 w-5" />
+                {isDocumentAssignment ? <LuFileText className="h-5 w-5" /> : <LuTerminal className="h-5 w-5" />}
               </div>
               <div>
-                <h1 className="text-xl font-semibold text-white heading-font">Practice Sandbox</h1>
+                <h1 className="text-xl font-semibold text-white heading-font">{isDocumentAssignment ? 'Assignment Workspace' : 'Practice Sandbox'}</h1>
                 <p className="text-xs text-white/60">
-                  {isAssignmentMode ? 'Complete your assigned exercise and submit it to your instructor.' : 'Write and test your code securely in the browser.'}
+                  {isDocumentAssignment
+                    ? 'Upload your completed document and submit it to your instructor.'
+                    : isAssignmentMode
+                      ? 'Complete your assigned exercise and submit it to your instructor.'
+                      : 'Write and test your code securely in the browser.'}
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <select
-                className="bg-[#111214] border border-white/10 rounded-lg text-sm px-3 py-2 text-white/80 outline-none focus:ring-2 focus:ring-blue-500/30 disabled:opacity-60 disabled:cursor-not-allowed"
-                value={language}
-                disabled={isLanguageLocked || isJavaScriptBlocked}
-                onChange={(e) => {
-                  const nextLanguage = normalizeLanguage(e.target.value);
-                  if (nextLanguage === 'javascript') {
-                    toast.info('JavaScript sandbox is coming soon.');
-                    return;
-                  }
+              {!isDocumentAssignment && (
+                <>
+                  <select
+                    className="bg-[#111214] border border-white/10 rounded-lg text-sm px-3 py-2 text-white/80 outline-none focus:ring-2 focus:ring-blue-500/30 disabled:opacity-60 disabled:cursor-not-allowed"
+                    value={language}
+                    disabled={isLanguageLocked || isJavaScriptBlocked}
+                    onChange={(e) => {
+                      const nextLanguage = normalizeLanguage(e.target.value);
+                      if (nextLanguage === 'javascript') {
+                        toast.info('JavaScript sandbox is coming soon.');
+                        return;
+                      }
 
-                  setLanguage(nextLanguage);
-                  if (nextLanguage === 'python' && code.includes('function greet(name)')) {
-                    setCode(DEFAULT_PYTHON_CODE);
-                  }
-                }}
-              >
-                <option value="python">Python</option>
-                <option value="javascript" disabled>JavaScript (Coming soon)</option>
-              </select>
-              <Button
-                onClick={handleRun}
-                disabled={isRunning || isJavaScriptBlocked}
-                className="bg-blue-500 text-white hover:bg-blue-400 rounded-full px-6 shadow-lg shadow-blue-500/20"
-              >
-                <LuPlay className="w-4 h-4 mr-2" />
-                {isRunning ? 'Running...' : 'Run Code'}
-              </Button>
+                      setLanguage(nextLanguage);
+                      if (nextLanguage === 'python' && code.includes('function greet(name)')) {
+                        setCode(DEFAULT_PYTHON_CODE);
+                      }
+                    }}
+                  >
+                    <option value="python">Python</option>
+                    <option value="javascript" disabled>JavaScript (Coming soon)</option>
+                  </select>
+                  <Button
+                    onClick={handleRun}
+                    disabled={isRunning || isJavaScriptBlocked}
+                    className="bg-blue-500 text-white hover:bg-blue-400 rounded-full px-6 shadow-lg shadow-blue-500/20"
+                  >
+                    <LuPlay className="w-4 h-4 mr-2" />
+                    {isRunning ? 'Running...' : 'Run Code'}
+                  </Button>
+                </>
+              )}
               {isAssignmentMode && (
                 <Button
                   onClick={handleSubmitAssignment}
@@ -432,9 +651,14 @@ sys.stderr = io.StringIO()
                       </h2>
                     </div>
                     {assignment && (
-                      <Badge className="border border-white/20 bg-white/10 text-white text-[11px]">
-                        {assignment.status}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge className="border border-white/20 bg-white/10 text-white text-[11px]">
+                          {assignment.language === 'document' ? 'document upload' : assignment.language}
+                        </Badge>
+                        <Badge className="border border-white/20 bg-white/10 text-white text-[11px]">
+                          {assignment.status}
+                        </Badge>
+                      </div>
                     )}
                   </div>
 
@@ -445,6 +669,12 @@ sys.stderr = io.StringIO()
                       <p className="text-sm text-white/75 whitespace-pre-wrap">
                         {assignment?.instructions || 'Open the editor below and complete the assigned task.'}
                       </p>
+                      {assignment?.formatting_requirements && (
+                        <div className="rounded-xl border border-blue-400/20 bg-blue-500/10 p-3 text-sm text-blue-100">
+                          <p className="text-xs uppercase tracking-[0.18em] text-blue-200/70">Formatting Requirements</p>
+                          <p className="mt-2 whitespace-pre-wrap">{assignment.formatting_requirements}</p>
+                        </div>
+                      )}
 
                       {(() => {
                         const isLate = assignment?.due_date && (
@@ -470,67 +700,151 @@ sys.stderr = io.StringIO()
           )}
 
           <div className="flex-1 p-4 lg:p-6 overflow-hidden flex flex-col lg:flex-row gap-6">
+            {isDocumentAssignment ? (
+              <>
+                <Card className="flex-1 border border-white/10 rounded-2xl bg-[#141518] shadow-[0_0_0_1px_rgba(255,255,255,0.04),0_24px_60px_-36px_rgba(0,0,0,0.9)]">
+                  <CardContent className="p-6 space-y-5">
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.18em] text-white/45">Upload submission</p>
+                      <h3 className="mt-2 text-lg font-semibold text-white">Research document</h3>
+                      <p className="mt-2 text-sm text-white/65">
+                        Upload a `.doc`, `.docx`, or `.pdf` file. The latest upload will be the version your instructor reviews.
+                      </p>
+                    </div>
 
-            {/* Editor Column */}
-            <Card className="flex-1 flex flex-col gap-0 border border-white/10 overflow-hidden rounded-2xl min-h-[420px] bg-[#141518] shadow-[0_0_0_1px_rgba(255,255,255,0.04),0_24px_60px_-36px_rgba(0,0,0,0.9)]">
-              <div className="bg-[#17181b] p-2 border-b border-[#24262b] flex items-center justify-between">
-                <div className="flex gap-2 px-2">
-                  <div className="w-3 h-3 rounded-full bg-red-500/80"></div>
-                  <div className="w-3 h-3 rounded-full bg-yellow-500/80"></div>
-                  <div className="w-3 h-3 rounded-full bg-blue-500/80"></div>
-                </div>
-                <span className="text-xs text-white/50 font-mono tracking-wider">{language === 'python' ? 'main.py' : 'index.js'}</span>
-                <div className="w-10"></div>
-              </div>
-              <div className="flex-1 bg-[#141518] relative">
-                <Editor
-                  height="100%"
-                  language={language}
-                  value={code}
-                  onChange={(value) => setCode(value || '')}
-                  theme="vs-dark"
-                  options={{
-                    minimap: { enabled: false },
-                    fontSize: 14,
-                    lineNumbers: 'on',
-                    scrollBeyondLastLine: false,
-                    automaticLayout: true,
-                    tabSize: language === 'python' ? 4 : 2,
-                    readOnly: isJavaScriptBlocked,
-                    fontFamily: '"JetBrains Mono", "Fira Code", monospace',
-                  }}
-                  className="absolute inset-0"
-                />
-              </div>
-            </Card>
+                    <label className="block rounded-2xl border border-dashed border-white/15 bg-white/[0.03] p-6 text-center cursor-pointer hover:border-blue-400/40 hover:bg-blue-500/[0.04] transition-colors">
+                      <input
+                        type="file"
+                        accept={DOCUMENT_ACCEPT}
+                        className="hidden"
+                        onChange={handleDocumentSelected}
+                        disabled={!canSubmitAssignment}
+                      />
+                      <LuUpload className="mx-auto h-8 w-8 text-blue-300" />
+                      <p className="mt-3 text-sm font-medium text-white">
+                        {selectedDocument ? selectedDocument.name : 'Choose a document to upload'}
+                      </p>
+                      <p className="mt-1 text-xs text-white/45">
+                        Max 10MB. Accepted formats: `.doc`, `.docx`, `.pdf`
+                      </p>
+                    </label>
 
-            {/* Console Column */}
-            <Card className="lg:w-1/3 flex flex-col gap-0 border border-white/10 overflow-hidden rounded-2xl min-h-[300px] lg:min-h-0 bg-[#0f1012] shadow-[0_0_0_1px_rgba(255,255,255,0.04),0_24px_60px_-36px_rgba(0,0,0,0.9)]">
-              <div className="bg-[#17181b] px-4 py-2 flex items-center justify-between border-b border-[#24262b]">
-                <span className="text-xs font-semibold uppercase tracking-wider text-white/70 flex items-center gap-2">
-                  <LuTerminal className="w-3 h-3" /> Console
-                </span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleClearConsole}
-                  className="h-7 text-xs text-white/50 hover:text-white hover:bg-white/10"
-                >
-                  <LuTrash2 className="w-3 h-3 mr-1" /> Clear
-                </Button>
-              </div>
-              <div className="flex-1 p-4 overflow-y-auto w-full">
-                {output ? (
-                  <pre className="text-sm font-mono text-blue-400 whitespace-pre-wrap leading-relaxed">
-                    {output}
-                  </pre>
-                ) : (
-                  <div className="h-full flex items-center justify-center text-white/30 text-sm italic font-mono">
-                    Output will appear here...
+                    {selectedDocument && (
+                      <div className="rounded-xl border border-emerald-400/20 bg-emerald-500/10 p-4">
+                        <p className="text-sm font-medium text-emerald-100">{selectedDocument.name}</p>
+                        <p className="mt-1 text-xs text-emerald-200/80">{formatBytes(selectedDocument.size)} ready to submit</p>
+                      </div>
+                    )}
+
+                    {assignment?.submission_document_name && (
+                      <div className="rounded-xl border border-white/10 bg-black/20 p-4">
+                        <p className="text-xs uppercase tracking-[0.18em] text-white/45">Current submission</p>
+                        <p className="mt-2 text-sm font-medium text-white">{assignment.submission_document_name}</p>
+                        <p className="mt-1 text-xs text-white/45">
+                          {formatBytes(assignment.submission_document_size)}
+                          {assignment.submitted_at ? ` • Submitted ${new Date(assignment.submitted_at).toLocaleString()}` : ''}
+                        </p>
+                        <div className="mt-3">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="border-white/15 bg-white/5 text-white hover:bg-white/10"
+                            onClick={openDocument}
+                            disabled={isResolvingDocumentUrl}
+                          >
+                            <LuDownload className="mr-2 h-4 w-4" />
+                            {isResolvingDocumentUrl ? 'Preparing file...' : 'Open uploaded document'}
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card className="lg:w-1/3 border border-white/10 rounded-2xl bg-[#0f1012] shadow-[0_0_0_1px_rgba(255,255,255,0.04),0_24px_60px_-36px_rgba(0,0,0,0.9)]">
+                  <CardContent className="p-6 space-y-4">
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.18em] text-white/45">Submission notes</p>
+                      <h3 className="mt-2 text-lg font-semibold text-white">Before you submit</h3>
+                    </div>
+
+                    <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 text-sm text-white/70">
+                      Make sure your document follows the instructor&apos;s formatting rules and includes your final content before submitting.
+                    </div>
+
+                    <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 text-sm text-white/70">
+                      Re-uploading a new file and clicking submit again will replace the current version your instructor sees.
+                    </div>
+
+                    <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 text-sm text-white/70">
+                      Status:
+                      <span className="ml-2 font-medium text-white">{assignment?.status || 'draft'}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
+            ) : (
+              <>
+                <Card className="flex-1 flex flex-col gap-0 border border-white/10 overflow-hidden rounded-2xl min-h-[420px] bg-[#141518] shadow-[0_0_0_1px_rgba(255,255,255,0.04),0_24px_60px_-36px_rgba(0,0,0,0.9)]">
+                  <div className="bg-[#17181b] p-2 border-b border-[#24262b] flex items-center justify-between">
+                    <div className="flex gap-2 px-2">
+                      <div className="w-3 h-3 rounded-full bg-red-500/80"></div>
+                      <div className="w-3 h-3 rounded-full bg-yellow-500/80"></div>
+                      <div className="w-3 h-3 rounded-full bg-blue-500/80"></div>
+                    </div>
+                    <span className="text-xs text-white/50 font-mono tracking-wider">{language === 'python' ? 'main.py' : 'index.js'}</span>
+                    <div className="w-10"></div>
                   </div>
-                )}
-              </div>
-            </Card>
+                  <div className="flex-1 bg-[#141518] relative">
+                    <Editor
+                      height="100%"
+                      language={language}
+                      value={code}
+                      onChange={(value) => setCode(value || '')}
+                      theme="vs-dark"
+                      options={{
+                        minimap: { enabled: false },
+                        fontSize: 14,
+                        lineNumbers: 'on',
+                        scrollBeyondLastLine: false,
+                        automaticLayout: true,
+                        tabSize: language === 'python' ? 4 : 2,
+                        readOnly: isJavaScriptBlocked,
+                        fontFamily: '"JetBrains Mono", "Fira Code", monospace',
+                      }}
+                      className="absolute inset-0"
+                    />
+                  </div>
+                </Card>
+
+                <Card className="lg:w-1/3 flex flex-col gap-0 border border-white/10 overflow-hidden rounded-2xl min-h-[300px] lg:min-h-0 bg-[#0f1012] shadow-[0_0_0_1px_rgba(255,255,255,0.04),0_24px_60px_-36px_rgba(0,0,0,0.9)]">
+                  <div className="bg-[#17181b] px-4 py-2 flex items-center justify-between border-b border-[#24262b]">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-white/70 flex items-center gap-2">
+                      <LuTerminal className="w-3 h-3" /> Console
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleClearConsole}
+                      className="h-7 text-xs text-white/50 hover:text-white hover:bg-white/10"
+                    >
+                      <LuTrash2 className="w-3 h-3 mr-1" /> Clear
+                    </Button>
+                  </div>
+                  <div className="flex-1 p-4 overflow-y-auto w-full">
+                    {output ? (
+                      <pre className="text-sm font-mono text-blue-400 whitespace-pre-wrap leading-relaxed">
+                        {output}
+                      </pre>
+                    ) : (
+                      <div className="h-full flex items-center justify-center text-white/30 text-sm italic font-mono">
+                        Output will appear here...
+                      </div>
+                    )}
+                  </div>
+                </Card>
+              </>
+            )}
           </div>
         </div>
 

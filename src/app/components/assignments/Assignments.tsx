@@ -14,12 +14,14 @@ interface InstructorExercise {
   student_id: string;
   title: string;
   instructions: string;
-  language: 'python' | 'javascript';
+  language: 'python' | 'javascript' | 'document';
   status: 'assigned' | 'submitted' | 'reviewed' | 'approved' | 'rejected';
   due_date: string | null;
   created_at: string;
   submitted_at: string | null;
   instructor_name?: string;
+  formatting_requirements?: string | null;
+  submission_document_name?: string | null;
   
   // Review specific fields
   grade?: number;
@@ -81,7 +83,7 @@ export default function Assignments() {
             student_id: String(row.student_id),
             title: String(row.title || 'Untitled Exercise'),
             instructions: String(row.instructions || ''),
-            language: row.language === 'javascript' ? 'javascript' : 'python',
+            language: row.language === 'javascript' ? 'javascript' : row.language === 'document' ? 'document' : 'python',
             status: row.status || 'assigned',
             due_date: row.due_date ? String(row.due_date) : null,
             created_at: String(row.created_at || ''),
@@ -89,6 +91,8 @@ export default function Assignments() {
             instructor_name: instructorNameMap.get(String(row.instructor_id)) || 'Instructor',
             grade: row.grade,
             feedback: row.feedback,
+            formatting_requirements: row.formatting_requirements ? String(row.formatting_requirements) : null,
+            submission_document_name: row.submission_document_name ? String(row.submission_document_name) : null,
           }));
           
           setAssignments(formattedAssignments as InstructorExercise[]);
@@ -183,7 +187,7 @@ export default function Assignments() {
                             </Badge>
                             {assignment.language && (
                               <Badge variant="outline" className="text-[10px] uppercase text-slate-500">
-                                {assignment.language}
+                                {assignment.language === 'document' ? 'document upload' : assignment.language}
                               </Badge>
                             )}
                           </div>
@@ -194,8 +198,13 @@ export default function Assignments() {
                           <p className="text-sm text-slate-600 line-clamp-2 mb-4 flex-1">
                             {assignment.status === 'rejected' && assignment.feedback 
                               ? `Feedback: ${assignment.feedback}` 
-                              : assignment.instructions || 'No detailed instructions provided. Open the sandbox to start coding.'}
+                              : assignment.instructions || 'No detailed instructions provided. Open the assignment workspace to begin.'}
                           </p>
+                          {assignment.language === 'document' && assignment.formatting_requirements && (
+                            <p className="text-xs text-slate-500 mb-4">
+                              Formatting: {assignment.formatting_requirements}
+                            </p>
+                          )}
                           
                           <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
                             <div className={`flex items-center text-xs gap-1 ${isLate ? 'text-red-500 font-medium' : 'text-slate-500'}`}>
@@ -208,7 +217,9 @@ export default function Assignments() {
                               onClick={() => navigate(`/sandbox?exerciseId=${assignment.id}`)}
                               className="rounded-full shadow-sm"
                             >
-                              {assignment.status === 'submitted' ? 'View' : 'Start working'}
+                              {assignment.language === 'document'
+                                ? assignment.status === 'submitted' ? 'View upload' : 'Upload document'
+                                : assignment.status === 'submitted' ? 'View' : 'Start working'}
                             </Button>
                           </div>
                         </CardContent>
@@ -260,7 +271,7 @@ export default function Assignments() {
                               className="w-full text-xs"
                               onClick={() => navigate(`/sandbox?exerciseId=${assignment.id}`)}
                             >
-                              View Submission Code
+                              {assignment.language === 'document' ? 'View Submitted Document' : 'View Submission Code'}
                             </Button>
                           </div>
                           

@@ -31,10 +31,15 @@ interface Submission {
   studentName: string;
   studentEmail: string;
   exerciseTitle: string;
-  exerciseType: string;
+  exerciseType: 'coding' | 'document' | 'written';
+  language: 'python' | 'javascript' | 'document';
   submittedAt: string;
   status: 'pending' | 'reviewed' | 'approved' | 'rejected';
   code?: string;
+  formattingRequirements?: string;
+  documentPath?: string;
+  documentName?: string;
+  documentSize?: number;
   testResults?: {
     passed: number;
     failed: number;
@@ -42,6 +47,14 @@ interface Submission {
   };
   grade?: number;
   feedback?: string;
+}
+
+const DOCUMENT_BUCKET = 'assignment-documents';
+
+async function getDocumentUrl(path: string) {
+  const { data, error } = await supabase.storage.from(DOCUMENT_BUCKET).createSignedUrl(path, 60 * 60);
+  if (error) throw error;
+  return data.signedUrl;
 }
 
 export default function SubmissionsPage() {
@@ -92,10 +105,15 @@ export default function SubmissionsPage() {
             studentName: studentProfile?.full_name || 'Unknown Student',
             studentEmail: studentProfile?.email || 'unknown@example.com',
             exerciseTitle: ex.title,
-            exerciseType: ex.language || 'coding',
+            exerciseType: ex.language === 'document' ? 'document' : 'coding',
+            language: ex.language === 'javascript' ? 'javascript' : ex.language === 'document' ? 'document' : 'python',
             submittedAt: new Date(ex.submitted_at).toLocaleDateString() + ' ' + new Date(ex.submitted_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
             status: ex.status === 'submitted' ? 'pending' : (ex.status as any), // Map DB 'submitted' to UI 'pending'
             code: ex.submission_code,
+            formattingRequirements: ex.formatting_requirements || undefined,
+            documentPath: ex.submission_document_path || undefined,
+            documentName: ex.submission_document_name || undefined,
+            documentSize: typeof ex.submission_document_size === 'number' ? ex.submission_document_size : undefined,
             grade: ex.grade,
             feedback: ex.feedback
           });
@@ -113,6 +131,38 @@ export default function SubmissionsPage() {
   useEffect(() => {
     loadSubmissions();
   }, []);
+
+  const openReviewSubmission = async (submission: Submission) => {
+    let documentUrl: string | undefined;
+
+    if (submission.documentPath) {
+      try {
+        documentUrl = await getDocumentUrl(submission.documentPath);
+      } catch (error) {
+        console.error('Failed to create signed URL for submission document', error);
+      }
+    }
+
+    setFullReviewSubmission({
+      id: submission.id,
+      studentName: submission.studentName,
+      studentEmail: submission.studentEmail,
+      exerciseTitle: submission.exerciseTitle,
+      exerciseDescription: submission.exerciseTitle,
+      exerciseModule: '',
+      exerciseType: submission.exerciseType === 'document' ? 'document' : 'coding',
+      language: submission.language,
+      submittedAt: submission.submittedAt,
+      submissionContent: submission.code || '',
+      existingGrade: submission.grade,
+      existingFeedback: submission.feedback,
+      status: submission.status,
+      formattingRequirements: submission.formattingRequirements,
+      documentName: submission.documentName,
+      documentSize: submission.documentSize,
+      documentUrl,
+    });
+  };
 
   const filteredSubmissions = submissions.filter(sub => {
     return statusFilter === 'all' || sub.status === statusFilter;
@@ -249,23 +299,7 @@ export default function SubmissionsPage() {
                         <tr 
                           key={submission.id} 
                           className="transition-all duration-200 cursor-pointer group hover:bg-slate-50"
-                          onClick={() => {
-                            setFullReviewSubmission({
-                              id: submission.id,
-                              studentName: submission.studentName,
-                              studentEmail: submission.studentEmail,
-                              exerciseTitle: submission.exerciseTitle,
-                              exerciseDescription: submission.exerciseTitle,
-                              exerciseModule: '',
-                              exerciseType: (submission.exerciseType === 'coding' ? 'coding' : 'written') as any,
-                              language: submission.exerciseType === 'coding' ? 'python' : undefined,
-                              submittedAt: submission.submittedAt,
-                              submissionContent: submission.code || '',
-                              existingGrade: submission.grade,
-                              existingFeedback: submission.feedback,
-                              status: submission.status,
-                            });
-                          }}
+                          onClick={() => { void openReviewSubmission(submission); }}
                         >
                           <td className="px-5 py-4">
                             <div className="flex items-center gap-3">
@@ -298,21 +332,7 @@ export default function SubmissionsPage() {
                                 className="h-8 rounded-full bg-slate-900 text-white hover:bg-slate-800 text-xs shadow-sm font-medium px-4"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  setFullReviewSubmission({
-                                    id: submission.id,
-                                    studentName: submission.studentName,
-                                    studentEmail: submission.studentEmail,
-                                    exerciseTitle: submission.exerciseTitle,
-                                    exerciseDescription: submission.exerciseTitle,
-                                    exerciseModule: '',
-                                    exerciseType: (submission.exerciseType === 'coding' ? 'coding' : 'written') as any,
-                                    language: submission.exerciseType === 'coding' ? 'python' : undefined,
-                                    submittedAt: submission.submittedAt,
-                                    submissionContent: submission.code || '',
-                                    existingGrade: submission.grade,
-                                    existingFeedback: submission.feedback,
-                                    status: submission.status,
-                                  });
+                                  void openReviewSubmission(submission);
                                 }}
                               >
                                 Grade Now

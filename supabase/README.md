@@ -19,10 +19,12 @@ If the database is ever lost, recreate it by running these SQL files in order fr
 11. `11_instructor_exercises.sql`
 12. `12_fix_streaks_logic.sql`
 13. `13_instructor_grading.sql`
+14. `15_document_upload_assignments.sql`
 
 ## Notes
 
 - `13_instructor_grading.sql` adds the `grade` and `feedback` columns and expands the allowed instructor review statuses.
+- `15_document_upload_assignments.sql` adds document-assignment metadata, uploaded-file fields, and the Supabase Storage bucket/policies for assignment documents.
 - Run files in numeric order because later files may depend on earlier schema changes.
 - Prefer `IF NOT EXISTS`, `DROP ... IF EXISTS`, and additive migrations so rerunning is safer.
 

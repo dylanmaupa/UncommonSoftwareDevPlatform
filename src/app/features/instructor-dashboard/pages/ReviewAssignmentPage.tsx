@@ -23,6 +23,7 @@ import {
   LuTerminal,
   LuTrash2,
   LuUser,
+  LuDownload,
 } from 'react-icons/lu';
 import { loadPyodideEnvironment } from '../../../../lib/pyodide';
 import { supabase } from '../../../../lib/supabase';
@@ -36,13 +37,17 @@ export interface ReviewSubmission {
   exerciseTitle: string;
   exerciseDescription: string;
   exerciseModule: string;
-  exerciseType: 'coding' | 'debugging' | 'written' | 'quiz' | 'project';
+  exerciseType: 'coding' | 'debugging' | 'written' | 'quiz' | 'project' | 'document';
   language?: string;
   submittedAt: string;
   submissionContent: string;           // The actual submitted code or written text
   focusLossCount?: number;             // From written assignments
   existingGrade?: number;
   existingFeedback?: string;
+  formattingRequirements?: string;
+  documentName?: string;
+  documentSize?: number;
+  documentUrl?: string;
   status: 'pending' | 'reviewed' | 'approved' | 'rejected';
 }
 
@@ -108,6 +113,7 @@ export default function ReviewAssignmentPage({
 }: ReviewAssignmentPageProps) {
 
   const isCodeSubmission = submission.exerciseType === 'coding' || submission.exerciseType === 'debugging';
+  const isDocumentSubmission = submission.exerciseType === 'document';
 
   // ── Grading state ─────────────────────────────────────────────────────────
   const [grade, setGrade] = useState<string>(
@@ -164,6 +170,15 @@ export default function ReviewAssignmentPage({
     : numericGrade >= 70 ? 'C'
     : numericGrade >= 60 ? 'D'
     : 'F';
+
+  const documentSizeLabel =
+    submission.documentSize == null
+      ? 'Unknown size'
+      : submission.documentSize < 1024
+        ? `${submission.documentSize} B`
+        : submission.documentSize < 1024 * 1024
+          ? `${Math.round(submission.documentSize / 1024)} KB`
+          : `${(submission.documentSize / (1024 * 1024)).toFixed(1)} MB`;
 
   // ── Run Student Code ──────────────────────────────────────────────────────
   const handleRunCode = async () => {
@@ -386,7 +401,7 @@ sys.stderr = io.StringIO()
                   <LuFileText className="h-4 w-4 text-indigo-600" />
                 )}
                 <span className="text-xs font-semibold text-slate-700">
-                  {isCodeSubmission ? 'Code Submission' : 'Written Submission'}
+                  {isCodeSubmission ? 'Code Submission' : isDocumentSubmission ? 'Document Submission' : 'Written Submission'}
                 </span>
                 {submission.language && (
                   <Badge className="bg-slate-100 text-slate-600 rounded-full text-[10px] capitalize">
@@ -396,6 +411,19 @@ sys.stderr = io.StringIO()
               </div>
 
               <div className="flex items-center gap-2">
+                {isDocumentSubmission && submission.documentUrl && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="rounded-full h-7 text-xs gap-1"
+                    onClick={() => window.open(submission.documentUrl, '_blank', 'noopener,noreferrer')}
+                  >
+                    <LuDownload className="h-3 w-3" />
+                    Open Document
+                  </Button>
+                )}
+                {isCodeSubmission && (
+                  <>
                 <Button
                   size="sm"
                   variant={isEditingCode ? "outline" : "secondary"}
@@ -414,12 +442,57 @@ sys.stderr = io.StringIO()
                   {isRunning ? <LuLoader className="h-3 w-3 animate-spin" /> : <LuPlay className="h-3 w-3" />}
                   Run Student Code
                 </Button>
+                  </>
+                )}
               </div>
             </div>
 
             {/* Content area */}
             <div className="flex-1 overflow-hidden">
-              {isCodeSubmission || isEditingCode ? (
+              {isDocumentSubmission ? (
+                <div className="h-full overflow-y-auto p-6 space-y-4">
+                  <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
+                    <Avatar className="h-10 w-10">
+                      <AvatarFallback className="bg-blue-100 text-blue-700 font-medium">
+                        {initials}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-medium text-sm text-slate-900">{submission.studentName}</p>
+                      <p className="text-xs text-slate-500">{submission.studentEmail}</p>
+                    </div>
+                  </div>
+
+                  <div className="text-xs text-slate-500 p-3 rounded-lg bg-blue-50 border border-blue-100">
+                    <span className="font-semibold text-blue-700 mr-1">Prompt:</span>
+                    {submission.exerciseDescription}
+                  </div>
+
+                  {submission.formattingRequirements && (
+                    <div className="text-sm text-slate-700 p-4 rounded-xl bg-amber-50 border border-amber-200">
+                      <p className="text-xs uppercase tracking-wider text-amber-700 font-semibold mb-2">Formatting Requirements</p>
+                      <p className="whitespace-pre-wrap">{submission.formattingRequirements}</p>
+                    </div>
+                  )}
+
+                  <div className="rounded-xl border border-slate-200 bg-white p-4">
+                    <p className="text-xs uppercase tracking-wider text-slate-400 font-semibold">Uploaded File</p>
+                    <p className="mt-2 text-sm font-medium text-slate-900">{submission.documentName || 'Document uploaded'}</p>
+                    <p className="mt-1 text-xs text-slate-500">{documentSizeLabel}</p>
+                    {submission.documentUrl ? (
+                      <Button
+                        className="mt-4 rounded-full"
+                        onClick={() => window.open(submission.documentUrl, '_blank', 'noopener,noreferrer')}
+                      >
+                        <LuDownload className="mr-2 h-4 w-4" />
+                        Open Submitted Document
+                      </Button>
+                    ) : (
+                      <p className="mt-3 text-sm text-slate-500">The document link could not be prepared for this submission.</p>
+                    )}
+                  </div>
+                </div>
+              ) : isCodeSubmission || isEditingCode ? (
                 <Editor
                   height="100%"
                   language={submission.language ?? 'python'}
