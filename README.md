@@ -180,6 +180,12 @@ A modern, gamified, interactive coding learning platform inspired by Codédex, b
 
 ## 🚀 Getting Started
 
+## Database SQL
+
+Supabase schema and seed files live in [supabase/README.md](/E:/WORK/New%20folder/UncommonSoftwareDevPlatform/supabase/README.md). If you ever need to rebuild the database, run the SQL files in numeric order from the `supabase` folder.
+
+Any future database change should be committed as a new numbered `.sql` file in that folder so the repo stays usable as a rebuild source of truth.
+
 ### Demo Account
 For quick testing, use:
 - **Email**: `demo@example.com`

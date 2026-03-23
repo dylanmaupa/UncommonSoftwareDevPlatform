@@ -89,7 +89,7 @@ export default function LessonView() {
             const foundLesson = foundModule.lessons.find((l: any) => l.id === lessonId);
             setLesson(foundLesson);
             if (foundLesson) {
-              setCode(foundLesson.starter_code || '');
+              setCode(foundLesson.exercise_starter_code || '');
             }
           }
         }
@@ -116,7 +116,7 @@ export default function LessonView() {
 
   useEffect(() => {
     if (lesson) {
-      setCode(lesson.starter_code || '');
+      setCode(lesson.exercise_starter_code || '');
       setOutput('');
       setShowHint(false);
       setShowSolution(false);
@@ -345,8 +345,8 @@ sys.stderr = io.StringIO()
         const solutionResult = await executeCode(lesson.exercise_solution);
         const solutionOutput = solutionResult?.run?.output || '';
 
-        const normalizedUser = executionOutput.trim().toLowerCase();
-        const normalizedSolution = solutionOutput.trim().toLowerCase();
+        const normalizedUser = executionOutput.trim().toLowerCase().replace(/\r\n/g, '\n');
+        const normalizedSolution = solutionOutput.trim().toLowerCase().replace(/\r\n/g, '\n');
 
         let passed = normalizedUser === normalizedSolution;
 

@@ -57,6 +57,28 @@ interface ReviewAssignmentPageProps {
   }) => void;
 }
 
+function getReviewSaveErrorMessage(error: unknown) {
+  const message =
+    error && typeof error === 'object' && 'message' in error
+      ? String((error as { message?: unknown }).message ?? '')
+      : '';
+
+  const code =
+    error && typeof error === 'object' && 'code' in error
+      ? String((error as { code?: unknown }).code ?? '')
+      : '';
+
+  if (
+    code === 'PGRST204' ||
+    message.includes("'feedback' column") ||
+    message.includes("'grade' column")
+  ) {
+    return 'The grading database columns are missing in Supabase. Run the instructor grading SQL migration, then try again.';
+  }
+
+  return 'Failed to save the review. Please check your connection and try again.';
+}
+
 // ─── Quick Comments ──────────────────────────────────────────────────────────
 
 const QUICK_COMMENTS = [
@@ -279,7 +301,6 @@ sys.stderr = io.StringIO()
             grade: numericGrade,
             feedback: feedback,
             status: newStatus,
-            reviewed_at: new Date().toISOString(),
           })
           .eq('id', submission.id);
 
@@ -289,7 +310,7 @@ sys.stderr = io.StringIO()
       }
     } catch (err) {
       console.error('Failed to submit review:', err);
-      alert('Failed to save the review. Please check your connection and try again.');
+      alert(getReviewSaveErrorMessage(err));
     } finally {
       setIsSubmitting(false);
     }
