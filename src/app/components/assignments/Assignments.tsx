@@ -164,7 +164,7 @@ export default function Assignments() {
                   </CardContent>
                 </Card>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   {pendingAssignments.map((assignment) => {
                     const statusTone = assignment.status === 'submitted' 
                       ? 'bg-amber-100 text-amber-700 border-amber-200' 
@@ -192,18 +192,19 @@ export default function Assignments() {
                             )}
                           </div>
                           
-                          <h3 className="font-semibold text-slate-900 mb-1 line-clamp-1" title={assignment.title}>{assignment.title}</h3>
+                          <h3 className="font-semibold text-slate-900 mb-1" title={assignment.title}>{assignment.title}</h3>
                           <p className="text-xs text-slate-500 mb-3">From {assignment.instructor_name}</p>
                           
-                          <p className="text-sm text-slate-600 line-clamp-2 mb-4 flex-1">
+                          <p className="text-sm text-slate-600 mb-4 flex-1 leading-relaxed">
                             {assignment.status === 'rejected' && assignment.feedback 
                               ? `Feedback: ${assignment.feedback}` 
                               : assignment.instructions || 'No detailed instructions provided. Open the assignment workspace to begin.'}
                           </p>
                           {assignment.language === 'document' && assignment.formatting_requirements && (
-                            <p className="text-xs text-slate-500 mb-4">
-                              Formatting: {assignment.formatting_requirements}
-                            </p>
+                            <div className="mb-4 rounded-lg border border-blue-100 bg-blue-50 px-3 py-2">
+                              <p className="text-[11px] font-semibold uppercase tracking-wider text-blue-500 mb-1">Formatting Requirements</p>
+                              <p className="text-xs text-blue-800 leading-relaxed">{assignment.formatting_requirements}</p>
+                            </div>
                           )}
                           
                           <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
