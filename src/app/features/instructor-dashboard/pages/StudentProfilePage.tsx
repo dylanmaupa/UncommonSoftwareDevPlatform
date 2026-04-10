@@ -12,7 +12,7 @@ import {
   LuAward,
   LuClock,
   LuTarget,
-  LuCheckCircle,
+  LuCircleCheck,
   LuTrendingUp,
   LuCalendar,
   LuMail,
@@ -332,7 +332,7 @@ export default function StudentProfilePage() {
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-full bg-emerald-500/10 flex items-center justify-center">
-                  <LuCheckCircle className="h-5 w-5 text-emerald-500" />
+                  <LuCircleCheck className="h-5 w-5 text-emerald-500" />
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Completed</p>
