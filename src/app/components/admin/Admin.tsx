@@ -718,9 +718,9 @@ export default function Admin() {
                         <thead>
                           <tr className="border-y border-border text-xs text-muted-foreground bg-sidebar/50">
                             <th className="px-4 py-3 font-medium">Student</th>
-                            <th className="px-4 py-3 font-medium text-center">Progress</th>
-                            <th className="px-4 py-3 font-medium">Last Active</th>
-                            <th className="px-4 py-3 font-medium">Status</th>
+                            <th className="px-4 py-3 font-medium text-center">Lessons</th>
+                            <th className="px-4 py-3 font-medium text-center">XP</th>
+                            <th className="px-4 py-3 font-medium text-center">Achievements</th>
                             <th className="px-4 py-3 font-medium">Action</th>
                           </tr>
                         </thead>
@@ -732,7 +732,19 @@ export default function Admin() {
                                   <p className="font-medium">{student.full_name}</p>
                                   <p className="text-xs text-muted-foreground">{student.email}</p>
                                 </td>
-                                <td className="px-4 py-3 capitalize">{student.role}</td>
+                                <td className="px-4 py-3 text-center">
+                                  <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-blue-100 text-blue-700 text-xs font-medium">
+                                    {student.lessons_completed || 0}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-3 text-center">
+                                  <span className="text-emerald-600 font-medium">{student.xp || 0}</span>
+                                </td>
+                                <td className="px-4 py-3 text-center">
+                                  <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-amber-100 text-amber-700 text-xs font-medium">
+                                    {student.achievements_count || 0}
+                                  </span>
+                                </td>
                                 <td className="px-4 py-3">
                                   <Button 
                                     size="sm" 
