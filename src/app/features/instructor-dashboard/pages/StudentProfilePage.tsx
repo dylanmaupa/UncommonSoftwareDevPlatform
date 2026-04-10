@@ -40,6 +40,8 @@ interface Student {
   created_at: string;
   xp?: number;
   level?: number;
+  streak?: number;
+  last_activity_date?: string;
 }
 
 interface CourseProgress {
@@ -109,26 +111,34 @@ export default function StudentProfilePage() {
         setStudent(studentData);
       }
 
-      // Fetch real course progress from user_progress table
-      const { data: progressData } = await supabase
+      // Fetch all user_progress for lessons completed count and course progress
+      const { data: allProgressData } = await supabase
         .from('user_progress')
         .select(`
           *,
           course:courses(id, title, icon)
         `)
-        .eq('user_id', studentId)
-        .eq('item_type', 'course');
+        .eq('user_id', studentId);
 
-      const realProgress: CourseProgress[] = progressData?.map((p: any) => ({
+      // Calculate lessons completed (item_type = 'lesson' and status = 'completed')
+      const lessonsCompleted = allProgressData?.filter((p: any) => p.item_type === 'lesson' && p.status === 'completed').length || 0;
+
+      // Filter for course progress only
+      const courseProgressData = allProgressData?.filter((p: any) => p.item_type === 'course') || [];
+
+      const realProgress: CourseProgress[] = courseProgressData.map((p: any) => ({
         id: p.course?.id || p.item_id,
         title: p.course?.title || 'Unknown Course',
         progress: p.progress_percentage || 0,
-        totalLessons: 0, // Will need to calculate separately
+        totalLessons: 0,
         completedLessons: 0,
         lastAccessed: p.updated_at ? new Date(p.updated_at).toLocaleDateString() : 'Unknown',
-        icon: p.course?.icon || '�',
+        icon: p.course?.icon || '',
       })) || [];
       setCourseProgress(realProgress);
+
+      // Store lessons completed for display
+      (studentData as any).lessons_completed = lessonsCompleted;
 
       // Fetch real achievements from user_achievements table
       const { data: achievementsData } = await supabase
@@ -429,7 +439,7 @@ export default function StudentProfilePage() {
           </CardContent>
         </Card>
 
-        {/* Stats Grid */}
+        {/* Stats Grid - Matching Student /Profile Page */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Card className="rounded-2xl border-border bg-sidebar hover:bg-sidebar/80 transition-colors">
             <CardContent className="p-4 sm:p-5">
@@ -438,7 +448,7 @@ export default function StudentProfilePage() {
                   <LuZap className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <p className="text-2xl text-foreground heading-font">{totalXP.toLocaleString()}</p>
+                  <p className="text-2xl text-foreground heading-font">{(student?.xp || totalXP || 0).toLocaleString()}</p>
                   <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Total XP</p>
                 </div>
               </div>
@@ -451,8 +461,8 @@ export default function StudentProfilePage() {
                   <LuBookOpen className="h-5 w-5 text-blue-500" />
                 </div>
                 <div>
-                  <p className="text-2xl text-foreground heading-font">{courseProgress.length}</p>
-                  <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Courses</p>
+                  <p className="text-2xl text-foreground heading-font">{(student as any)?.lessons_completed || 0}</p>
+                  <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Lessons</p>
                 </div>
               </div>
             </CardContent>
@@ -484,6 +494,30 @@ export default function StudentProfilePage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Level & Streak Info */}
+        {(student?.level || student?.streak) && (
+          <div className="flex flex-wrap items-center justify-center gap-4 text-sm text-muted-foreground">
+            {student?.level && (
+              <div className="flex items-center gap-2 bg-secondary/50 px-3 py-1.5 rounded-full border border-border/50">
+                <LuTrendingUp className="h-4 w-4 text-primary" />
+                <span>Level <span className="font-medium text-foreground">{student.level}</span></span>
+              </div>
+            )}
+            {student?.streak ? (
+              <div className="flex items-center gap-2 bg-orange-500/10 px-3 py-1.5 rounded-full border border-orange-500/20">
+                <LuZap className="h-4 w-4 text-orange-500" />
+                <span className="text-orange-600"><span className="font-medium">{student.streak}</span> day streak</span>
+              </div>
+            ) : null}
+            {student?.last_activity_date && (
+              <div className="flex items-center gap-2 bg-secondary/50 px-3 py-1.5 rounded-full border border-border/50">
+                <LuClock className="h-4 w-4 text-muted-foreground" />
+                <span>Last active {new Date(student.last_activity_date).toLocaleDateString()}</span>
+              </div>
+            )}
+          </div>
+        )
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Course Progress Section */}
