@@ -12,6 +12,7 @@ import { Input } from '../../../components/ui/input';
 import { Textarea } from '../../../components/ui/textarea';
 import { Label } from '../../../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select';
+import { achievementsData } from '../../../../services/mockData';
 import {
   LuArrowLeft,
   LuBookOpen,
@@ -129,7 +130,10 @@ export default function StudentProfilePage() {
       // Calculate lessons completed (item_type = 'lesson' and status = 'completed')
       // Fallback to profile data if database is empty
       const dbLessons = allProgressData?.filter((p: any) => p.item_type === 'lesson' && p.status === 'completed').length || 0;
-      const profileLessons = (studentData as any)?.lessons_completed || (studentData as any)?.completed_lessons || 0;
+      const profileLessons = (studentData as any)?.lessons_completed ||
+                            (studentData as any)?.completed_lessons ||
+                            (studentData as any)?.lessons ||
+                            (studentData as any)?.total_lessons || 0;
       const lessonsCompleted = dbLessons || profileLessons || 0;
 
       console.log('DB lessons:', dbLessons, 'Profile lessons:', profileLessons, 'Total:', lessonsCompleted);
@@ -141,59 +145,63 @@ export default function StudentProfilePage() {
         setStudent(studentData as Student);
       }
 
-      // Fetch real achievements from user_achievements table
-      const { data: achievementsData, error: achievementsError } = await supabase
-        .from('user_achievements')
-        .select('*')
-        .eq('user_id', studentId);
-
-      if (achievementsError) {
-        console.error('Error fetching achievements:', achievementsError);
-      }
-
-      const realAchievements: Achievement[] = achievementsData?.map((ua: any) => ({
-        id: ua.achievement_id || ua.id,
-        name: ua.name || 'Unknown Achievement',
-        description: ua.description || '',
-        icon: ua.icon || '🏆',
-        earnedAt: ua.earned_at || ua.created_at,
-        xpReward: ua.xp_reward || 0,
-        rarity: ua.rarity || 'common',
-      })) || [];
+      // Map achievements from the string array on the profile
+      const userAchievementCodes: string[] = (studentData as any)?.achievements || [];
+      const realAchievements = achievementsData
+        .filter(a => userAchievementCodes.includes(a.id))
+        .map(a => ({
+          id: a.id,
+          name: a.title,
+          description: a.description,
+          icon: a.icon,
+          earnedAt: new Date().toISOString(), // Mocked date for now
+          xpReward: a.xpReward || 10,
+          rarity: 'common' as any,
+        }));
       setAchievements(realAchievements);
 
-      // Fetch submissions
-      const { data: submissionsData } = await supabase
-        .from('submissions')
-        .select('*, assignment:assignments(title, type)')
-        .eq('user_id', studentId)
-        .order('created_at', { ascending: false });
-      
-      if (submissionsData) {
-        const formattedSubmissions = submissionsData.map((sub: any) => ({
-          id: sub.id,
-          assignment: sub.assignment?.title || 'Unknown Assignment',
-          status: sub.status || 'Pending',
-          submitted: new Date(sub.created_at).toLocaleDateString(),
-          score: sub.score,
-          type: sub.assignment?.type || 'code',
-        }));
-        setSubmissions(formattedSubmissions);
-      }
+      // We no longer query the missing 'submissions' table since that was deprecated.
+      // We will instead populate the 'submissions' UI using the 'instructor_exercises' records that have been submitted.
 
-      const { data: fetchExercises } = await supabase
+      const { data: fetchExercises, error: fetchExError } = await supabase
         .from('instructor_exercises')
         .select('*')
         .eq('student_id', studentId)
         .order('created_at', { ascending: false });
-      if (fetchExercises) setPastExercises(fetchExercises);
+        
+      if (fetchExError) console.error("Exercises fetch error", fetchExError);
 
-      const { data: fetchMessages } = await supabase
+      if (fetchExercises) {
+        setPastExercises(fetchExercises);
+        
+        // Map submitted instructor exercises to the submissions view limit 5
+        const formattedSubmissions = fetchExercises
+          .filter(ex => ex.status !== 'assigned')
+          .slice(0, 5)
+          .map((ex: any) => ({
+            id: ex.id,
+            assignment: ex.title || 'Unknown Assignment',
+            status: ex.status === 'rejected' ? 'Needs Revision' : ex.status === 'approved' ? 'Approved' : 'Pending',
+            submitted: new Date(ex.submitted_at || ex.created_at).toLocaleDateString(),
+            score: ex.grade,
+            type: ex.language,
+          }));
+        setSubmissions(formattedSubmissions);
+      }
+
+
+
+      const { data: fetchMessages, error: msgError } = await supabase
         .from('direct_messages')
         .select('*')
         .or(`sender_id.eq.${studentId},receiver_id.eq.${studentId}`)
         .order('created_at', { ascending: true });
-      if (fetchMessages) setPastMessages(fetchMessages);
+        
+      if (msgError) {
+        console.error("Messages table missing or error (Run SQL Migration 16): ", msgError.message);
+      } else if (fetchMessages) {
+        setPastMessages(fetchMessages);
+      }
 
     } catch (error) {
       console.error('Error fetching student data:', error);
