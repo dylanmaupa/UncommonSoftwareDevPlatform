@@ -432,7 +432,9 @@ function DashboardMain({
                   <AvatarFallback>{nickname ? nickname[0] : 'U'}</AvatarFallback>
                 </Avatar>
                 <p className="mt-3 text-base text-foreground">{getGreeting()} {nickname}</p>
-                <p className="text-xs text-muted-foreground">Hub: {profile.hub_location || 'Not assigned'}</p>
+                <Badge variant="outline" className="mt-1 bg-sidebar rounded-full text-[11px] font-normal text-muted-foreground border-border px-3 py-0.5">
+                   📍 {profile.hub_location || 'Not assigned'}
+                </Badge>
               </div>
               <div className="rounded-2xl bg-secondary p-3">
                 <div className="mb-2 flex items-end justify-between gap-2 h-14">

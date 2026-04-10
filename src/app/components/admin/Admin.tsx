@@ -35,6 +35,10 @@ import { fetchProfileForAuthUser } from '../../lib/profileAccess';
 
 import { Link } from 'react-router';
 import SubmissionsPage from '../../features/instructor-dashboard/pages/SubmissionsPage';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { HUB_LOCATIONS } from '../auth/AccountSetup';
+import { updateProfileForAuthUser } from '../../lib/profileAccess';
+import { toast } from 'sonner';
 
 const instructorSections = [
   {
@@ -603,9 +607,40 @@ export default function Admin() {
 
             <Card className="overflow-hidden rounded-2xl border-border bg-primary">
               <CardContent className="p-4 sm:p-6">
-                <Badge variant="secondary" className="mb-2 rounded-full px-3 py-1 text-[11px] uppercase tracking-wider bg-white/20 text-white hover:bg-white/30 border-none">
-                  Hub: {profile.hub_location || 'Pending Assignment'}
-                </Badge>
+                <div className="mb-2 inline-block">
+                  <Select
+                      value={profile.hub_location || ''}
+                      onValueChange={async (val) => {
+                        try {
+                          const { data: { user } } = await supabase.auth.getUser();
+                          if (!user) throw new Error('Not authenticated');
+                          
+                          setProfile(prev => prev ? { ...prev, hub_location: val } : prev);
+                          await updateProfileForAuthUser(user as any, { hub_location: val });
+                          
+                          const metadata = (user.user_metadata as Record<string, unknown> | undefined) ?? {};
+                          await supabase.auth.updateUser({
+                            data: { ...metadata, hub_location: val },
+                          });
+                          
+                          toast.success(`Hub changed to ${val}. Refreshing data...`);
+                          setTimeout(() => window.location.reload(), 1000); 
+                        } catch (err) {
+                           console.error('Failed to change hub', err);
+                           toast.error('Failed to change hub');
+                        }
+                      }}
+                    >
+                      <SelectTrigger className="w-auto h-7 px-3 py-1 rounded-full text-[11px] uppercase tracking-wider bg-white/10 hover:bg-white/20 text-white border-white/20 focus:ring-0 gap-2">
+                        <SelectValue placeholder="Select Hub" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {HUB_LOCATIONS.map((hub) => (
+                          <SelectItem key={hub} value={hub}>{hub}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                </div>
                 <h2 className="heading-font lowercase mt-1 max-w-md text-2xl leading-tight text-white sm:text-3xl">
                   Instructor Dashboard
                 </h2>
