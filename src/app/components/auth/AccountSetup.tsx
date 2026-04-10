@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { supabase } from '../../../lib/supabase';
 import { getRandomAvatar, type Gender } from '../../lib/avatars';
 
-const HUB_LOCATIONS = [
+export const HUB_LOCATIONS = [
     'Dzivarasekwa',
     'Kuwadzana',
     'Kambuzuma',

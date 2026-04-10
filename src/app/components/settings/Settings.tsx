@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { supabase } from '../../../lib/supabase';
 import DashboardLayout from '../layout/DashboardLayout';
@@ -11,6 +11,8 @@ import { Switch } from '../ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Badge } from '../ui/badge';
 import { toast } from 'sonner';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { HUB_LOCATIONS } from '../auth/AccountSetup';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -107,6 +109,7 @@ export default function Settings() {
   const [authUser, setAuthUser] = useState<any>(null);
   const [profileRow, setProfileRow] = useState<Record<string, unknown> | null>(null);
   const [displayName, setDisplayName] = useState('');
+  const [hubLocation, setHubLocation] = useState('');
   const [preferences, setPreferences] = useState<PreferenceSettings>(DEFAULT_PREFERENCES);
 
   const [newPassword, setNewPassword] = useState('');
@@ -147,9 +150,11 @@ export default function Settings() {
         const metadata = (user.user_metadata as Record<string, unknown> | undefined) ?? {};
         const fallbackName = readString(user.email).split('@')[0] || 'Learner';
         const resolvedName = readString(profile?.['full_name'] ?? metadata.full_name) || fallbackName;
+        const resolvedHub = readString(profile?.['hub_location'] ?? metadata.hub_location) || '';
 
         if (!ignore) {
           setDisplayName(resolvedName);
+          setHubLocation(resolvedHub);
           setPreferences(parsePreferences(metadata[PREFERENCES_KEY]));
         }
       } catch (error) {
@@ -221,7 +226,7 @@ export default function Settings() {
     setIsSavingProfile(true);
 
     try {
-      const profileUpdate = await updateProfileForAuthUser(authUser as any, { full_name: trimmedName });
+      const profileUpdate = await updateProfileForAuthUser(authUser as any, { full_name: trimmedName, hub_location: hubLocation });
       if (profileUpdate.data) {
         setProfileRow(profileUpdate.data);
       }
@@ -229,7 +234,7 @@ export default function Settings() {
       const {
         error,
       } = await supabase.auth.updateUser({
-        data: { ...metadata, full_name: trimmedName },
+        data: { ...metadata, full_name: trimmedName, hub_location: hubLocation },
       });
 
       if (error) {
@@ -394,6 +399,21 @@ export default function Settings() {
                       className="h-11 rounded-xl bg-secondary"
                     />
                   </div>
+                  {accountRole === 'instructor' && (
+                      <div className="space-y-2">
+                        <Label htmlFor="hubLocation">Hub Location</Label>
+                        <Select value={hubLocation} onValueChange={setHubLocation}>
+                            <SelectTrigger className="w-full h-11 bg-secondary border-0 rounded-xl">
+                                <SelectValue placeholder="Select Hub Location" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {HUB_LOCATIONS.map((hub) => (
+                                    <SelectItem key={hub} value={hub}>{hub}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                      </div>
+                  )}
                   <Button type="submit" disabled={isSavingProfile} className="rounded-xl">
                     <LuSave className="mr-2 h-4 w-4" />
                     {isSavingProfile ? 'Saving...' : 'Save Changes'}

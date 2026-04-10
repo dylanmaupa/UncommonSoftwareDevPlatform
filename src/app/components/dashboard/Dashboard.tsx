@@ -424,7 +424,7 @@ function DashboardMain({
                   <AvatarFallback>{nickname ? nickname[0] : 'U'}</AvatarFallback>
                 </Avatar>
                 <p className="mt-3 text-base text-foreground">{getGreeting()} {nickname}</p>
-                <p className="text-xs text-muted-foreground">{profile.role === 'instructor' ? `Hub: ${profile.hub_location}` : 'Continue your journey to your target'}</p>
+                <p className="text-xs text-muted-foreground">Hub: {profile.hub_location || 'Not assigned'}</p>
               </div>
               <div className="rounded-2xl bg-secondary p-3">
                 <div className="mb-2 flex items-end justify-between gap-2 h-14">
