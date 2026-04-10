@@ -692,7 +692,7 @@ export default function Admin() {
                                     size="sm" 
                                     variant="outline" 
                                     className="rounded-full text-xs h-8"
-                                    onClick={() => setSelectedStudent(student)}
+                                    onClick={() => navigate(`/instructor/students/${student.id}`)}
                                   >
                                     View Profile
                                   </Button>
