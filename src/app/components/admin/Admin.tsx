@@ -688,10 +688,13 @@ export default function Admin() {
                                 </td>
                                 <td className="px-4 py-3 capitalize">{student.role}</td>
                                 <td className="px-4 py-3">
-                                  <Button size="sm" variant="outline" className="rounded-full text-xs h-8" asChild>
-                                    <Link to={`/admin/students/${student.id}`} target="_blank">
-                                      View Profile
-                                    </Link>
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline" 
+                                    className="rounded-full text-xs h-8"
+                                    onClick={() => setSelectedStudent(student)}
+                                  >
+                                    View Profile
                                   </Button>
                                 </td>
                               </tr>
