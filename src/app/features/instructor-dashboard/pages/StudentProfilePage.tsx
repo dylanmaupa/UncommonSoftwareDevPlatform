@@ -100,13 +100,17 @@ export default function StudentProfilePage() {
     
     setLoading(true);
     try {
-      // Fetch student profile
+      // Fetch student profile with user metadata
       const { data: studentData } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', studentId)
         .single();
-      
+
+      // Fetch user metadata (lessons, XP, streak might be stored here)
+      const { data: userData } = await supabase.auth.getUser();
+      const userMetadata = userData?.user?.user_metadata;
+
       if (studentData) {
         setStudent(studentData);
       }
@@ -124,8 +128,12 @@ export default function StudentProfilePage() {
       console.log('User progress data:', allProgressData);
 
       // Calculate lessons completed (item_type = 'lesson' and status = 'completed')
-      const lessonsCompleted = allProgressData?.filter((p: any) => p.item_type === 'lesson' && p.status === 'completed').length || 0;
-      console.log('Lessons completed:', lessonsCompleted);
+      // Fallback to user metadata if database is empty
+      const dbLessons = allProgressData?.filter((p: any) => p.item_type === 'lesson' && p.status === 'completed').length || 0;
+      const metadataLessons = userMetadata?.lessons_completed || userMetadata?.completed_lessons || 0;
+      const lessonsCompleted = dbLessons || metadataLessons || (studentData as any)?.lessons_completed || 0;
+
+      console.log('DB lessons:', dbLessons, 'Metadata lessons:', metadataLessons, 'Total:', lessonsCompleted);
       setCourseProgress([]); // Simplified - no course progress for now
 
       // Update student with lessons completed
