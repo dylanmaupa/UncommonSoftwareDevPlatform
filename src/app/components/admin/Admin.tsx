@@ -533,7 +533,7 @@ export default function Admin() {
     }
 
     loadData();
-  }, [navigate]);
+  }, [navigate, profile?.hub_location]);
 
 
   if (isLoading) return <div className="p-8 text-center text-muted-foreground">Loading instructor workspace...</div>;
