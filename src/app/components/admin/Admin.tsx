@@ -204,6 +204,9 @@ interface UserProfile {
   streak?: number;
   xp?: number;
   last_activity_date?: string;
+  lessons_completed?: number;
+  achievements_count?: number;
+  projects_completed?: number;
 }
 
 export default function Admin() {
@@ -359,7 +362,49 @@ export default function Admin() {
               console.error('Failed to load hub students', studentError);
             }
 
-            const hubStudents = (!studentError && studentData ? studentData : []) as UserProfile[];
+            let hubStudents = (!studentError && studentData ? studentData : []) as UserProfile[];
+
+            // Fetch student metrics (XP, lessons, achievements) for each student
+            if (hubStudents.length > 0) {
+              const studentIds = hubStudents.map(s => s.id);
+              
+              // Fetch user_progress for lessons completed and XP
+              const { data: progressData } = await supabase
+                .from('user_progress')
+                .select('user_id, item_type, status, progress_percentage')
+                .in('user_id', studentIds);
+              
+              // Fetch user_achievements for achievements count
+              const { data: achievementsData } = await supabase
+                .from('user_achievements')
+                .select('user_id')
+                .in('user_id', studentIds);
+
+              // Calculate metrics for each student
+              const progressMap = new Map();
+              const achievementsMap = new Map();
+
+              // Count lessons completed per student
+              progressData?.forEach((p: any) => {
+                if (p.item_type === 'lesson' && p.status === 'completed') {
+                  progressMap.set(p.user_id, (progressMap.get(p.user_id) || 0) + 1);
+                }
+              });
+
+              // Count achievements per student
+              achievementsData?.forEach((a: any) => {
+                achievementsMap.set(a.user_id, (achievementsMap.get(a.user_id) || 0) + 1);
+              });
+
+              // Enrich student data with calculated metrics
+              hubStudents = hubStudents.map(student => ({
+                ...student,
+                lessons_completed: progressMap.get(student.id) || 0,
+                achievements_count: achievementsMap.get(student.id) || 0,
+                projects_completed: 0 // Will be calculated separately if needed
+              }));
+            }
+
             setStudents(hubStudents);
 
             // Fetch Instructor Content
