@@ -466,9 +466,9 @@ export default function ExercisesPage() {
 
       {/* Create Exercise Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="rounded-2xl border-blue-200/60 bg-white w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <CardHeader className="flex flex-row items-center justify-between pb-4">
+        <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-4 pt-16">
+          <Card className="rounded-2xl border-blue-200/60 bg-white w-full max-w-2xl flex flex-col" style={{ maxHeight: '50vh' }}>
+            <CardHeader className="flex flex-row items-center justify-between pb-4 flex-shrink-0">
               <div>
                 <CardTitle className="text-lg font-semibold text-slate-900">Create New Exercise</CardTitle>
                 <CardDescription>Define a new learning exercise for your students</CardDescription>
@@ -482,7 +482,7 @@ export default function ExercisesPage() {
                 <LuX className="h-4 w-4" />
               </Button>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 overflow-y-auto flex-1 min-h-0">
               <div>
                 <label className="text-sm font-medium text-slate-700 mb-1 block">Exercise Title *</label>
                 <Input 
@@ -592,25 +592,26 @@ export default function ExercisesPage() {
                   </button>
                 </div>
               </div>
-
-              <div className="flex gap-2 pt-4 border-t border-slate-100">
-                <Button 
-                  className="flex-1 rounded-full bg-blue-600 hover:bg-blue-700"
-                  onClick={handleCreateExercise}
-                  disabled={!newExercise.title || !newExercise.description || !newExercise.module || !newExercise.deadline}
-                >
-                  <LuSave className="mr-2 h-4 w-4" />
-                  Create Exercise
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="rounded-full border-slate-200"
-                  onClick={() => setShowCreateModal(false)}
-                >
-                  Cancel
-                </Button>
-              </div>
             </CardContent>
+
+            {/* Sticky Footer — always visible */}
+            <div className="flex gap-2 px-6 py-4 border-t border-slate-100 flex-shrink-0">
+              <Button 
+                className="flex-1 rounded-full bg-blue-600 hover:bg-blue-700"
+                onClick={handleCreateExercise}
+                disabled={!newExercise.title || !newExercise.description || !newExercise.module || !newExercise.deadline}
+              >
+                <LuSave className="mr-2 h-4 w-4" />
+                Create Exercise
+              </Button>
+              <Button 
+                variant="outline" 
+                className="rounded-full border-slate-200"
+                onClick={() => setShowCreateModal(false)}
+              >
+                Cancel
+              </Button>
+            </div>
           </Card>
         </div>
       )}

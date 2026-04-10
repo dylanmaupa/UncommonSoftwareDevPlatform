@@ -250,12 +250,13 @@ export default function Admin() {
   // Create Exercise Modal State
   const [showCreateExerciseModal, setShowCreateExerciseModal] = useState(false);
   const [newExerciseTitle, setNewExerciseTitle] = useState('');
-  const [newExerciseType, setNewExerciseType] = useState('code'); // We map 'code' to language selection now
+  const [newExerciseType, setNewExerciseType] = useState<'code' | 'document'>('code');
   const [newExerciseLanguage, setNewExerciseLanguage] = useState<'python' | 'javascript'>('python');
   const [newExerciseDifficulty, setNewExerciseDifficulty] = useState('beginner');
   const [newExerciseDueDate, setNewExerciseDueDate] = useState('');
   const [newExerciseXP, setNewExerciseXP] = useState(100);
   const [newExerciseDescription, setNewExerciseDescription] = useState('');
+  const [newExerciseFormattingRequirements, setNewExerciseFormattingRequirements] = useState('');
 
   const handleCreateExercise = async () => {
     if (!newExerciseTitle.trim() || !profile) return;
@@ -271,7 +272,8 @@ export default function Admin() {
         student_id: student.id,
         title: newExerciseTitle,
         instructions: newExerciseDescription,
-        language: newExerciseLanguage,
+        language: newExerciseType === 'document' ? 'document' : newExerciseLanguage,
+        formatting_requirements: newExerciseType === 'document' ? newExerciseFormattingRequirements : null,
         due_date: newExerciseDueDate ? new Date(newExerciseDueDate).toISOString() : null,
         status: 'assigned',
       }));
@@ -288,10 +290,11 @@ export default function Admin() {
       const mockAssignedGroup = {
         id: Date.now().toString(),
         title: newExerciseTitle,
-        type: newExerciseLanguage,
+        type: newExerciseType === 'document' ? 'document' : newExerciseLanguage,
         difficulty_level: newExerciseDifficulty,
         xp_reward: newExerciseXP,
         description: newExerciseDescription,
+        formatting_requirements: newExerciseFormattingRequirements,
         created_at: new Date().toISOString(),
       };
 
@@ -304,6 +307,7 @@ export default function Admin() {
       setNewExerciseDueDate('');
       setNewExerciseXP(100);
       setNewExerciseDescription('');
+      setNewExerciseFormattingRequirements('');
       setShowCreateExerciseModal(false);
 
     } catch (err) {
@@ -1074,9 +1078,9 @@ export default function Admin() {
 
                 {/* Create Exercise Modal */}
                 {showCreateExerciseModal && (
-                  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                    <Card className="rounded-2xl border-border bg-card w-full max-w-lg">
-                      <CardHeader className="flex flex-row items-center justify-between pb-4">
+                  <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-4 pt-16">
+                    <Card className="rounded-2xl border-border bg-card w-full max-w-lg flex flex-col" style={{ maxHeight: '70vh' }}>
+                      <CardHeader className="flex flex-row items-center justify-between pb-4 flex-shrink-0">
                         <div>
                           <CardTitle className="heading-font lowercase text-xl text-foreground">Create New Exercise</CardTitle>
                           <CardDescription>Add a new exercise or project assignment</CardDescription>
@@ -1090,7 +1094,7 @@ export default function Admin() {
                           <LuX className="h-4 w-4" />
                         </Button>
                       </CardHeader>
-                      <CardContent className="space-y-4">
+                      <CardContent className="space-y-4 overflow-y-auto flex-1 min-h-0">
                         <div>
                           <label className="text-sm font-medium text-foreground mb-1 block">Exercise Title *</label>
                           <input
@@ -1103,14 +1107,14 @@ export default function Admin() {
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <label className="text-sm font-medium text-foreground mb-1 block">Language</label>
+                            <label className="text-sm font-medium text-foreground mb-1 block">Assignment Type</label>
                             <select
-                              value={newExerciseLanguage}
-                              onChange={(e) => setNewExerciseLanguage(e.target.value as 'python' | 'javascript')}
+                              value={newExerciseType}
+                              onChange={(e) => setNewExerciseType(e.target.value as 'code' | 'document')}
                               className="h-10 w-full rounded-xl border border-border bg-sidebar px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary"
                             >
-                              <option value="python">Python</option>
-                              <option value="javascript">JavaScript</option>
+                              <option value="code">Code Exercise</option>
+                              <option value="document">Document Upload</option>
                             </select>
                           </div>
                           <div>
@@ -1125,6 +1129,25 @@ export default function Admin() {
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                           <div>
+                            <label className="text-sm font-medium text-foreground mb-1 block">
+                              {newExerciseType === 'document' ? 'Submission Format' : 'Language'}
+                            </label>
+                            {newExerciseType === 'document' ? (
+                              <div className="rounded-xl border border-border bg-sidebar px-3 py-2 text-sm text-muted-foreground">
+                                Word or PDF upload (`.doc`, `.docx`, `.pdf`)
+                              </div>
+                            ) : (
+                              <select
+                                value={newExerciseLanguage}
+                                onChange={(e) => setNewExerciseLanguage(e.target.value as 'python' | 'javascript')}
+                                className="h-10 w-full rounded-xl border border-border bg-sidebar px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary"
+                              >
+                                <option value="python">Python</option>
+                                <option value="javascript">JavaScript</option>
+                              </select>
+                            )}
+                          </div>
+                          <div>
                             <label className="text-sm font-medium text-foreground mb-1 block">Difficulty</label>
                             <select
                               value={newExerciseDifficulty}
@@ -1136,17 +1159,17 @@ export default function Admin() {
                               <option value="advanced">Advanced</option>
                             </select>
                           </div>
-                          <div>
-                            <label className="text-sm font-medium text-foreground mb-1 block">XP Reward</label>
-                            <input
-                              type="number"
-                              min="10"
-                              max="1000"
-                              value={newExerciseXP}
-                              onChange={(e) => setNewExerciseXP(Number(e.target.value))}
-                              className="h-10 w-full rounded-xl border border-border bg-sidebar px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary"
-                            />
-                          </div>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-foreground mb-1 block">XP Reward</label>
+                          <input
+                            type="number"
+                            min="10"
+                            max="1000"
+                            value={newExerciseXP}
+                            onChange={(e) => setNewExerciseXP(Number(e.target.value))}
+                            className="h-10 w-full rounded-xl border border-border bg-sidebar px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary"
+                          />
                         </div>
                         <div>
                           <label className="text-sm font-medium text-foreground mb-1 block">Description</label>
@@ -1157,24 +1180,36 @@ export default function Admin() {
                             className="min-h-[100px] w-full rounded-xl border border-border bg-sidebar px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary resize-none"
                           />
                         </div>
-                        <div className="flex gap-2 pt-4 border-t border-border">
-                          <Button
-                            className="flex-1 rounded-full"
-                            onClick={handleCreateExercise}
-                            disabled={!newExerciseTitle.trim()}
-                          >
-                            <LuTarget className="mr-2 h-4 w-4" />
-                            Create Exercise
-                          </Button>
-                          <Button
-                            variant="outline"
-                            className="rounded-full"
-                            onClick={() => setShowCreateExerciseModal(false)}
-                          >
-                            Cancel
-                          </Button>
-                        </div>
+                        {newExerciseType === 'document' && (
+                          <div>
+                            <label className="text-sm font-medium text-foreground mb-1 block">Formatting Requirements</label>
+                            <textarea
+                              placeholder="Example: 3-5 pages, Times New Roman 12pt, 1.5 spacing, APA references, include a title page."
+                              value={newExerciseFormattingRequirements}
+                              onChange={(e) => setNewExerciseFormattingRequirements(e.target.value)}
+                              className="min-h-[100px] w-full rounded-xl border border-border bg-sidebar px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary resize-none"
+                            />
+                          </div>
+                        )}
                       </CardContent>
+                      {/* Sticky footer — always visible */}
+                      <div className="flex gap-2 px-6 py-4 border-t border-border flex-shrink-0">
+                        <Button
+                          className="flex-1 rounded-full"
+                          onClick={handleCreateExercise}
+                          disabled={!newExerciseTitle.trim()}
+                        >
+                          <LuTarget className="mr-2 h-4 w-4" />
+                          Create Exercise
+                        </Button>
+                        <Button
+                          variant="outline"
+                          className="rounded-full"
+                          onClick={() => setShowCreateExerciseModal(false)}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
                     </Card>
                   </div>
                 )}
