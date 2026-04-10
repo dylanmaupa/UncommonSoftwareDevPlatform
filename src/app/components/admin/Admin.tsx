@@ -383,17 +383,18 @@ export default function Admin() {
             const hubStudentIds = hubStudents.map((student) => String(student.id));
             const hubStudentIdSet = new Set(hubStudentIds);
             const studentNameMap = new Map(
-              hubStudents.map((student) => [
-                String(student.id),
-                String(student.full_name || student.email || 'Student'),
-              ]),
+              hubStudents.map((student) => [String(student.id), student.full_name || 'Student'])
             );
 
             if (hubStudentIds.length > 0) {
               const { data: exerciseData, error: exerciseError } = await supabase
                 .from('instructor_exercises')
-                .select('id, student_id, title, status, submitted_at, created_at')
+                .select(`
+                  id, student_id, title, status, submitted_at, created_at,
+                  student:profiles!inner(hub_location)
+                `)
                 .eq('instructor_id', user.id)
+                .eq('student.hub_location', profileData.hub_location)
                 .order('submitted_at', { ascending: false, nullsFirst: false })
                 .order('created_at', { ascending: false });
 
