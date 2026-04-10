@@ -72,6 +72,13 @@ export default function SubmissionsPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      // Fetch instructor profile to get their hub location
+      const { data: instructorProfile } = await supabase
+        .from('profiles')
+        .select('hub_location')
+        .eq('id', user.id)
+        .single();
+
       const { data: exercises, error } = await supabase
         .from('instructor_exercises')
         .select('*')
@@ -86,11 +93,11 @@ export default function SubmissionsPage() {
       const formattedSubmissions: Submission[] = [];
 
       if (exercises && exercises.length > 0) {
-        // Fetch student profiles for names/emails
+        // Fetch student profiles for names/emails AND hub_location
         const studentIds = Array.from(new Set(exercises.map((e: any) => e.student_id)));
         const { data: profiles } = await supabase
           .from('profiles')
-          .select('id, full_name, email')
+          .select('id, full_name, email, hub_location')
           .in('id', studentIds);
 
         const profileMap = new Map();
@@ -100,6 +107,10 @@ export default function SubmissionsPage() {
 
         for (const ex of exercises) {
           const studentProfile = profileMap.get(ex.student_id);
+          // Only include submissions from students in the instructor's hub
+          if (studentProfile?.hub_location !== instructorProfile?.hub_location) {
+            continue;
+          }
           formattedSubmissions.push({
             id: ex.id,
             studentName: studentProfile?.full_name || 'Unknown Student',
