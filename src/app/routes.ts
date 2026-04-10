@@ -17,6 +17,7 @@ import Settings from './components/settings/Settings';
 import Admin from './components/admin/Admin';
 import Assignments from './components/assignments/Assignments';
 
+import StudentProfilePage from './features/instructor-dashboard/pages/StudentProfilePage';
 import NotFound from './components/NotFound';
 
 export const router = createBrowserRouter([
@@ -31,6 +32,7 @@ export const router = createBrowserRouter([
       { path: 'dashboard', Component: Dashboard },
       { path: 'instructor', Component: Admin },
       { path: 'instructor/:section', Component: Admin },
+      { path: 'instructor/students/:studentId', Component: StudentProfilePage },
       { path: 'sandbox', Component: Sandbox },
       { path: 'courses', Component: Courses },
       { path: 'courses/:courseId', Component: CourseDetail },
