@@ -94,78 +94,46 @@ export default function StudentProfilePage() {
         setStudent(studentData);
       }
 
-      // Mock course progress - replace with actual data fetching
-      const mockProgress: CourseProgress[] = [
-        {
-          id: '1',
-          title: 'Introduction to Python',
-          progress: 75,
-          totalLessons: 12,
-          completedLessons: 9,
-          lastAccessed: '2 days ago',
-          icon: '🐍',
-        },
-        {
-          id: '2',
-          title: 'React Fundamentals',
-          progress: 45,
-          totalLessons: 20,
-          completedLessons: 9,
-          lastAccessed: '5 days ago',
-          icon: '⚛️',
-        },
-        {
-          id: '3',
-          title: 'Data Structures',
-          progress: 30,
-          totalLessons: 15,
-          completedLessons: 4,
-          lastAccessed: '1 week ago',
-          icon: '📊',
-        },
-      ];
-      setCourseProgress(mockProgress);
+      // Fetch real course progress from user_progress table
+      const { data: progressData } = await supabase
+        .from('user_progress')
+        .select(`
+          *,
+          course:courses(id, title, icon)
+        `)
+        .eq('user_id', studentId)
+        .eq('item_type', 'course');
 
-      // Mock achievements
-      const mockAchievements: Achievement[] = [
-        {
-          id: '1',
-          name: 'First Steps',
-          description: 'Completed your first lesson',
-          icon: '👣',
-          earnedAt: '2024-01-15',
-          xpReward: 50,
-          rarity: 'common',
-        },
-        {
-          id: '2',
-          name: 'Code Warrior',
-          description: 'Completed 10 coding exercises',
-          icon: '⚔️',
-          earnedAt: '2024-02-20',
-          xpReward: 150,
-          rarity: 'rare',
-        },
-        {
-          id: '3',
-          name: 'Python Master',
-          description: 'Completed Python course',
-          icon: '🐍',
-          earnedAt: '2024-03-10',
-          xpReward: 300,
-          rarity: 'epic',
-        },
-        {
-          id: '4',
-          name: '7-Day Streak',
-          description: 'Learned for 7 consecutive days',
-          icon: '🔥',
-          earnedAt: '2024-03-15',
-          xpReward: 100,
-          rarity: 'rare',
-        },
-      ];
-      setAchievements(mockAchievements);
+      const realProgress: CourseProgress[] = progressData?.map((p: any) => ({
+        id: p.course?.id || p.item_id,
+        title: p.course?.title || 'Unknown Course',
+        progress: p.progress_percentage || 0,
+        totalLessons: 0, // Will need to calculate separately
+        completedLessons: 0,
+        lastAccessed: p.updated_at ? new Date(p.updated_at).toLocaleDateString() : 'Unknown',
+        icon: p.course?.icon || '�',
+      })) || [];
+      setCourseProgress(realProgress);
+
+      // Fetch real achievements from user_achievements table
+      const { data: achievementsData } = await supabase
+        .from('user_achievements')
+        .select(`
+          *,
+          achievement:achievements(*)
+        `)
+        .eq('user_id', studentId);
+
+      const realAchievements: Achievement[] = achievementsData?.map((ua: any) => ({
+        id: ua.achievement?.id || ua.achievement_id,
+        name: ua.achievement?.name || 'Unknown Achievement',
+        description: ua.achievement?.description || '',
+        icon: ua.achievement?.icon || '🏆',
+        earnedAt: ua.earned_at || ua.created_at,
+        xpReward: ua.achievement?.xp_reward || 0,
+        rarity: ua.achievement?.rarity || 'common',
+      })) || [];
+      setAchievements(realAchievements);
 
       // Fetch submissions
       const { data: submissionsData } = await supabase
