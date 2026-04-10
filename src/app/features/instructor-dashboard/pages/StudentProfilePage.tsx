@@ -109,6 +109,9 @@ export default function StudentProfilePage() {
 
       if (studentData) {
         setStudent(studentData);
+        console.log('Student profile data:', studentData);
+        console.log('Profile lessons_completed:', (studentData as any).lessons_completed);
+        console.log('Profile completed_lessons:', (studentData as any).completed_lessons);
       }
 
       // Fetch all user_progress for lessons completed count
