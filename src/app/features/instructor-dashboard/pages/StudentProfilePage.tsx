@@ -111,52 +111,47 @@ export default function StudentProfilePage() {
         setStudent(studentData);
       }
 
-      // Fetch all user_progress for lessons completed count and course progress
-      const { data: allProgressData } = await supabase
+      // Fetch all user_progress for lessons completed count
+      const { data: allProgressData, error: progressError } = await supabase
         .from('user_progress')
-        .select(`
-          *,
-          course:courses(id, title, icon)
-        `)
+        .select('user_id, item_type, status, progress_percentage')
         .eq('user_id', studentId);
+
+      if (progressError) {
+        console.error('Error fetching progress:', progressError);
+      }
+
+      console.log('User progress data:', allProgressData);
 
       // Calculate lessons completed (item_type = 'lesson' and status = 'completed')
       const lessonsCompleted = allProgressData?.filter((p: any) => p.item_type === 'lesson' && p.status === 'completed').length || 0;
+      console.log('Lessons completed:', lessonsCompleted);
+      setCourseProgress([]); // Simplified - no course progress for now
 
-      // Filter for course progress only
-      const courseProgressData = allProgressData?.filter((p: any) => p.item_type === 'course') || [];
-
-      const realProgress: CourseProgress[] = courseProgressData.map((p: any) => ({
-        id: p.course?.id || p.item_id,
-        title: p.course?.title || 'Unknown Course',
-        progress: p.progress_percentage || 0,
-        totalLessons: 0,
-        completedLessons: 0,
-        lastAccessed: p.updated_at ? new Date(p.updated_at).toLocaleDateString() : 'Unknown',
-        icon: p.course?.icon || '',
-      })) || [];
-      setCourseProgress(realProgress);
-
-      // Store lessons completed for display
-      (studentData as any).lessons_completed = lessonsCompleted;
+      // Update student with lessons completed
+      if (studentData) {
+        (studentData as any).lessons_completed = lessonsCompleted;
+        setStudent(studentData as Student);
+      }
 
       // Fetch real achievements from user_achievements table
-      const { data: achievementsData } = await supabase
+      const { data: achievementsData, error: achievementsError } = await supabase
         .from('user_achievements')
-        .select(`
-          *,
-          achievement:achievements(*)
-        `)
+        .select('*')
         .eq('user_id', studentId);
 
+      if (achievementsError) {
+        console.error('Error fetching achievements:', achievementsError);
+      }
+
       const realAchievements: Achievement[] = achievementsData?.map((ua: any) => ({
-        id: ua.achievement?.id || ua.achievement_id,
-        name: ua.achievement?.name || 'Unknown Achievement',
-        description: ua.achievement?.description || '',
-        icon: ua.achievement?.icon || '🏆',
+        id: ua.achievement_id || ua.id,
+        name: ua.name || 'Unknown Achievement',
+        description: ua.description || '',
+        icon: ua.icon || '🏆',
         earnedAt: ua.earned_at || ua.created_at,
-        xpReward: ua.achievement?.xp_reward || 0,
-        rarity: ua.achievement?.rarity || 'common',
+        xpReward: ua.xp_reward || 0,
+        rarity: ua.rarity || 'common',
       })) || [];
       setAchievements(realAchievements);
 
@@ -321,6 +316,7 @@ export default function StudentProfilePage() {
 
   const totalXP = achievements.reduce((acc, ach) => acc + ach.xpReward, 0);
   const completedCourses = courseProgress.filter(c => c.progress === 100).length;
+  const totalLessons = courseProgress.reduce((acc, course) => acc + course.completedLessons, 0);
 
   return (
     <DashboardLayout>
@@ -461,7 +457,7 @@ export default function StudentProfilePage() {
                   <LuBookOpen className="h-5 w-5 text-blue-500" />
                 </div>
                 <div>
-                  <p className="text-2xl text-foreground heading-font">{(student as any)?.lessons_completed || 0}</p>
+                  <p className="text-2xl text-foreground heading-font">{(student as any)?.lessons_completed || totalLessons || 0}</p>
                   <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Lessons</p>
                 </div>
               </div>
