@@ -5,7 +5,6 @@ import { Button } from '../../../components/ui/button';
 import { Badge } from '../../../components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '../../../components/ui/avatar';
 import { Progress } from '../../../components/ui/progress';
-import { Progress } from '../../../components/ui/progress';
 import { supabase } from '../../../../lib/supabase';
 import DashboardLayout from '../../../components/layout/DashboardLayout';
 import {
