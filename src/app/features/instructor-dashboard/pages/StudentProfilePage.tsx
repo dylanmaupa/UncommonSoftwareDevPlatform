@@ -658,8 +658,8 @@ export default function StudentProfilePage() {
                   <div key={ex.id} className="p-3 rounded-xl bg-sidebar border border-border hover:border-primary/30 transition-colors">
                     <div className="flex justify-between items-start mb-2">
                       <h3 className="font-medium text-sm text-foreground leading-tight">{ex.title}</h3>
-                      <Badge variant={ex.status === 'reviewed' ? "default" : "outline"} className="text-[9px] uppercase h-5 font-semibold">
-                        {ex.status}
+                      <Badge variant={['reviewed', 'approved'].includes(ex.status) ? "default" : "outline"} className="text-[9px] uppercase h-5 font-semibold">
+                        {['reviewed', 'approved'].includes(ex.status) ? "Reviewed" : "Pending"}
                       </Badge>
                     </div>
                     <p className="text-xs text-muted-foreground line-clamp-3 mb-2">{ex.instructions}</p>

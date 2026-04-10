@@ -183,7 +183,7 @@ export default function Assignments() {
                         <CardContent className="p-5 flex flex-col h-full">
                           <div className="flex justify-between items-start mb-3">
                             <Badge className={statusTone}>
-                              {assignment.status === 'submitted' ? 'Awaiting Review' : assignment.status === 'rejected' ? 'Needs Revision' : 'To Do'}
+                              {assignment.status === 'submitted' ? 'Pending Review' : assignment.status === 'rejected' ? 'Needs Revision' : 'Pending'}
                             </Badge>
                             {assignment.language && (
                               <Badge variant="outline" className="text-[10px] uppercase text-slate-500">
