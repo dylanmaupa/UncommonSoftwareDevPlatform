@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router';
+import { HUB_LOCATIONS } from '../auth/AccountSetup';
 import DashboardLayout from '../layout/DashboardLayout';
 // @ts-ignore
 import profileAvatar from '../../../assets/avatar2.png';
@@ -52,6 +53,7 @@ export default function Profile() {
   const [isSaving, setIsSaving] = useState(false);
   const [selectedAvatar, setSelectedAvatar] = useState('');
   const [userRole, setUserRole] = useState('');
+  const [hubLocation, setHubLocation] = useState('');
 
   useEffect(() => {
     async function loadData() {
@@ -81,6 +83,10 @@ export default function Profile() {
         const mdLastAct = String(metadata?.['last_activity_date'] || '');
         const last_activity_date = dbLastAct ? dbLastAct : mdLastAct;
 
+        const dbHub = String(profile?.hub_location || '');
+        const mdHub = String(metadata?.['hub_location'] || '');
+        const resolvedHub = dbHub || mdHub;
+
         const resolvedProfile = {
           ...profile,
           email: user.email ?? profile?.email ?? '',
@@ -91,6 +97,7 @@ export default function Profile() {
           last_activity_date,
           gender: String(profile?.gender || metadata?.['gender'] || ''),
           avatar_url: String(profile?.avatar_url || metadata?.['avatar_url'] || ''),
+          hub_location: resolvedHub,
         };
 
         const role = resolveRole(resolvedProfile as Record<string, unknown>, metadata);
@@ -100,6 +107,7 @@ export default function Profile() {
         setNickname(String(resolvedProfile.full_name ?? ''));
         setGender(String(resolvedProfile.gender ?? '') as Gender | '');
         setSelectedAvatar(String(resolvedProfile.avatar_url ?? ''));
+        setHubLocation(resolvedHub);
 
         if (role !== 'instructor') {
           const { data: cData } = await supabase.from('courses').select('*');
@@ -141,11 +149,13 @@ export default function Profile() {
       setIsSaving(true);
       await updateProfileForAuthUser(authUser as any, {
         full_name: nickname.trim(),
+        hub_location: hubLocation,
         ...(gender ? { gender, avatar_url: finalAvatarUrl } : {})
       });
       await supabase.auth.updateUser({
         data: {
           full_name: nickname.trim(),
+          hub_location: hubLocation,
           ...(gender ? { gender, avatar_url: finalAvatarUrl } : {})
         }
       });
@@ -153,6 +163,7 @@ export default function Profile() {
       setUserProfile((prev: any) => ({
         ...prev,
         full_name: nickname.trim(),
+        hub_location: hubLocation,
         ...(gender ? { gender, avatar_url: finalAvatarUrl } : {})
       }));
       toast.success('Profile updated successfully');
@@ -168,6 +179,7 @@ export default function Profile() {
     setNickname(userProfile.full_name || '');
     setGender((userProfile.gender || '') as Gender | '');
     setSelectedAvatar(userProfile.avatar_url || '');
+    setHubLocation(userProfile.hub_location || '');
     setIsEditing(false);
   };
 
@@ -275,6 +287,20 @@ export default function Profile() {
                         </Select>
                       </div>
 
+                      <div className="space-y-2">
+                        <Label>Hub</Label>
+                        <Select value={hubLocation} onValueChange={(val) => setHubLocation(val)}>
+                          <SelectTrigger className="h-9 w-full rounded-xl border-0 bg-secondary">
+                            <SelectValue placeholder="Select hub" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {HUB_LOCATIONS.map((hub) => (
+                                <SelectItem key={hub} value={hub}>{hub}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
                       {gender && availableAvatars.length > 0 && (
                         <div className="space-y-2">
                           <Label>Choose Avatar</Label>
@@ -317,7 +343,12 @@ export default function Profile() {
                   ) : (
                     <>
                       <h2 className="mb-1 text-xl text-foreground heading-font">{userProfile.full_name}</h2>
-                      <p className="mb-3 text-sm text-muted-foreground">{authUser.email}</p>
+                      <p className="mb-1 text-sm text-muted-foreground">{authUser.email}</p>
+                      <div className="mb-3">
+                         <Badge variant="outline" className="bg-sidebar rounded-full text-[11px] font-normal text-muted-foreground border-border px-3 py-0.5">
+                            📍 {userProfile.hub_location || 'Not assigned'}
+                         </Badge>
+                      </div>
                       <Button onClick={() => setIsEditing(true)} size="sm" variant="outline" className="rounded-lg">
                         <LuPencil className="mr-2 h-4 w-4" />
                         Edit Profile
