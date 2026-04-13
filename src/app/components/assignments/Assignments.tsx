@@ -446,29 +446,45 @@ export default function Assignments() {
                       : assignment.grade >= 60 ? 'text-amber-700 bg-amber-100'
                       : 'text-rose-700 bg-rose-100';
 
+                    const isNotMine = assignment.is_assigned_to_me === false;
+
                     return (
-                      <Card key={assignment.id} className="overflow-hidden">
+                      <Card key={assignment.id} className={`overflow-hidden ${isNotMine ? 'opacity-75' : ''}`}>
                         <div className="flex flex-col sm:flex-row">
                           <div className="p-5 sm:w-1/3 border-b sm:border-b-0 sm:border-r border-slate-100 bg-slate-50/50">
-                            <h3 className="font-semibold text-slate-900 mb-1">{assignment.title}</h3>
+                            <div className="flex items-start justify-between mb-2">
+                              <h3 className="font-semibold text-slate-900">{assignment.title}</h3>
+                              {isNotMine && (
+                                <Badge variant="outline" className="text-[10px] ml-2 shrink-0">Hub Assignment</Badge>
+                              )}
+                            </div>
                             <p className="text-xs text-slate-500 mb-4">Graded by {assignment.instructor_name}</p>
                             
-                            <div className="flex items-center justify-between mb-4">
-                              <span className="text-xs font-medium text-slate-500 flex items-center gap-1.5">
-                                <LuStar className="h-3.5 w-3.5" /> Final Grade 
-                              </span>
-                              <div className={`px-2.5 py-1 rounded-md font-bold text-sm ${gradeColor}`}>
-                                {assignment.grade != null ? `${assignment.grade}/100` : 'N/A'}
+                            {isNotMine ? (
+                              <div className="mb-4">
+                                <Badge variant="outline" className="bg-slate-50 text-slate-500">
+                                  Not Assigned to You
+                                </Badge>
                               </div>
-                            </div>
+                            ) : (
+                              <div className="flex items-center justify-between mb-4">
+                                <span className="text-xs font-medium text-slate-500 flex items-center gap-1.5">
+                                  <LuStar className="h-3.5 w-3.5" /> Final Grade 
+                                </span>
+                                <div className={`px-2.5 py-1 rounded-md font-bold text-sm ${gradeColor}`}>
+                                  {assignment.grade != null ? `${assignment.grade}/100` : 'N/A'}
+                                </div>
+                              </div>
+                            )}
 
                             <Button 
                               variant="outline" 
                               size="sm" 
                               className="w-full text-xs"
                               onClick={() => navigate(`/sandbox?exerciseId=${assignment.id}`)}
+                              disabled={isNotMine}
                             >
-                              {assignment.language === 'document' ? 'View Submitted Document' : 'View Submission Code'}
+                              {isNotMine ? 'Not Available' : assignment.language === 'document' ? 'View Submitted Document' : 'View Submission Code'}
                             </Button>
                           </div>
                           
@@ -476,12 +492,14 @@ export default function Assignments() {
                             <span className="text-xs font-semibold text-slate-500 mb-2 flex items-center gap-1.5 uppercase tracking-wider">
                               <LuMessageSquare className="h-3.5 w-3.5" /> Instructor Feedback
                             </span>
-                            {assignment.feedback ? (
+                            {assignment.feedback && !isNotMine ? (
                               <div className="prose prose-sm prose-slate max-w-none text-sm leading-relaxed mt-2 p-4 bg-slate-50 rounded-xl border border-slate-100 text-slate-700">
                                 {assignment.feedback}
                               </div>
                             ) : (
-                              <p className="text-sm text-slate-500 italic mt-2">No written feedback provided.</p>
+                              <p className="text-sm text-slate-500 italic mt-2">
+                                {isNotMine ? 'Assignment not assigned to you.' : 'No written feedback provided.'}
+                              </p>
                             )}
                           </div>
                         </div>
