@@ -155,7 +155,7 @@ export default function StudentProfilePage() {
           description: a.description,
           icon: a.icon,
           earnedAt: new Date().toISOString(), // Mocked date for now
-          xpReward: a.xpReward || 10,
+          xpReward: (a as any).xpReward || (a as any).xp_reward || 10,
           rarity: 'common' as any,
         }));
       setAchievements(realAchievements);
@@ -181,7 +181,7 @@ export default function StudentProfilePage() {
           .map((ex: any) => ({
             id: ex.id,
             assignment: ex.title || 'Unknown Assignment',
-            status: ex.status === 'rejected' ? 'Needs Revision' : ex.status === 'approved' ? 'Approved' : 'Pending',
+            status: (ex.status === 'rejected' ? 'Needs Revision' : ex.status === 'approved' ? 'Approved' : 'Pending') as Submission['status'],
             submitted: new Date(ex.submitted_at || ex.created_at).toLocaleDateString(),
             score: ex.grade,
             type: ex.language,
