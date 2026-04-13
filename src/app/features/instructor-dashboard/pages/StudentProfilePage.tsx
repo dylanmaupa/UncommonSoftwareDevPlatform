@@ -428,6 +428,7 @@ export default function StudentProfilePage() {
                               <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="document">Document</SelectItem>
+                                <SelectItem value="written">Written / Theory</SelectItem>
                                 <SelectItem value="python">Python IDE</SelectItem>
                                 <SelectItem value="javascript">JS IDE</SelectItem>
                               </SelectContent>
