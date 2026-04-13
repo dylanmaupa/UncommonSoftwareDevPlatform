@@ -11,6 +11,7 @@ interface Student {
   id: string;
   full_name: string;
   email: string;
+  hub_location?: string;
 }
 
 interface AssignExerciseModalProps {
@@ -36,13 +37,30 @@ export default function AssignExerciseModal({ isOpen, onClose, exercise }: Assig
     }
   }, [isOpen]);
 
+  const [instructorHub, setInstructorHub] = useState<string>('');
+
   const fetchStudents = async () => {
     setIsLoadingStudents(true);
     try {
+      // Get instructor's hub first
+      const { data: userData } = await supabase.auth.getUser();
+      if (userData.user) {
+        const { data: instructorProfile } = await supabase
+          .from('profiles')
+          .select('hub_location')
+          .eq('id', userData.user.id)
+          .single();
+        if (instructorProfile?.hub_location) {
+          setInstructorHub(instructorProfile.hub_location);
+        }
+      }
+
+      // Fetch students in the same hub
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, full_name, email')
+        .select('id, full_name, email, hub_location')
         .eq('role', 'student')
+        .eq('hub_location', instructorHub || (await getInstructorHub()))
         .order('full_name');
       
       if (error) throw error;
@@ -53,6 +71,17 @@ export default function AssignExerciseModal({ isOpen, onClose, exercise }: Assig
     } finally {
       setIsLoadingStudents(false);
     }
+  };
+
+  const getInstructorHub = async () => {
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) return '';
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('hub_location')
+      .eq('id', userData.user.id)
+      .single();
+    return profile?.hub_location || '';
   };
 
   const handleAssign = async () => {
@@ -73,9 +102,14 @@ export default function AssignExerciseModal({ isOpen, onClose, exercise }: Assig
       if (exercise.type === 'written') language = 'written';
       else if (exercise.type === 'coding') language = 'python'; // Default to python for generic coding
       
+      // Get student's hub to use as the assignment hub
+      const selectedStudent = students.find(s => s.id === selectedStudentId);
+      const hubLocation = selectedStudent?.hub_location || instructorHub;
+
       const { error } = await supabase.from('instructor_exercises').insert({
         instructor_id: instructorId,
         student_id: selectedStudentId,
+        hub_location: hubLocation,
         title: exercise.title,
         instructions: exercise.description,
         due_date: dueDate || null,

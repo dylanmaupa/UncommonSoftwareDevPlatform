@@ -64,7 +64,7 @@ export default function Assignments() {
         const studentHub = studentProfile.hub_location;
         console.log('[Assignments] Student hub:', studentHub);
 
-        // Find all instructors in the same hub
+        // Find all instructors in the same hub (for name mapping)
         const { data: instructors, error: instructorsError } = await supabase
           .from('profiles')
           .select('id, full_name, email')
@@ -77,7 +77,6 @@ export default function Assignments() {
           console.error('Failed to get instructors:', instructorsError);
         }
 
-        const instructorIds = instructors?.map((i: any) => i.id) || [];
         const instructorNameMap = new Map<string, string>();
         
         if (instructors) {
@@ -86,36 +85,25 @@ export default function Assignments() {
           });
         }
 
-        // Fetch all exercises from instructors in this hub
-        // Fetch ALL exercises for this student - both hub-wide and directly assigned
+        // Fetch ALL exercises for this student's hub - both hub-wide and directly assigned
+        // Using hub_location to get all assignments visible to students in this hub
         let exerciseRows: any[] = [];
-        
-        // Build OR condition: student_id = user.id OR instructor_id in hub instructors
-        const orConditions = [`student_id.eq.${user.id}`];
-        if (instructorIds.length > 0) {
-          instructorIds.forEach(id => {
-            orConditions.push(`instructor_id.eq.${id}`);
-          });
-        }
-        
-        console.log('[Assignments] Query OR conditions:', orConditions);
         
         const { data: exercises, error: exerciseError } = await supabase
           .from('instructor_exercises')
           .select('*')
-          .or(orConditions.join(','))
+          .eq('hub_location', studentHub)
           .order('created_at', { ascending: false });
 
         if (exerciseError) {
           console.error('Failed to load assignments', exerciseError);
         } else {
           exerciseRows = exercises || [];
-          console.log('[Assignments] Total exercises fetched:', exerciseRows.length);
+          console.log('[Assignments] Total hub exercises fetched:', exerciseRows.length);
           console.log('[Assignments] Exercise details:', exerciseRows.map((e: any) => ({ 
             id: e.id, 
             title: e.title, 
-            instructor_id: e.instructor_id, 
-            student_id: e.student_id,
+            hub_location: e.hub_location,
             created: e.created_at 
           })));
         }
