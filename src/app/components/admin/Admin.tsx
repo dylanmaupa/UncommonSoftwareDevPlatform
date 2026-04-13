@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
+import Editor from '@monaco-editor/react';
 import DashboardLayout from '../layout/DashboardLayout';
 import StreakWidget from '../dashboard/StreakWidget';
 // @ts-ignore
@@ -231,26 +232,64 @@ export default function Admin() {
   const [activeLessons, setActiveLessons] = useState<any[]>([]);
   const [activeAssignments, setActiveAssignments] = useState<any[]>([]);
 
-  // Create Lesson Modal State
-  const [showCreateLessonModal, setShowCreateLessonModal] = useState(false);
-  const [newLessonTitle, setNewLessonTitle] = useState('');
-  const [newLessonCourse, setNewLessonCourse] = useState('');
-  const [newLessonDescription, setNewLessonDescription] = useState('');
+  // Create Course Modal State
+  const [showCreateCourseModal, setShowCreateCourseModal] = useState(false);
+  const [newCourseTitle, setNewCourseTitle] = useState('');
+  const [newCourseDescription, setNewCourseDescription] = useState('');
+  const [newCourseDifficulty, setNewCourseDifficulty] = useState<'Beginner' | 'Intermediate' | 'Advanced'>('Beginner');
+  const [newCourseIcon, setNewCourseIcon] = useState('📚');
 
-  const handleCreateLesson = () => {
-    if (newLessonTitle.trim()) {
-      const newLesson = {
-        id: Date.now().toString(),
-        title: newLessonTitle,
-        course_id: newLessonCourse || null,
-        description: newLessonDescription,
-        created_at: new Date().toISOString(),
-      };
-      setActiveLessons([newLesson, ...activeLessons]);
-      setNewLessonTitle('');
-      setNewLessonCourse('');
-      setNewLessonDescription('');
-      setShowCreateLessonModal(false);
+  const handleCreateCourse = async () => {
+    if (newCourseTitle.trim()) {
+      const { data, error } = await supabase.from('courses').insert({
+        id: newCourseTitle.toLowerCase().replace(/\s+/g, '-'),
+        title: newCourseTitle,
+        description: newCourseDescription,
+        difficulty: newCourseDifficulty,
+        icon: newCourseIcon,
+      }).select().single();
+
+      if (error) {
+        toast.error('Failed to create course: ' + error.message);
+        return;
+      }
+
+      setActiveCourses([data, ...activeCourses]);
+      setNewCourseTitle('');
+      setNewCourseDescription('');
+      setShowCreateCourseModal(false);
+      toast.success('Course created successfully!');
+    }
+  };
+
+  // Create Module State
+  const [showCreateModuleModal, setShowCreateModuleModal] = useState(false);
+  const [newModuleTitle, setNewModuleTitle] = useState('');
+  const [newModuleCourse, setNewModuleCourse] = useState('');
+  const [newModuleDescription, setNewModuleDescription] = useState('');
+
+  const handleCreateModule = async () => {
+    if (newModuleTitle.trim() && newModuleCourse) {
+      const { data, error } = await supabase.from('modules').insert({
+        id: newModuleTitle.toLowerCase().replace(/\s+/g, '-'),
+        course_id: newModuleCourse,
+        title: newModuleTitle,
+        description: newModuleDescription,
+        order: activeModules.filter(m => m.course_id === newModuleCourse).length + 1
+      }).select().single();
+
+      if (error) {
+        toast.error('Failed to create module: ' + error.message);
+        return;
+      }
+
+      setActiveModules([...activeModules, data]);
+      setNewModuleTitle('');
+      setNewModuleDescription('');
+      setShowCreateModuleModal(false);
+      toast.success('Module added to course!');
+    } else if (!newModuleCourse) {
+      toast.error('Please select a course for the module.');
     }
   };
 
@@ -264,6 +303,44 @@ export default function Admin() {
   const [newExerciseXP, setNewExerciseXP] = useState(100);
   const [newExerciseDescription, setNewExerciseDescription] = useState('');
   const [newExerciseFormattingRequirements, setNewExerciseFormattingRequirements] = useState('');
+
+  // Lesson State
+  const [showCreateLessonModal, setShowCreateLessonModal] = useState(false);
+  const [newLessonTitle, setNewLessonTitle] = useState('');
+  const [newLessonModule, setNewLessonModule] = useState('');
+  const [newLessonContent, setNewLessonContent] = useState('# New Lesson\n\nWrite your content here...');
+  const [newLessonExercisePrompt, setNewLessonExercisePrompt] = useState('');
+  const [newLessonStarterCode, setNewLessonStarterCode] = useState('');
+  const [newLessonSolution, setNewLessonSolution] = useState('');
+  const [newLessonXp, setNewLessonXp] = useState(100);
+
+  const handleCreateLesson = async () => {
+    if (newLessonTitle.trim() && newLessonModule) {
+      const { data, error } = await supabase.from('lessons').insert({
+        id: newLessonTitle.toLowerCase().replace(/\s+/g, '-'),
+        module_id: newLessonModule,
+        title: newLessonTitle,
+        content: newLessonContent,
+        exercise_prompt: newLessonExercisePrompt,
+        exercise_starter_code: newLessonStarterCode,
+        exercise_solution: newLessonSolution,
+        xp_reward: newLessonXp,
+        order: activeLessons.filter(l => l.module_id === newLessonModule).length + 1
+      }).select().single();
+
+      if (error) {
+        toast.error('Failed to create lesson: ' + error.message);
+        return;
+      }
+
+      setActiveLessons([data, ...activeLessons]);
+      setShowCreateLessonModal(false);
+      setNewLessonTitle('');
+      toast.success('Lesson created successfully!');
+    } else if (!newLessonModule) {
+      toast.error('Please select a module for the lesson.');
+    }
+  };
 
   const handleCreateExercise = async () => {
     if (!newExerciseTitle.trim() || !profile) return;
@@ -415,7 +492,7 @@ export default function Admin() {
               { data: exercisesData }
             ] = await Promise.all([
               supabase.from('courses').select('*'),
-              supabase.from('course_modules').select('*'),
+              supabase.from('modules').select('*'),
               supabase.from('lessons').select('*'),
               supabase.from('exercises').select('*')
             ]);
@@ -962,39 +1039,54 @@ export default function Admin() {
 
             {activeSection === 'courses' && (
               <Card className="rounded-2xl border-border bg-card relative overflow-hidden">
-                <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/50 backdrop-blur-sm">
-                  <Badge className="px-5 py-2 text-sm font-semibold tracking-widest uppercase bg-primary text-primary-foreground shadow-lg">
-                    Coming Soon
-                  </Badge>
-                </div>
-                <div className="pointer-events-none select-none opacity-60 blur-[1px]">
+                <div className="flex flex-col">
                   <CardHeader className="flex flex-row items-center justify-between pb-2">
                     <div>
                       <CardTitle className="heading-font lowercase text-xl text-foreground">Course Catalog</CardTitle>
                       <CardDescription>Manage curriculum structure and module organization.</CardDescription>
                     </div>
-                    <Button size="sm" className="rounded-full" disabled>
+                    <Button size="sm" className="rounded-full" onClick={() => setShowCreateCourseModal(true)}>
                       <LuBookOpen className="mr-2 h-4 w-4" /> Create Course
                     </Button>
                   </CardHeader>
                   <CardContent>
                     {activeCourses.length > 0 ? (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {activeCourses.map(course => (
-                          <Card key={course.id} className="rounded-xl border border-border bg-sidebar hover:border-primary/50 transition">
-                            <CardContent className="p-4 flex gap-4">
-                              <div className="h-16 w-16 rounded-xl bg-secondary flex items-center justify-center text-3xl shrink-0">
-                                {course.icon || '📚'}
-                              </div>
-                              <div className="flex-1">
-                                <div className="flex justify-between items-start mb-1">
-                                  <h3 className="font-semibold text-foreground line-clamp-1">{course.title}</h3>
-                                  <Badge variant="outline" className="text-[10px] rounded-full px-2 uppercase">{course.difficulty_level || 'Beginner'}</Badge>
+                          <Card key={course.id} className="rounded-xl border border-border bg-sidebar hover:border-primary/50 transition-all group">
+                            <CardContent className="p-4">
+                              <div className="flex gap-4">
+                                <div className="h-16 w-16 rounded-xl bg-primary/10 flex items-center justify-center text-3xl shrink-0">
+                                  {course.icon || '📚'}
                                 </div>
-                                <p className="text-xs text-muted-foreground line-clamp-2 mb-3">{course.description || 'No description provided.'}</p>
-                                <div className="flex items-center gap-2">
-                                  <Button size="sm" variant="secondary" className="h-7 text-xs rounded-lg flex-1">Modules ({activeModules.filter(m => m.course_id === course.id).length})</Button>
-                                  <Button size="sm" variant="default" className="h-7 text-xs rounded-lg flex-1">Edit Course</Button>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex justify-between items-start mb-1">
+                                    <h3 className="font-semibold text-foreground truncate" title={course.title}>{course.title}</h3>
+                                    <Badge variant="outline" className="text-[10px] rounded-full px-2 uppercase shrink-0">{course.difficulty || 'Beginner'}</Badge>
+                                  </div>
+                                  <p className="text-xs text-muted-foreground line-clamp-2 mb-3">{course.description || 'No description provided.'}</p>
+                                </div>
+                              </div>
+                              <div className="mt-4 pt-4 border-t border-border flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                                  <LuFolderKanban className="h-3 w-3" />
+                                  <span>{activeModules.filter(m => m.course_id === course.id).length} Modules</span>
+                                </div>
+                                <div className="flex gap-1">
+                                  <Button 
+                                    size="sm" 
+                                    variant="secondary" 
+                                    className="h-7 text-xs rounded-lg px-2"
+                                    onClick={() => {
+                                      setNewModuleCourse(course.id);
+                                      setShowCreateModuleModal(true);
+                                    }}
+                                  >
+                                    + Module
+                                  </Button>
+                                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0 rounded-lg">
+                                    <LuEllipsis className="h-3 w-3" />
+                                  </Button>
                                 </div>
                               </div>
                             </CardContent>
@@ -1002,8 +1094,10 @@ export default function Admin() {
                         ))}
                       </div>
                     ) : (
-                      <div className="p-8 text-center bg-sidebar/50 rounded-xl border border-dashed border-border text-muted-foreground">
-                        No courses available. Start by creating your first course.
+                      <div className="p-12 text-center bg-sidebar/50 rounded-xl border border-dashed border-border text-muted-foreground">
+                        <LuBookOpen className="h-10 w-10 mx-auto mb-4 opacity-20" />
+                        <p>No courses available in this hub.</p>
+                        <p className="text-xs mt-1">Create your first course to start building the curriculum.</p>
                       </div>
                     )}
                   </CardContent>
@@ -1014,45 +1108,46 @@ export default function Admin() {
             {activeSection === 'lessons' && (
               <>
                 <Card className="rounded-2xl border-border bg-card relative overflow-hidden">
-                  <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/50 backdrop-blur-sm">
-                    <Badge className="px-5 py-2 text-sm font-semibold tracking-widest uppercase bg-primary text-primary-foreground shadow-lg">
-                      Coming Soon
-                    </Badge>
-                  </div>
-                  <div className="pointer-events-none select-none opacity-60 blur-[1px]">
+                  <div className="flex flex-col">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
                       <div>
                         <CardTitle className="heading-font lowercase text-xl text-foreground">Lesson Content Editor</CardTitle>
                         <CardDescription>Author and organize individual lesson structures.</CardDescription>
                       </div>
-                      <Button size="sm" className="rounded-full" disabled>
+                      <Button size="sm" className="rounded-full" onClick={() => setShowCreateLessonModal(true)}>
                         <LuFolderKanban className="mr-2 h-4 w-4" /> New Lesson
                       </Button>
                     </CardHeader>
                     <CardContent>
                       {activeLessons.length > 0 ? (
-                        <div className="space-y-2">
-                          {activeLessons.slice(0, 2).map(lesson => {
-                            const course = activeCourses.find(c => c.id === lesson.course_id);
+                        <div className="flex flex-col gap-2">
+                          {activeLessons.map(lesson => {
+                            const module = activeModules.find(m => m.id === lesson.module_id);
+                            const course = module ? activeCourses.find(c => c.id === module.course_id) : null;
                             return (
-                              <div key={lesson.id} className="flex items-center justify-between p-3 rounded-xl border border-border bg-sidebar hover:bg-secondary/50 transition">
+                              <div key={lesson.id} className="flex items-center justify-between p-3 rounded-xl border border-border bg-sidebar hover:bg-secondary/50 transition group">
                                 <div className="flex items-center gap-3">
-                                  <div className="bg-primary/10 text-primary p-2 rounded-lg"><LuFolderKanban className="h-4 w-4" /></div>
+                                  <div className="bg-primary/10 text-primary p-2 rounded-lg group-hover:bg-primary group-hover:text-primary-foreground transition"><LuFolderKanban className="h-4 w-4" /></div>
                                   <div>
                                     <p className="font-medium text-sm text-foreground">{lesson.title}</p>
-                                    <p className="text-xs text-muted-foreground flex items-center gap-1">
-                                      {course?.title || 'Unassigned'}
+                                    <p className="text-[10px] text-muted-foreground flex items-center gap-1 uppercase tracking-wider">
+                                      {course?.title || 'Unassigned'} • {module?.title || 'No Module'}
                                     </p>
                                   </div>
                                 </div>
-                                <Button size="sm" variant="ghost" className="h-8 rounded-lg text-xs">Edit Content</Button>
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="outline" className="text-[10px] text-primary">{lesson.xp_reward} XP</Badge>
+                                  <Button size="sm" variant="ghost" className="h-8 rounded-lg text-xs">Edit Content</Button>
+                                </div>
                               </div>
                             )
                           })}
                         </div>
                       ) : (
-                        <div className="p-8 text-center bg-sidebar/50 rounded-xl border border-dashed border-border text-muted-foreground">
-                          No lessons have been created yet.
+                        <div className="p-12 text-center bg-sidebar/50 rounded-xl border border-dashed border-border text-muted-foreground">
+                          <LuFolderKanban className="h-10 w-10 mx-auto mb-4 opacity-20" />
+                          <p>No lesson content templates found.</p>
+                          <p className="text-xs mt-1">Create lesson content to be organized into your courses.</p>
                         </div>
                       )}
                     </CardContent>
@@ -1062,11 +1157,11 @@ export default function Admin() {
                 {/* Create Lesson Modal */}
                 {showCreateLessonModal && (
                   <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                    <Card className="rounded-2xl border-border bg-card w-full max-w-lg">
-                      <CardHeader className="flex flex-row items-center justify-between pb-4">
+                    <Card className="rounded-2xl border-border bg-card w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+                      <CardHeader className="flex flex-row items-center justify-between pb-4 sticky top-0 bg-card z-10 border-b border-border">
                         <div>
                           <CardTitle className="heading-font lowercase text-xl text-foreground">Create New Lesson</CardTitle>
-                          <CardDescription>Add a new lesson to your curriculum</CardDescription>
+                          <CardDescription>Author your curriculum content and exercise validation.</CardDescription>
                         </div>
                         <Button
                           variant="ghost"
@@ -1077,22 +1172,165 @@ export default function Admin() {
                           <LuX className="h-4 w-4" />
                         </Button>
                       </CardHeader>
+                      <CardContent className="space-y-6 pt-6">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="text-sm font-medium text-foreground mb-1 block">Lesson Title *</label>
+                            <input
+                              type="text"
+                              placeholder="e.g., Introduction to Variables"
+                              value={newLessonTitle}
+                              onChange={(e) => setNewLessonTitle(e.target.value)}
+                              className="h-10 w-full rounded-xl border border-border bg-sidebar px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium text-foreground mb-1 block">Module *</label>
+                            <select
+                              value={newLessonModule}
+                              onChange={(e) => setNewLessonModule(e.target.value)}
+                              className="h-10 w-full rounded-xl border border-border bg-sidebar px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary"
+                            >
+                              <option value="">Select a module...</option>
+                              {activeModules.map(mod => {
+                                const course = activeCourses.find(c => c.id === mod.course_id);
+                                return <option key={mod.id} value={mod.id}>{course?.title || 'Unknown'} - {mod.title}</option>;
+                              })}
+                            </select>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="text-sm font-medium text-foreground mb-1 block text-xs uppercase tracking-wider opacity-70">Lesson Content (Markdown)</label>
+                          <div className="rounded-xl border border-border overflow-hidden ring-1 ring-primary/20">
+                            <Editor
+                              height="400px"
+                              defaultLanguage="markdown"
+                              value={newLessonContent}
+                              theme="vs-dark"
+                              onChange={(val) => setNewLessonContent(val || '')}
+                              options={{
+                                minimap: { enabled: false },
+                                fontSize: 14,
+                                lineNumbers: 'on',
+                                scrollBeyondLastLine: false,
+                                automaticLayout: true,
+                                padding: { top: 10, bottom: 10 }
+                              }}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="space-y-4 rounded-xl border border-border p-5 bg-sidebar/40">
+                          <h4 className="text-sm font-bold uppercase tracking-widest text-primary flex items-center gap-2">
+                            <LuTarget className="h-4 w-4" /> Exercise Validation Logic
+                          </h4>
+                          <div>
+                            <label className="text-sm font-medium text-foreground mb-1 block">Exercise Prompt (Instructions for student)</label>
+                            <textarea
+                              placeholder="Describe the challenge..."
+                              value={newLessonExercisePrompt}
+                              onChange={(e) => setNewLessonExercisePrompt(e.target.value)}
+                              className="min-h-[100px] w-full rounded-xl border border-border bg-sidebar px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary resize-none"
+                            />
+                          </div>
+                          <div className="grid grid-cols-2 gap-6">
+                            <div>
+                              <label className="text-sm font-medium text-foreground mb-1 block text-xs uppercase opacity-70">Starter Code</label>
+                              <div className="rounded-xl border border-border overflow-hidden">
+                                <Editor
+                                  height="180px"
+                                  defaultLanguage="python"
+                                  value={newLessonStarterCode}
+                                  theme="vs-dark"
+                                  onChange={(val) => setNewLessonStarterCode(val || '')}
+                                  options={{
+                                    minimap: { enabled: false },
+                                    fontSize: 13,
+                                    lineNumbers: 'off',
+                                    scrollBeyondLastLine: false,
+                                    automaticLayout: true,
+                                  }}
+                                />
+                              </div>
+                            </div>
+                            <div>
+                              <label className="text-sm font-medium text-foreground mb-1 block text-xs uppercase opacity-70">Solution Code (for validation)</label>
+                              <div className="rounded-xl border border-border overflow-hidden">
+                                <Editor
+                                  height="180px"
+                                  defaultLanguage="python"
+                                  value={newLessonSolution}
+                                  theme="vs-dark"
+                                  onChange={(val) => setNewLessonSolution(val || '')}
+                                  options={{
+                                    minimap: { enabled: false },
+                                    fontSize: 13,
+                                    lineNumbers: 'off',
+                                    scrollBeyondLastLine: false,
+                                    automaticLayout: true,
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                          <div className="w-32">
+                            <label className="text-sm font-medium text-foreground mb-1 block text-xs opacity-70">XP Reward</label>
+                            <input
+                              type="number"
+                              value={newLessonXp}
+                              onChange={(e) => setNewLessonXp(Number(e.target.value))}
+                              className="h-10 w-full rounded-xl border border-border bg-sidebar px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="flex gap-3 pt-4 border-t border-border">
+                          <Button
+                            className="flex-1 h-12 rounded-full text-base"
+                            onClick={handleCreateLesson}
+                            disabled={!newLessonTitle.trim() || !newLessonModule}
+                          >
+                            <LuFolderKanban className="mr-2 h-5 w-5" />
+                            Save Lesson Template
+                          </Button>
+                          <Button
+                            variant="outline"
+                            className="h-12 rounded-full px-8"
+                            onClick={() => setShowCreateLessonModal(false)}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+
+                {/* Create Module Modal */}
+                {showCreateModuleModal && (
+                  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <Card className="rounded-2xl border-border bg-card w-full max-w-md">
+                      <CardHeader className="flex flex-row items-center justify-between pb-4">
+                        <div>
+                          <CardTitle className="heading-font lowercase text-xl text-foreground">Add New Module</CardTitle>
+                          <CardDescription>Group lessons together into modules.</CardDescription>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 rounded-full"
+                          onClick={() => setShowCreateModuleModal(false)}
+                        >
+                          <LuX className="h-4 w-4" />
+                        </Button>
+                      </CardHeader>
                       <CardContent className="space-y-4">
                         <div>
-                          <label className="text-sm font-medium text-foreground mb-1 block">Lesson Title *</label>
-                          <input
-                            type="text"
-                            placeholder="e.g., Introduction to React Hooks"
-                            value={newLessonTitle}
-                            onChange={(e) => setNewLessonTitle(e.target.value)}
-                            className="h-10 w-full rounded-xl border border-border bg-sidebar px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-sm font-medium text-foreground mb-1 block">Course</label>
+                          <label className="text-sm font-medium text-foreground mb-1 block">Course *</label>
                           <select
-                            value={newLessonCourse}
-                            onChange={(e) => setNewLessonCourse(e.target.value)}
+                            value={newModuleCourse}
+                            onChange={(e) => setNewModuleCourse(e.target.value)}
                             className="h-10 w-full rounded-xl border border-border bg-sidebar px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary"
                           >
                             <option value="">Select a course...</option>
@@ -1102,27 +1340,107 @@ export default function Admin() {
                           </select>
                         </div>
                         <div>
+                          <label className="text-sm font-medium text-foreground mb-1 block">Module Title *</label>
+                          <input
+                            type="text"
+                            placeholder="e.g., Fundamentals of Python"
+                            value={newModuleTitle}
+                            onChange={(e) => setNewModuleTitle(e.target.value)}
+                            className="h-10 w-full rounded-xl border border-border bg-sidebar px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary"
+                          />
+                        </div>
+                        <div>
                           <label className="text-sm font-medium text-foreground mb-1 block">Description</label>
                           <textarea
-                            placeholder="Brief description of the lesson content..."
-                            value={newLessonDescription}
-                            onChange={(e) => setNewLessonDescription(e.target.value)}
-                            className="min-h-[100px] w-full rounded-xl border border-border bg-sidebar px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary resize-none"
+                            placeholder="Module goals..."
+                            value={newModuleDescription}
+                            onChange={(e) => setNewModuleDescription(e.target.value)}
+                            className="min-h-[80px] w-full rounded-xl border border-border bg-sidebar px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary resize-none"
                           />
                         </div>
                         <div className="flex gap-2 pt-4 border-t border-border">
                           <Button
                             className="flex-1 rounded-full"
-                            onClick={handleCreateLesson}
-                            disabled={!newLessonTitle.trim()}
+                            onClick={handleCreateModule}
+                            disabled={!newModuleTitle.trim() || !newModuleCourse}
                           >
                             <LuFolderKanban className="mr-2 h-4 w-4" />
-                            Create Lesson
+                            Add Module
                           </Button>
                           <Button
                             variant="outline"
                             className="rounded-full"
-                            onClick={() => setShowCreateLessonModal(false)}
+                            onClick={() => setShowCreateModuleModal(false)}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+                {showCreateCourseModal && (
+                  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <Card className="rounded-2xl border-border bg-card w-full max-w-lg">
+                      <CardHeader className="flex flex-row items-center justify-between pb-4">
+                        <div>
+                          <CardTitle className="heading-font lowercase text-xl text-foreground">Create New Course</CardTitle>
+                          <CardDescription>Add a new course to the catalog</CardDescription>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 rounded-full"
+                          onClick={() => setShowCreateCourseModal(false)}
+                        >
+                          <LuX className="h-4 w-4" />
+                        </Button>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div>
+                          <label className="text-sm font-medium text-foreground mb-1 block">Course Title *</label>
+                          <input
+                            type="text"
+                            placeholder="e.g., Python Advanced"
+                            value={newCourseTitle}
+                            onChange={(e) => setNewCourseTitle(e.target.value)}
+                            className="h-10 w-full rounded-xl border border-border bg-sidebar px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-foreground mb-1 block">Difficulty</label>
+                          <select
+                            value={newCourseDifficulty}
+                            onChange={(e) => setNewCourseDifficulty(e.target.value as any)}
+                            className="h-10 w-full rounded-xl border border-border bg-sidebar px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary"
+                          >
+                            <option value="Beginner">Beginner</option>
+                            <option value="Intermediate">Intermediate</option>
+                            <option value="Advanced">Advanced</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-foreground mb-1 block">Description</label>
+                          <textarea
+                            placeholder="Course summary..."
+                            value={newCourseDescription}
+                            onChange={(e) => setNewCourseDescription(e.target.value)}
+                            className="min-h-[80px] w-full rounded-xl border border-border bg-sidebar px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary resize-none"
+                          />
+                        </div>
+                        <div className="flex gap-2 pt-4 border-t border-border">
+                          <Button
+                            className="flex-1 rounded-full"
+                            onClick={handleCreateCourse}
+                            disabled={!newCourseTitle.trim()}
+                          >
+                            <LuBookOpen className="mr-2 h-4 w-4" />
+                            Create Course
+                          </Button>
+                          <Button
+                            variant="outline"
+                            className="rounded-full"
+                            onClick={() => setShowCreateCourseModal(false)}
                           >
                             Cancel
                           </Button>

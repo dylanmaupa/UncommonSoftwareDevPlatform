@@ -87,42 +87,37 @@ export default function Assignments() {
         }
 
         // Fetch all exercises from instructors in this hub
-        // Join with instructor_exercises to get student-specific data
+        // Fetch ALL exercises for this student - both hub-wide and directly assigned
         let exerciseRows: any[] = [];
         
+        // Build OR condition: student_id = user.id OR instructor_id in hub instructors
+        const orConditions = [`student_id.eq.${user.id}`];
         if (instructorIds.length > 0) {
-          const { data: exercises, error: exerciseError } = await supabase
-            .from('instructor_exercises')
-            .select('*')
-            .in('instructor_id', instructorIds)
-            .order('created_at', { ascending: false });
-
-          if (exerciseError) {
-            if (exerciseError.code !== '42P01') {
-              console.error('Failed to load assignments', exerciseError);
-            }
-          } else {
-            exerciseRows = exercises || [];
-            console.log('[Assignments] Hub exercises fetched:', exerciseRows.length);
-            console.log('[Assignments] Exercise created dates:', exerciseRows.map((e: any) => ({ title: e.title, created: e.created_at })));
-          }
+          instructorIds.forEach(id => {
+            orConditions.push(`instructor_id.eq.${id}`);
+          });
         }
-
-        // Also get exercises assigned specifically to this student
-        const { data: myExercises, error: myExercisesError } = await supabase
+        
+        console.log('[Assignments] Query OR conditions:', orConditions);
+        
+        const { data: exercises, error: exerciseError } = await supabase
           .from('instructor_exercises')
           .select('*')
-          .eq('student_id', user.id)
+          .or(orConditions.join(','))
           .order('created_at', { ascending: false });
 
-        if (!myExercisesError && myExercises) {
-          // Merge and deduplicate by id
-          const existingIds = new Set(exerciseRows.map(e => e.id));
-          myExercises.forEach((ex: any) => {
-            if (!existingIds.has(ex.id)) {
-              exerciseRows.push(ex);
-            }
-          });
+        if (exerciseError) {
+          console.error('Failed to load assignments', exerciseError);
+        } else {
+          exerciseRows = exercises || [];
+          console.log('[Assignments] Total exercises fetched:', exerciseRows.length);
+          console.log('[Assignments] Exercise details:', exerciseRows.map((e: any) => ({ 
+            id: e.id, 
+            title: e.title, 
+            instructor_id: e.instructor_id, 
+            student_id: e.student_id,
+            created: e.created_at 
+          })));
         }
 
         if (!isMounted) return;
