@@ -802,6 +802,46 @@ sys.stderr = io.StringIO()
                       value={code}
                       onChange={(value) => setCode(value || '')}
                       theme="vs-dark"
+                      onMount={(editor) => {
+                        // Disable paste functionality
+                        editor.onDidPaste(() => {
+                          // Cancel paste operation by setting empty string
+                          const model = editor.getModel();
+                          if (model) {
+                            const selection = editor.getSelection();
+                            if (selection) {
+                              // Get the text that was just pasted and remove it
+                              const range = selection;
+                              const currentValue = model.getValueInRange(range);
+                              if (currentValue) {
+                                editor.executeEdits('paste-blocker', [
+                                  {
+                                    range: range,
+                                    text: '',
+                                    forceMoveMarkers: true
+                                  }
+                                ]);
+                              }
+                            }
+                          }
+                        });
+                        
+                        // Also disable paste command
+                        editor.addCommand(
+                          (window as any).monaco?.KeyMod?.CtrlCmd | (window as any).monaco?.KeyCode?.KeyV,
+                          () => {
+                            // Do nothing - paste blocked
+                            return null;
+                          }
+                        );
+                        editor.addCommand(
+                          (window as any).monaco?.KeyMod?.CtrlCmd | (window as any).monaco?.KeyMod?.Shift | (window as any).monaco?.KeyCode?.KeyV,
+                          () => {
+                            // Do nothing - paste blocked
+                            return null;
+                          }
+                        );
+                      }}
                       options={{
                         minimap: { enabled: false },
                         fontSize: 14,
