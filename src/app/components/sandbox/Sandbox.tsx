@@ -8,9 +8,9 @@ import { Button } from '../ui/button';
 import { Card, CardContent } from '../ui/card';
 import { supabase } from '../../../lib/supabase';
 import { loadPyodideEnvironment } from '../../../lib/pyodide';
-import { LuDownload, LuFileText, LuPlay, LuSend, LuTerminal, LuTrash2, LuUpload } from 'react-icons/lu';
+import { LuAlertTriangle, LuClock, LuDownload, LuFileText, LuPlay, LuSend, LuTerminal, LuTrash2, LuUpload } from 'react-icons/lu';
 
-type ExerciseLanguage = 'python' | 'javascript' | 'document';
+type ExerciseLanguage = 'python' | 'javascript' | 'document' | 'written';
 type ExerciseStatus = 'assigned' | 'submitted' | 'reviewed' | 'approved' | 'rejected';
 
 interface InstructorExerciseAssignment {
@@ -47,6 +47,7 @@ function getDefaultStarterCode(language: ExerciseLanguage) {
 function normalizeLanguage(value: unknown): ExerciseLanguage {
   if (value === 'javascript') return 'javascript';
   if (value === 'document') return 'document';
+  if (value === 'written') return 'written';
   return 'python';
 }
 
@@ -104,6 +105,35 @@ export default function Sandbox() {
   const [selectedDocument, setSelectedDocument] = useState<File | null>(null);
   const [documentUrl, setDocumentUrl] = useState<string | null>(null);
   const [isResolvingDocumentUrl, setIsResolvingDocumentUrl] = useState(false);
+  const [isAutoSaving, setIsAutoSaving] = useState(false);
+
+  const isWrittenAssignment = language === 'written';
+  const wordCount = code.trim() ? code.trim().split(/\s+/).length : 0;
+
+  // Auto-save logic for written assignments
+  useEffect(() => {
+    if (!isWrittenAssignment || !assignment || assignment.status === 'submitted' || assignment.status === 'approved' || !currentUserId) return;
+    
+    // Don't auto-save if the code hasn't changed from the initial submission or starter code
+    if (code === (assignment.submission_code || assignment.starter_code)) return;
+
+    const timer = setTimeout(async () => {
+      setIsAutoSaving(true);
+      try {
+        await supabase
+          .from('instructor_exercises')
+          .update({ submission_code: code })
+          .eq('id', assignment.id)
+          .eq('student_id', currentUserId);
+      } catch (err) {
+        console.error('Auto-save failed', err);
+      } finally {
+        setIsAutoSaving(false);
+      }
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [code, isWrittenAssignment, assignment, currentUserId]);
 
   const logActivity = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -594,7 +624,7 @@ sys.stderr = io.StringIO()
               </div>
             </div>
             <div className="flex items-center gap-2">
-              {!isDocumentAssignment && (
+              {!isDocumentAssignment && !isWrittenAssignment && (
                 <>
                   <select
                     className="bg-[#111214] border border-white/10 rounded-lg text-sm px-3 py-2 text-white/80 outline-none focus:ring-2 focus:ring-blue-500/30 disabled:opacity-60 disabled:cursor-not-allowed"
@@ -629,7 +659,7 @@ sys.stderr = io.StringIO()
               {isAssignmentMode && (
                 <Button
                   onClick={handleSubmitAssignment}
-                  disabled={isRunning || isSubmittingAssignment || !canSubmitAssignment || isJavaScriptBlocked}
+                  disabled={isRunning || isSubmittingAssignment || !canSubmitAssignment || isJavaScriptBlocked || (isWrittenAssignment && !code.trim())}
                   className="bg-emerald-500 text-white hover:bg-emerald-400 rounded-full px-6 shadow-lg shadow-emerald-500/20"
                 >
                   <LuSend className="w-4 h-4 mr-2" />
@@ -783,6 +813,70 @@ sys.stderr = io.StringIO()
                   </CardContent>
                 </Card>
               </>
+            ) : isWrittenAssignment ? (
+              <div className="flex-1 flex flex-col gap-6 w-full max-w-4xl mx-auto">
+                <Card className="border border-white/10 rounded-2xl bg-[#141518] shadow-xl overflow-hidden">
+                  <div className="bg-[#1a1b1e] px-6 py-4 border-b border-white/5 flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-blue-400">
+                      <LuFileText className="w-5 h-5" />
+                      <span className="text-sm font-semibold uppercase tracking-wider">Theory Question</span>
+                    </div>
+                    {isAutoSaving && (
+                      <div className="flex items-center gap-2 text-white/40 text-xs animate-pulse">
+                        <LuClock className="w-3 h-3" />
+                        Saving locally...
+                      </div>
+                    )}
+                  </div>
+                  <CardContent className="p-8">
+                    <div className="space-y-6">
+                      <div className="rounded-2xl bg-blue-500/5 border border-blue-500/10 p-6">
+                        <h3 className="text-lg font-semibold text-white mb-2 flex items-center gap-2">
+                          <LuAlertTriangle className="w-5 h-5 text-amber-500" />
+                          Question
+                        </h3>
+                        <p className="text-white/80 leading-relaxed text-lg">
+                          {assignment?.instructions || 'Please provide your written answer below.'}
+                        </p>
+                      </div>
+
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between px-1">
+                          <label className="text-sm font-medium text-white/60">Your Answer</label>
+                          <span className={`text-xs font-mono ${wordCount > 500 ? 'text-amber-400' : 'text-white/40'}`}>
+                            {wordCount} words
+                          </span>
+                        </div>
+                        <textarea
+                          className="w-full min-h-[400px] bg-[#0b0b0b] border border-white/10 rounded-2xl p-6 text-white/90 focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-all font-sans text-lg leading-relaxed resize-none disabled:opacity-50"
+                          placeholder="Type your answer here..."
+                          value={code}
+                          onChange={(e) => setCode(e.target.value)}
+                          onPaste={(e) => {
+                            e.preventDefault();
+                            toast.error("Pasting is not allowed. Please type your answer.");
+                          }}
+                          onCopy={(e) => {
+                            e.preventDefault();
+                            toast.info("Copying is disabled for this assignment.");
+                          }}
+                          onCut={(e) => {
+                            e.preventDefault();
+                          }}
+                          onContextMenu={(e) => e.preventDefault()}
+                          disabled={!canSubmitAssignment}
+                        />
+                        <div className="flex items-center gap-2 px-1">
+                          <div className={`w-2 h-2 rounded-full ${code.trim() ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                          <p className="text-[11px] text-white/40 uppercase tracking-wider">
+                            {code.trim() ? 'Answer present' : 'Answer required for submission'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             ) : (
               <>
                 <Card className="flex-1 flex flex-col gap-0 border border-white/10 overflow-hidden rounded-2xl min-h-[420px] bg-[#141518] shadow-[0_0_0_1px_rgba(255,255,255,0.04),0_24px_60px_-36px_rgba(0,0,0,0.9)]">

@@ -14,7 +14,7 @@ interface InstructorExercise {
   student_id: string;
   title: string;
   instructions: string;
-  language: 'python' | 'javascript' | 'document';
+  language: 'python' | 'javascript' | 'document' | 'written';
   status: 'assigned' | 'submitted' | 'reviewed' | 'approved' | 'rejected';
   due_date: string | null;
   created_at: string;
@@ -150,7 +150,7 @@ export default function Assignments() {
               student_id: String(row.student_id || user.id),
               title: String(row.title || 'Untitled Exercise'),
               instructions: String(row.instructions || ''),
-              language: row.language === 'javascript' ? 'javascript' : row.language === 'document' ? 'document' : 'python',
+              language: row.language === 'javascript' ? 'javascript' : row.language === 'document' ? 'document' : row.language === 'written' ? 'written' : 'python',
               status: isAssignedToMe ? row.status : (isCompleted ? row.status : 'assigned'),
               due_date: row.due_date ? String(row.due_date) : null,
               created_at: String(row.created_at || ''),
@@ -379,7 +379,7 @@ export default function Assignments() {
                             </div>
                             {assignment.language && (
                               <Badge variant="outline" className="text-[10px] uppercase text-slate-500">
-                                {assignment.language === 'document' ? 'document upload' : assignment.language}
+                                {assignment.language === 'document' ? 'document upload' : assignment.language === 'written' ? 'theory question' : assignment.language}
                               </Badge>
                             )}
                           </div>
@@ -416,7 +416,9 @@ export default function Assignments() {
                                 ? 'Not Available' 
                                 : assignment.language === 'document'
                                   ? assignment.status === 'submitted' ? 'View upload' : 'Upload document'
-                                  : assignment.status === 'submitted' ? 'View' : 'Start working'}
+                                  : assignment.language === 'written'
+                                    ? assignment.status === 'submitted' ? 'View Answer' : 'Answer Question'
+                                    : assignment.status === 'submitted' ? 'View' : 'Start working'}
                             </Button>
                           </div>
                         </CardContent>
