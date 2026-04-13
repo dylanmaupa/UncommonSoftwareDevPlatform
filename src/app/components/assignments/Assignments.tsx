@@ -23,6 +23,8 @@ interface InstructorExercise {
   formatting_requirements?: string | null;
   submission_document_name?: string | null;
   is_assigned_to_me?: boolean;
+  is_new?: boolean;
+  is_past_due?: boolean;
   
   // Review specific fields
   grade?: number;
@@ -33,6 +35,7 @@ export default function Assignments() {
   const navigate = useNavigate();
   const [assignments, setAssignments] = useState<InstructorExercise[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [filter, setFilter] = useState<'all' | 'submitted' | 'not-submitted'>('all');
 
   useEffect(() => {
     let isMounted = true;
@@ -59,6 +62,7 @@ export default function Assignments() {
         }
 
         const studentHub = studentProfile.hub_location;
+        console.log('[Assignments] Student hub:', studentHub);
 
         // Find all instructors in the same hub
         const { data: instructors, error: instructorsError } = await supabase
@@ -66,6 +70,8 @@ export default function Assignments() {
           .select('id, full_name, email')
           .eq('role', 'instructor')
           .eq('hub_location', studentHub);
+        
+        console.log('[Assignments] Instructors in hub:', instructors?.length || 0, instructors);
 
         if (instructorsError) {
           console.error('Failed to get instructors:', instructorsError);
@@ -97,6 +103,8 @@ export default function Assignments() {
             }
           } else {
             exerciseRows = exercises || [];
+            console.log('[Assignments] Hub exercises fetched:', exerciseRows.length);
+            console.log('[Assignments] Exercise created dates:', exerciseRows.map((e: any) => ({ title: e.title, created: e.created_at })));
           }
         }
 
@@ -140,9 +148,18 @@ export default function Assignments() {
             }
           }
 
+          const now = new Date();
+          const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000); // 3 days ago
+
           const formattedAssignments = exerciseRows.map((row: any) => {
             const isAssignedToMe = row.student_id === user.id;
             const isCompleted = ['submitted', 'reviewed', 'approved', 'rejected'].includes(row.status);
+            const createdAt = row.created_at ? new Date(row.created_at) : null;
+            const dueDate = row.due_date ? new Date(row.due_date) : null;
+            
+            // Calculate flags
+            const isNew = createdAt && createdAt >= threeDaysAgo;
+            const isPastDue = dueDate && dueDate < now && !['submitted', 'reviewed', 'approved'].includes(row.status);
             
             return {
               id: String(row.id),
@@ -161,10 +178,13 @@ export default function Assignments() {
               formatting_requirements: row.formatting_requirements ? String(row.formatting_requirements) : null,
               submission_document_name: row.submission_document_name ? String(row.submission_document_name) : null,
               is_assigned_to_me: isAssignedToMe,
+              is_new: isNew,
+              is_past_due: isPastDue,
             };
           });
           
           setAssignments(formattedAssignments as InstructorExercise[]);
+          console.log('[Assignments] Final assignments set:', formattedAssignments.length);
         }
       } catch (err) {
         console.error('Error fetching assignments:', err);
@@ -178,9 +198,25 @@ export default function Assignments() {
     return () => { isMounted = false; };
   }, [navigate]);
 
-  const allAssignments = assignments;
-  const pendingAssignments = assignments.filter((a) => ['assigned', 'submitted', 'rejected'].includes(a.status));
-  const reviewedAssignments = assignments.filter((a) => ['reviewed', 'approved'].includes(a.status));
+  // Sort assignments by date
+  const sortedAssignments = [...assignments].sort((a, b) => 
+    new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
+
+  // Filter assignments based on selected filter
+  const filteredAssignments = sortedAssignments.filter((a) => {
+    if (filter === 'all') return true;
+    if (filter === 'submitted') return ['submitted', 'reviewed', 'approved'].includes(a.status);
+    if (filter === 'not-submitted') return a.status === 'assigned' || a.status === 'rejected';
+    return true;
+  });
+
+  // All assignments count for tabs
+  const allAssignments = sortedAssignments;
+
+  // Legacy tab filters (for backward compatibility)
+  const pendingAssignments = sortedAssignments.filter((a) => ['assigned', 'submitted', 'rejected'].includes(a.status));
+  const reviewedAssignments = sortedAssignments.filter((a) => ['reviewed', 'approved'].includes(a.status));
 
   return (
     <DashboardLayout>
@@ -194,6 +230,40 @@ export default function Assignments() {
               <h1 className="text-2xl font-bold text-slate-900 heading-font lowercase">Hub Assignments</h1>
               <p className="text-sm text-slate-500">View all assignments from instructors in your hub.</p>
             </div>
+            {/* Debug info - shows total count */}
+            {!isLoading && (
+              <Badge variant="outline" className="ml-auto text-xs">
+                {assignments.length} total assignments
+              </Badge>
+            )}
+          </div>
+          
+          {/* Filter Buttons */}
+          <div className="flex flex-wrap gap-2 mt-4">
+            <Button
+              variant={filter === 'all' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setFilter('all')}
+              className="rounded-full text-xs"
+            >
+              All ({assignments.length})
+            </Button>
+            <Button
+              variant={filter === 'not-submitted' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setFilter('not-submitted')}
+              className="rounded-full text-xs"
+            >
+              Not Submitted ({assignments.filter(a => a.status === 'assigned' || a.status === 'rejected').length})
+            </Button>
+            <Button
+              variant={filter === 'submitted' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setFilter('submitted')}
+              className="rounded-full text-xs"
+            >
+              Submitted ({assignments.filter(a => ['submitted', 'reviewed', 'approved'].includes(a.status)).length})
+            </Button>
           </div>
         </div>
 
@@ -233,17 +303,21 @@ export default function Assignments() {
 
             {/* ─── ALL TAB ─── */}
             <TabsContent value="all" className="mt-0 space-y-4">
-              {allAssignments.length === 0 ? (
+              {filteredAssignments.length === 0 ? (
                 <Card className="border-dashed shadow-none">
                   <CardContent className="flex flex-col items-center justify-center h-48 text-center">
                     <LuTarget className="h-8 w-8 text-slate-300 mb-3" />
-                    <p className="text-slate-600 font-medium tracking-tight">No assignments available</p>
-                    <p className="text-slate-400 text-sm mt-1">No assignments have been created in your hub yet.</p>
+                    <p className="text-slate-600 font-medium tracking-tight">
+                      {filter === 'all' ? 'No assignments available' : 'No assignments match this filter'}
+                    </p>
+                    <p className="text-slate-400 text-sm mt-1">
+                      {filter === 'all' ? 'No assignments have been created in your hub yet.' : 'Try selecting a different filter.'}
+                    </p>
                   </CardContent>
                 </Card>
               ) : (
                 <div className="space-y-4">
-                  {allAssignments.map((assignment) => {
+                  {filteredAssignments.map((assignment) => {
                     const gradeColor = 
                       !assignment.grade ? 'text-slate-700 bg-slate-100'
                       : assignment.grade >= 80 ? 'text-emerald-700 bg-emerald-100'
@@ -267,7 +341,15 @@ export default function Assignments() {
                         <div className="flex flex-col sm:flex-row">
                           <div className="p-5 sm:w-1/3 border-b sm:border-b-0 sm:border-r border-slate-100 bg-slate-50/50">
                             <div className="flex items-start justify-between mb-2">
-                              <h3 className="font-semibold text-slate-900">{assignment.title}</h3>
+                              <div className="flex items-center gap-2">
+                                <h3 className="font-semibold text-slate-900">{assignment.title}</h3>
+                                {assignment.is_new && (
+                                  <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 text-[10px]">New</Badge>
+                                )}
+                                {assignment.is_past_due && (
+                                  <Badge className="bg-rose-100 text-rose-700 border-rose-200 text-[10px]">Past Due</Badge>
+                                )}
+                              </div>
                               {assignment.is_assigned_to_me === false && (
                                 <Badge variant="outline" className="text-[10px] ml-2 shrink-0">Hub Assignment</Badge>
                               )}
