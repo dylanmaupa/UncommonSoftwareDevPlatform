@@ -22,6 +22,7 @@ interface InstructorExercise {
   instructor_name?: string;
   formatting_requirements?: string | null;
   submission_document_name?: string | null;
+  is_assigned_to_me?: boolean;
   
   // Review specific fields
   grade?: number;
@@ -177,6 +178,7 @@ export default function Assignments() {
     return () => { isMounted = false; };
   }, [navigate]);
 
+  const allAssignments = assignments;
   const pendingAssignments = assignments.filter((a) => ['assigned', 'submitted', 'rejected'].includes(a.status));
   const reviewedAssignments = assignments.filter((a) => ['reviewed', 'approved'].includes(a.status));
 
@@ -189,8 +191,8 @@ export default function Assignments() {
               <LuTarget className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-slate-900 heading-font lowercase">My Assignments</h1>
-              <p className="text-sm text-slate-500">Track and manage exercises assigned by your instructors.</p>
+              <h1 className="text-2xl font-bold text-slate-900 heading-font lowercase">Hub Assignments</h1>
+              <p className="text-sm text-slate-500">View all assignments from instructors in your hub.</p>
             </div>
           </div>
         </div>
@@ -201,8 +203,16 @@ export default function Assignments() {
             Loading assignments...
           </div>
         ) : (
-          <Tabs defaultValue="pending" className="w-full">
+          <Tabs defaultValue="all" className="w-full">
             <TabsList className="mb-6">
+              <TabsTrigger value="all" className="flex gap-2 relative">
+                All
+                {allAssignments.length > 0 && (
+                  <span className="ml-1 bg-slate-100 text-slate-700 py-0.5 px-2 rounded-full text-[10px] font-bold">
+                    {allAssignments.length}
+                  </span>
+                )}
+              </TabsTrigger>
               <TabsTrigger value="pending" className="flex gap-2 relative">
                 Pending
                 {pendingAssignments.length > 0 && (
@@ -214,12 +224,115 @@ export default function Assignments() {
               <TabsTrigger value="reviewed" className="flex gap-2 relative">
                 Reviewed
                 {reviewedAssignments.length > 0 && (
-                  <span className="ml-1 bg-slate-100 text-slate-600 py-0.5 px-2 rounded-full text-[10px] font-bold">
+                  <span className="ml-1 bg-emerald-100 text-emerald-700 py-0.5 px-2 rounded-full text-[10px] font-bold">
                     {reviewedAssignments.length}
                   </span>
                 )}
               </TabsTrigger>
             </TabsList>
+
+            {/* ─── ALL TAB ─── */}
+            <TabsContent value="all" className="mt-0 space-y-4">
+              {allAssignments.length === 0 ? (
+                <Card className="border-dashed shadow-none">
+                  <CardContent className="flex flex-col items-center justify-center h-48 text-center">
+                    <LuTarget className="h-8 w-8 text-slate-300 mb-3" />
+                    <p className="text-slate-600 font-medium tracking-tight">No assignments available</p>
+                    <p className="text-slate-400 text-sm mt-1">No assignments have been created in your hub yet.</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-4">
+                  {allAssignments.map((assignment) => {
+                    const gradeColor = 
+                      !assignment.grade ? 'text-slate-700 bg-slate-100'
+                      : assignment.grade >= 80 ? 'text-emerald-700 bg-emerald-100'
+                      : assignment.grade >= 60 ? 'text-amber-700 bg-amber-100'
+                      : 'text-rose-700 bg-rose-100';
+
+                    const statusBadge = assignment.status === 'approved' 
+                      ? <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">Approved</Badge>
+                      : assignment.status === 'reviewed'
+                        ? <Badge className="bg-blue-100 text-blue-700 border-blue-200">Reviewed</Badge>
+                        : assignment.status === 'rejected'
+                          ? <Badge className="bg-rose-100 text-rose-700 border-rose-200">Needs Revision</Badge>
+                          : assignment.status === 'submitted'
+                            ? <Badge className="bg-amber-100 text-amber-700 border-amber-200">Pending Review</Badge>
+                            : assignment.is_assigned_to_me === false
+                              ? <Badge variant="outline" className="text-slate-500">Not Assigned</Badge>
+                              : <Badge className="bg-blue-100 text-blue-700 border-blue-200">Pending</Badge>;
+
+                    return (
+                      <Card key={assignment.id} className="overflow-hidden hover:shadow-md transition-shadow">
+                        <div className="flex flex-col sm:flex-row">
+                          <div className="p-5 sm:w-1/3 border-b sm:border-b-0 sm:border-r border-slate-100 bg-slate-50/50">
+                            <div className="flex items-start justify-between mb-2">
+                              <h3 className="font-semibold text-slate-900">{assignment.title}</h3>
+                              {assignment.is_assigned_to_me === false && (
+                                <Badge variant="outline" className="text-[10px] ml-2 shrink-0">Hub Assignment</Badge>
+                              )}
+                            </div>
+                            <p className="text-xs text-slate-500 mb-3">From {assignment.instructor_name}</p>
+                            
+                            <div className="flex items-center gap-2 mb-3">
+                              {statusBadge}
+                              {assignment.language && (
+                                <Badge variant="outline" className="text-[10px] uppercase text-slate-500">
+                                  {assignment.language === 'document' ? 'document' : assignment.language}
+                                </Badge>
+                              )}
+                            </div>
+
+                            {assignment.grade != null && assignment.is_assigned_to_me !== false && (
+                              <div className={`px-2.5 py-1 rounded-md font-bold text-sm inline-block ${gradeColor}`}>
+                                {assignment.grade}/100
+                              </div>
+                            )}
+                          </div>
+                          
+                          <div className="p-5 sm:w-2/3 flex flex-col">
+                            <p className="text-sm text-slate-600 mb-3 line-clamp-2">
+                              {assignment.instructions || 'No detailed instructions provided.'}
+                            </p>
+                            
+                            <div className="mt-auto flex items-center justify-between">
+                              <div className="flex items-center text-xs text-slate-500 gap-4">
+                                <span className="flex items-center gap-1">
+                                  <LuClock className="h-3.5 w-3.5" />
+                                  {assignment.due_date ? `Due ${new Date(assignment.due_date).toLocaleDateString()}` : 'No due date'}
+                                </span>
+                                {assignment.submitted_at && (
+                                  <span className="flex items-center gap-1 text-emerald-600">
+                                    <LuCircleCheck className="h-3.5 w-3.5" />
+                                    Submitted
+                                  </span>
+                                )}
+                              </div>
+                              
+                              <Button 
+                                size="sm" 
+                                variant={assignment.is_assigned_to_me === false ? 'outline' : 'default'}
+                                disabled={assignment.is_assigned_to_me === false}
+                                onClick={() => navigate(`/sandbox?exerciseId=${assignment.id}`)}
+                                className="rounded-full text-xs"
+                              >
+                                {assignment.is_assigned_to_me === false 
+                                  ? 'Not Available' 
+                                  : ['reviewed', 'approved', 'rejected'].includes(assignment.status)
+                                    ? 'View Results'
+                                    : assignment.status === 'submitted'
+                                      ? 'View Submission'
+                                      : 'Start Working'}
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+            </TabsContent>
 
             {/* ─── PENDING TAB ─── */}
             <TabsContent value="pending" className="mt-0 space-y-4">
@@ -238,7 +351,9 @@ export default function Assignments() {
                       ? 'bg-amber-100 text-amber-700 border-amber-200' 
                       : assignment.status === 'rejected'
                         ? 'bg-rose-100 text-rose-700 border-rose-200'
-                        : 'bg-blue-100 text-blue-700 border-blue-200';
+                        : assignment.is_assigned_to_me === false
+                          ? 'bg-slate-100 text-slate-600 border-slate-200'
+                          : 'bg-blue-100 text-blue-700 border-blue-200';
                       
                     const isLate = assignment.due_date && (
                       assignment.status === 'assigned'
@@ -246,13 +361,22 @@ export default function Assignments() {
                         : (assignment.submitted_at && new Date(assignment.submitted_at) > new Date(assignment.due_date))
                     );
 
+                    const isNotMine = assignment.is_assigned_to_me === false;
+
                     return (
-                      <Card key={assignment.id} className="flex flex-col h-full hover:shadow-md transition-shadow">
+                      <Card key={assignment.id} className={`flex flex-col h-full hover:shadow-md transition-shadow ${isNotMine ? 'opacity-75' : ''}`}>
                         <CardContent className="p-5 flex flex-col h-full">
                           <div className="flex justify-between items-start mb-3">
-                            <Badge className={statusTone}>
-                              {assignment.status === 'submitted' ? 'Pending Review' : assignment.status === 'rejected' ? 'Needs Revision' : 'Pending'}
-                            </Badge>
+                            <div className="flex gap-2">
+                              <Badge className={statusTone}>
+                                {assignment.status === 'submitted' ? 'Pending Review' : assignment.status === 'rejected' ? 'Needs Revision' : isNotMine ? 'Not Assigned to You' : 'Pending'}
+                              </Badge>
+                              {isNotMine && assignment.status !== 'assigned' && (
+                                <Badge variant="outline" className="text-[10px] bg-emerald-50 text-emerald-600 border-emerald-200">
+                                  Completed by others
+                                </Badge>
+                              )}
+                            </div>
                             {assignment.language && (
                               <Badge variant="outline" className="text-[10px] uppercase text-slate-500">
                                 {assignment.language === 'document' ? 'document upload' : assignment.language}
@@ -285,10 +409,14 @@ export default function Assignments() {
                               size="sm" 
                               onClick={() => navigate(`/sandbox?exerciseId=${assignment.id}`)}
                               className="rounded-full shadow-sm"
+                              disabled={isNotMine}
+                              variant={isNotMine ? 'outline' : 'default'}
                             >
-                              {assignment.language === 'document'
-                                ? assignment.status === 'submitted' ? 'View upload' : 'Upload document'
-                                : assignment.status === 'submitted' ? 'View' : 'Start working'}
+                              {isNotMine 
+                                ? 'Not Available' 
+                                : assignment.language === 'document'
+                                  ? assignment.status === 'submitted' ? 'View upload' : 'Upload document'
+                                  : assignment.status === 'submitted' ? 'View' : 'Start working'}
                             </Button>
                           </div>
                         </CardContent>
