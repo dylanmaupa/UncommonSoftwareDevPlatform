@@ -44,56 +44,124 @@ export default function Assignments() {
           return;
         }
 
-        const { data: exerciseRows, error: exerciseError } = await supabase
+        // Get student's hub location
+        const { data: studentProfile, error: profileError } = await supabase
+          .from('profiles')
+          .select('hub_location')
+          .eq('id', user.id)
+          .single();
+
+        if (profileError || !studentProfile?.hub_location) {
+          console.error('Failed to get student hub location:', profileError);
+          if (isMounted) setIsLoading(false);
+          return;
+        }
+
+        const studentHub = studentProfile.hub_location;
+
+        // Find all instructors in the same hub
+        const { data: instructors, error: instructorsError } = await supabase
+          .from('profiles')
+          .select('id, full_name, email')
+          .eq('role', 'instructor')
+          .eq('hub_location', studentHub);
+
+        if (instructorsError) {
+          console.error('Failed to get instructors:', instructorsError);
+        }
+
+        const instructorIds = instructors?.map((i: any) => i.id) || [];
+        const instructorNameMap = new Map<string, string>();
+        
+        if (instructors) {
+          instructors.forEach((row: any) => {
+            instructorNameMap.set(String(row.id), String(row.full_name || row.email || 'Instructor'));
+          });
+        }
+
+        // Fetch all exercises from instructors in this hub
+        // Join with instructor_exercises to get student-specific data
+        let exerciseRows: any[] = [];
+        
+        if (instructorIds.length > 0) {
+          const { data: exercises, error: exerciseError } = await supabase
+            .from('instructor_exercises')
+            .select('*')
+            .in('instructor_id', instructorIds)
+            .order('created_at', { ascending: false });
+
+          if (exerciseError) {
+            if (exerciseError.code !== '42P01') {
+              console.error('Failed to load assignments', exerciseError);
+            }
+          } else {
+            exerciseRows = exercises || [];
+          }
+        }
+
+        // Also get exercises assigned specifically to this student
+        const { data: myExercises, error: myExercisesError } = await supabase
           .from('instructor_exercises')
           .select('*')
           .eq('student_id', user.id)
           .order('created_at', { ascending: false });
 
-        if (!isMounted) return;
-
-        if (exerciseError) {
-          if (exerciseError.code !== '42P01') {
-            console.error('Failed to load assignments', exerciseError);
-          }
-          return;
+        if (!myExercisesError && myExercises) {
+          // Merge and deduplicate by id
+          const existingIds = new Set(exerciseRows.map(e => e.id));
+          myExercises.forEach((ex: any) => {
+            if (!existingIds.has(ex.id)) {
+              exerciseRows.push(ex);
+            }
+          });
         }
 
-        if (exerciseRows && exerciseRows.length > 0) {
-          // Fetch instructor names
-          const instructorIds = Array.from(new Set(exerciseRows.map((row: any) => String(row.instructor_id)).filter(Boolean)));
-          const instructorNameMap = new Map<string, string>();
-          
-          if (instructorIds.length > 0) {
-            const { data: instructorRows } = await supabase
+        if (!isMounted) return;
+
+        if (exerciseRows.length > 0) {
+          // Get instructor names for any missing instructors
+          const missingInstructorIds = Array.from(new Set(
+            exerciseRows
+              .map((row: any) => String(row.instructor_id))
+              .filter((id: string) => id && !instructorNameMap.has(id))
+          ));
+
+          if (missingInstructorIds.length > 0) {
+            const { data: missingInstructors } = await supabase
               .from('profiles')
               .select('id, full_name, email')
-              .in('id', instructorIds);
+              .in('id', missingInstructorIds);
 
-            if (instructorRows) {
-              instructorRows.forEach((row: any) => {
+            if (missingInstructors) {
+              missingInstructors.forEach((row: any) => {
                 instructorNameMap.set(String(row.id), String(row.full_name || row.email || 'Instructor'));
               });
             }
           }
 
-          const formattedAssignments = exerciseRows.map((row: any) => ({
-            id: String(row.id),
-            instructor_id: String(row.instructor_id),
-            student_id: String(row.student_id),
-            title: String(row.title || 'Untitled Exercise'),
-            instructions: String(row.instructions || ''),
-            language: row.language === 'javascript' ? 'javascript' : row.language === 'document' ? 'document' : 'python',
-            status: row.status || 'assigned',
-            due_date: row.due_date ? String(row.due_date) : null,
-            created_at: String(row.created_at || ''),
-            submitted_at: row.submitted_at ? String(row.submitted_at) : null,
-            instructor_name: instructorNameMap.get(String(row.instructor_id)) || 'Instructor',
-            grade: row.grade,
-            feedback: row.feedback,
-            formatting_requirements: row.formatting_requirements ? String(row.formatting_requirements) : null,
-            submission_document_name: row.submission_document_name ? String(row.submission_document_name) : null,
-          }));
+          const formattedAssignments = exerciseRows.map((row: any) => {
+            const isAssignedToMe = row.student_id === user.id;
+            const isCompleted = ['submitted', 'reviewed', 'approved', 'rejected'].includes(row.status);
+            
+            return {
+              id: String(row.id),
+              instructor_id: String(row.instructor_id),
+              student_id: String(row.student_id || user.id),
+              title: String(row.title || 'Untitled Exercise'),
+              instructions: String(row.instructions || ''),
+              language: row.language === 'javascript' ? 'javascript' : row.language === 'document' ? 'document' : 'python',
+              status: isAssignedToMe ? row.status : (isCompleted ? row.status : 'assigned'),
+              due_date: row.due_date ? String(row.due_date) : null,
+              created_at: String(row.created_at || ''),
+              submitted_at: row.submitted_at ? String(row.submitted_at) : null,
+              instructor_name: instructorNameMap.get(String(row.instructor_id)) || 'Instructor',
+              grade: isAssignedToMe ? row.grade : undefined,
+              feedback: isAssignedToMe ? row.feedback : undefined,
+              formatting_requirements: row.formatting_requirements ? String(row.formatting_requirements) : null,
+              submission_document_name: row.submission_document_name ? String(row.submission_document_name) : null,
+              is_assigned_to_me: isAssignedToMe,
+            };
+          });
           
           setAssignments(formattedAssignments as InstructorExercise[]);
         }
