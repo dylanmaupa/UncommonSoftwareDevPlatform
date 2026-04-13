@@ -839,6 +839,36 @@ sys.stderr = io.StringIO()
                           toast.warning("Pasting is disabled! Typing it out helps you learn.");
                         }, true);
                       }
+                      // Also block onDidPaste event from Monaco
+                      editor.onDidPaste(() => {
+                        const model = editor.getModel();
+                        if (model) {
+                          const selection = editor.getSelection();
+                          if (selection) {
+                            const range = selection;
+                            const currentValue = model.getValueInRange(range);
+                            if (currentValue) {
+                              editor.executeEdits('paste-blocker', [
+                                {
+                                  range: range,
+                                  text: '',
+                                  forceMoveMarkers: true
+                                }
+                              ]);
+                            }
+                          }
+                        }
+                        toast.warning("Pasting is disabled! Typing it out helps you learn.");
+                      });
+                      // Disable paste commands
+                      editor.addCommand(
+                        monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyV,
+                        () => null
+                      );
+                      editor.addCommand(
+                        monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyV,
+                        () => null
+                      );
                     }}
                     options={{
                       minimap: { enabled: false },

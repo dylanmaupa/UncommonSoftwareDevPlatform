@@ -8,7 +8,7 @@ import { Button } from '../ui/button';
 import { Card, CardContent } from '../ui/card';
 import { supabase } from '../../../lib/supabase';
 import { loadPyodideEnvironment } from '../../../lib/pyodide';
-import { LuAlertTriangle, LuClock, LuDownload, LuFileText, LuPlay, LuSend, LuTerminal, LuTrash2, LuUpload } from 'react-icons/lu';
+import { LuTriangle, LuClock, LuDownload, LuFileText, LuPlay, LuSend, LuTerminal, LuTrash2, LuUpload } from 'react-icons/lu';
 
 type ExerciseLanguage = 'python' | 'javascript' | 'document' | 'written';
 type ExerciseStatus = 'assigned' | 'submitted' | 'reviewed' | 'approved' | 'rejected';
@@ -832,7 +832,7 @@ sys.stderr = io.StringIO()
                     <div className="space-y-6">
                       <div className="rounded-2xl bg-blue-500/5 border border-blue-500/10 p-6">
                         <h3 className="text-lg font-semibold text-white mb-2 flex items-center gap-2">
-                          <LuAlertTriangle className="w-5 h-5 text-amber-500" />
+                          <LuTriangle className="w-5 h-5 text-amber-500" />
                           Question
                         </h3>
                         <p className="text-white/80 leading-relaxed text-lg">
@@ -880,15 +880,6 @@ sys.stderr = io.StringIO()
             ) : (
               <>
                 <Card className="flex-1 flex flex-col gap-0 border border-white/10 overflow-hidden rounded-2xl min-h-[420px] bg-[#141518] shadow-[0_0_0_1px_rgba(255,255,255,0.04),0_24px_60px_-36px_rgba(0,0,0,0.9)]">
-                  <div className="bg-[#17181b] p-2 border-b border-[#24262b] flex items-center justify-between">
-                    <div className="flex gap-2 px-2">
-                      <div className="w-3 h-3 rounded-full bg-red-500/80"></div>
-                      <div className="w-3 h-3 rounded-full bg-yellow-500/80"></div>
-                      <div className="w-3 h-3 rounded-full bg-blue-500/80"></div>
-                    </div>
-                    <span className="text-xs text-white/50 font-mono tracking-wider">{language === 'python' ? 'main.py' : 'index.js'}</span>
-                    <div className="w-10"></div>
-                  </div>
                   <div className="flex-1 bg-[#141518] relative">
                     <Editor
                       height="100%"
@@ -896,15 +887,44 @@ sys.stderr = io.StringIO()
                       value={code}
                       onChange={(value) => setCode(value || '')}
                       theme="vs-dark"
-                      onMount={(editor) => {
-                        // Disable paste functionality
+                      onMount={(editor, monaco) => {
+                        // Add resize listener
+                        const updateHeight = () => {
+                          const container = document.getElementById('editor-container');
+                          if (container) {
+                            const height = container.clientHeight;
+                            editor.layout({ width: container.clientWidth, height });
+                          }
+                        };
+                        window.addEventListener('resize', updateHeight);
+
+                        // Add a keyboard listener to block Ctrl+V paste in the code editor
+                        if (!isJavaScriptBlocked) {
+                          editor.onKeyDown((e: any) => {
+                            if ((e.ctrlKey || e.metaKey) && e.keyCode === monaco.KeyCode.KeyV) {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              toast.warning("Pasting is disabled! Typing it out helps you learn.");
+                            }
+                          });
+                          
+                          // Prevent native right-click paste
+                          const domNode = editor.getDomNode();
+                          if (domNode) {
+                            domNode.addEventListener('paste', (e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              toast.warning("Pasting is disabled! Typing it out helps you learn.");
+                            }, true);
+                          }
+                        }
+
+                        // Also block the onDidPaste event if somehow it gets triggered
                         editor.onDidPaste(() => {
-                          // Cancel paste operation by setting empty string
                           const model = editor.getModel();
-                          if (model) {
+                          if (model && !isJavaScriptBlocked) {
                             const selection = editor.getSelection();
                             if (selection) {
-                              // Get the text that was just pasted and remove it
                               const range = selection;
                               const currentValue = model.getValueInRange(range);
                               if (currentValue) {
@@ -918,22 +938,19 @@ sys.stderr = io.StringIO()
                               }
                             }
                           }
+                          if (!isJavaScriptBlocked) {
+                            toast.warning("Pasting is disabled! Typing it out helps you learn.");
+                          }
                         });
                         
                         // Also disable paste command
                         editor.addCommand(
-                          (window as any).monaco?.KeyMod?.CtrlCmd | (window as any).monaco?.KeyCode?.KeyV,
-                          () => {
-                            // Do nothing - paste blocked
-                            return null;
-                          }
+                          monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyV,
+                          () => null
                         );
                         editor.addCommand(
-                          (window as any).monaco?.KeyMod?.CtrlCmd | (window as any).monaco?.KeyMod?.Shift | (window as any).monaco?.KeyCode?.KeyV,
-                          () => {
-                            // Do nothing - paste blocked
-                            return null;
-                          }
+                          monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyV,
+                          () => null
                         );
                       }}
                       options={{

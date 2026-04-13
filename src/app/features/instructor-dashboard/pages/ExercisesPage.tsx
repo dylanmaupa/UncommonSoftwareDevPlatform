@@ -26,6 +26,7 @@ import {
 } from 'react-icons/lu';
 import WrittenAssignmentEditor from '../components/WrittenAssignmentEditor';
 import CodeAssignmentPortal from '../components/CodeAssignmentPortal';
+import AssignExerciseModal from '../components/AssignExerciseModal';
 
 interface Exercise {
   id: string;
@@ -146,6 +147,9 @@ export default function ExercisesPage() {
 
   // Code assignment portal state
   const [codePortalExercise, setCodePortalExercise] = useState<Exercise | null>(null);
+
+  // Assign to student modal state
+  const [assignModalExercise, setAssignModalExercise] = useState<Exercise | null>(null);
 
   const handleCreateExercise = () => {
     if (newExercise.title && newExercise.description && newExercise.module && newExercise.deadline) {
@@ -336,7 +340,7 @@ export default function ExercisesPage() {
                 <option value="quiz">Quiz</option>
                 <option value="project">Project</option>
                 <option value="debugging">Debugging</option>
-                <option value="written">Written</option>
+                <option value="written">Theory Exercise</option>
               </select>
               <select 
                 value={difficultyFilter}
@@ -430,6 +434,14 @@ export default function ExercisesPage() {
                   <LuPencil className="mr-1 h-3 w-3" />
                   Edit
                 </Button>
+                <Button 
+                  size="sm" 
+                  className="flex-1 rounded-full h-9 text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
+                  onClick={() => setAssignModalExercise(exercise)}
+                >
+                  <LuSend className="mr-1 h-3 w-3" />
+                  Assign
+                </Button>
                 <Button size="sm" variant="outline" className="rounded-full h-9 w-9 p-0 text-slate-400 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50">
                   <LuTrash2 className="h-3 w-3" />
                 </Button>
@@ -515,7 +527,7 @@ export default function ExercisesPage() {
                     <option value="quiz">Quiz</option>
                     <option value="project">Project</option>
                     <option value="debugging">Debugging</option>
-                    <option value="written">Written Assignment</option>
+                    <option value="written">Theory Exercise</option>
                   </select>
                 </div>
 
@@ -615,6 +627,13 @@ export default function ExercisesPage() {
           </Card>
         </div>
       )}
+
+      {/* Assign to Student Modal */}
+      <AssignExerciseModal 
+        isOpen={!!assignModalExercise}
+        onClose={() => setAssignModalExercise(null)}
+        exercise={assignModalExercise}
+      />
     </div>
   );
 }
