@@ -42,17 +42,23 @@ export default function AssignExerciseModal({ isOpen, onClose, exercise }: Assig
   const fetchStudents = async () => {
     setIsLoadingStudents(true);
     try {
-      // Get instructor's hub first
+      // Resolve the instructor's hub synchronously in one query
       const { data: userData } = await supabase.auth.getUser();
-      if (userData.user) {
-        const { data: instructorProfile } = await supabase
-          .from('profiles')
-          .select('hub_location')
-          .eq('id', userData.user.id)
-          .single();
-        if (instructorProfile?.hub_location) {
-          setInstructorHub(instructorProfile.hub_location);
-        }
+      if (!userData.user) return;
+
+      const { data: instructorProfile } = await supabase
+        .from('profiles')
+        .select('hub_location')
+        .eq('id', userData.user.id)
+        .single();
+
+      // Use the local variable — NOT the state, which may not have updated yet
+      const hub = instructorProfile?.hub_location || '';
+      setInstructorHub(hub);
+
+      if (!hub) {
+        toast.error('Your account does not have a hub location set.');
+        return;
       }
 
       // Fetch students in the same hub
@@ -60,7 +66,7 @@ export default function AssignExerciseModal({ isOpen, onClose, exercise }: Assig
         .from('profiles')
         .select('id, full_name, email, hub_location')
         .eq('role', 'student')
-        .eq('hub_location', instructorHub || (await getInstructorHub()))
+        .eq('hub_location', hub)
         .order('full_name');
       
       if (error) throw error;
@@ -73,17 +79,6 @@ export default function AssignExerciseModal({ isOpen, onClose, exercise }: Assig
     }
   };
 
-  const getInstructorHub = async () => {
-    const { data: userData } = await supabase.auth.getUser();
-    if (!userData.user) return '';
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('hub_location')
-      .eq('id', userData.user.id)
-      .single();
-    return profile?.hub_location || '';
-  };
-
   const handleAssign = async () => {
     if (!exercise || !selectedStudentId) {
       toast.error('Please select a student.');
@@ -93,23 +88,32 @@ export default function AssignExerciseModal({ isOpen, onClose, exercise }: Assig
     setIsSubmitting(true);
     try {
       const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user) throw new Error("Not authenticated");
+      if (!userData.user) throw new Error('Not authenticated');
       const instructorId = userData.user.id;
 
-      // Map 'written' UI type to 'written' db type (I've updated Assignments and Sandbox to handle 'written')
-      // Map other types as needed
+      // Re-fetch the instructor's hub at submit time to guarantee correctness
+      const { data: instructorProfile } = await supabase
+        .from('profiles')
+        .select('hub_location')
+        .eq('id', instructorId)
+        .single();
+
+      const hub = instructorProfile?.hub_location || instructorHub;
+
+      if (!hub) {
+        toast.error('Cannot determine your hub location. Please refresh and try again.');
+        return;
+      }
+
       let language = 'python';
       if (exercise.type === 'written') language = 'written';
-      else if (exercise.type === 'coding') language = 'python'; // Default to python for generic coding
-      
-      // Get student's hub to use as the assignment hub
-      const selectedStudent = students.find(s => s.id === selectedStudentId);
-      const hubLocation = selectedStudent?.hub_location || instructorHub;
+      else if (exercise.type === 'quiz') language = 'written';
+      // coding / debugging / project → python
 
       const { error } = await supabase.from('instructor_exercises').insert({
         instructor_id: instructorId,
         student_id: selectedStudentId,
-        hub_location: hubLocation,
+        hub_location: hub,           // always uses instructor's hub
         title: exercise.title,
         instructions: exercise.description,
         due_date: dueDate || null,
@@ -119,7 +123,8 @@ export default function AssignExerciseModal({ isOpen, onClose, exercise }: Assig
 
       if (error) throw error;
       
-      toast.success(`Exercise assigned to ${students.find(s => s.id === selectedStudentId)?.full_name}`);
+      const studentName = students.find(s => s.id === selectedStudentId)?.full_name;
+      toast.success(`Exercise assigned to ${studentName}`);
       onClose();
       setSelectedStudentId('');
       setDueDate('');

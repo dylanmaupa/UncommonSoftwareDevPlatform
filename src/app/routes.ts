@@ -16,6 +16,7 @@ import Profile from './components/profile/Profile';
 import Settings from './components/settings/Settings';
 import Admin from './components/admin/Admin';
 import Assignments from './components/assignments/Assignments';
+import StudentAnnouncements from './components/announcements/StudentAnnouncements';
 
 import StudentProfilePage from './features/instructor-dashboard/pages/StudentProfilePage';
 import NotFound from './components/NotFound';
@@ -41,6 +42,7 @@ export const router = createBrowserRouter([
       { path: 'projects/:projectId', Component: ProjectDetail },
       { path: 'achievements', Component: Achievements },
       { path: 'assignments', Component: Assignments },
+      { path: 'announcements', Component: StudentAnnouncements },
       { path: 'profile', Component: Profile },
       { path: 'settings', Component: Settings },
       { path: '*', Component: NotFound },

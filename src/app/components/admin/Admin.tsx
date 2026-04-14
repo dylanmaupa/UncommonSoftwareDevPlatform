@@ -36,6 +36,7 @@ import { fetchProfileForAuthUser } from '../../lib/profileAccess';
 
 import { Link } from 'react-router';
 import SubmissionsPage from '../../features/instructor-dashboard/pages/SubmissionsPage';
+import AnnouncementsPage from '../../features/instructor-dashboard/pages/AnnouncementsPage';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { HUB_LOCATIONS } from '../auth/AccountSetup';
 import { updateProfileForAuthUser } from '../../lib/profileAccess';
@@ -1633,6 +1634,12 @@ export default function Admin() {
             {activeSection === 'submissions' && (
               <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <SubmissionsPage />
+              </div>
+            )}
+
+            {activeSection === 'announcements' && (
+              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <AnnouncementsPage />
               </div>
             )}
 

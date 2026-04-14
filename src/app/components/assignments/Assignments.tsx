@@ -31,6 +31,15 @@ interface InstructorExercise {
   feedback?: string;
 }
 
+/** Parse a DATE string (YYYY-MM-DD) without timezone offset shift */
+function formatDueDate(dateStr: string | null): string {
+  if (!dateStr) return 'No due date';
+  // Split to avoid UTC-midnight → previous-day conversion in non-UTC timezones
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const d = new Date(year, month - 1, day);
+  return `Due: ${d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`;
+}
+
 export default function Assignments() {
   const navigate = useNavigate();
   const [assignments, setAssignments] = useState<InstructorExercise[]>([]);
@@ -364,7 +373,7 @@ export default function Assignments() {
                               <div className="flex items-center text-xs text-slate-500 gap-4">
                                 <span className="flex items-center gap-1">
                                   <LuClock className="h-3.5 w-3.5" />
-                                  {assignment.due_date ? `Due ${new Date(assignment.due_date).toLocaleDateString()}` : 'No due date'}
+                                  {formatDueDate(assignment.due_date)}
                                 </span>
                                 {assignment.submitted_at && (
                                   <span className="flex items-center gap-1 text-emerald-600">
@@ -467,7 +476,7 @@ export default function Assignments() {
                           <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
                             <div className={`flex items-center text-xs gap-1 ${isLate ? 'text-red-500 font-medium' : 'text-slate-500'}`}>
                               <LuClock className="h-3.5 w-3.5" />
-                              {assignment.due_date ? `Due ${new Date(assignment.due_date).toLocaleDateString()}` : 'No due date'}
+                              {formatDueDate(assignment.due_date)}
                             </div>
                             
                             <Button 
