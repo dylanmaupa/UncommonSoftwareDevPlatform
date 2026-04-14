@@ -22,7 +22,8 @@ import {
   LuActivity,
   LuX,
   LuSave,
-  LuFileText
+  LuFileText,
+  LuSend
 } from 'react-icons/lu';
 import WrittenAssignmentEditor from '../components/WrittenAssignmentEditor';
 import CodeAssignmentPortal from '../components/CodeAssignmentPortal';
