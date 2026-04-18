@@ -48,18 +48,19 @@ export const loadPyodideEnvironment = async (): Promise<any> => {
                     },
                 });
 
-                // Replace builtins.input() with a browser-compatible version that uses
-                // window.prompt(). Without this, any lesson that calls input() crashes
-                // with OSError [Errno 29] because stdin is a broken WASM file descriptor.
+                // Replace builtins.input() with a console-only version.
+                // Prints the prompt to stdout and returns "" — no browser dialog.
+                // stdin is a broken WASM file descriptor so the real input() always
+                // crashes with OSError [Errno 29].
                 await window.pyodideLocal.runPythonAsync(`
 import builtins
-import js
+import sys
 
 def _browser_input(prompt=""):
-    result = js.prompt(str(prompt))
-    if result is None:
-        return ""
-    return str(result)
+    if prompt:
+        sys.stdout.write(str(prompt))
+        sys.stdout.flush()
+    return ""
 
 builtins.input = _browser_input
 `);
