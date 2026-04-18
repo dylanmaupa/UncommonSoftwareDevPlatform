@@ -21,7 +21,7 @@ import {
   LuZap,
 } from 'react-icons/lu';
 import { supabase } from '../../../lib/supabase';
-import { loadPyodideEnvironment } from '../../../lib/pyodide';
+import { loadPyodideEnvironment, setPyodideCapture, clearPyodideCapture } from '../../../lib/pyodide';
 import { fetchProfileForAuthUser, updateProfileForAuthUser } from '../../lib/profileAccess';
 
 export default function LessonView() {
@@ -259,25 +259,32 @@ export default function LessonView() {
 
     if (lang === 'python') {
       try {
-        const pyodide = await loadPyodideEnvironment();
+        await loadPyodideEnvironment();
 
-        // Redirect stdout/stderr specifically for this run
-        await pyodide.runPythonAsync(`
-import sys
-import io
-sys.stdout = io.StringIO()
-sys.stderr = io.StringIO()
-`);
+        // Route output through the module-level callbacks that were wired into
+        // loadPyodide at WASM init time. Using pyodide.setStdout() after the fact
+        // or Python-level sys.stdout = StringIO() both cause OSError [Errno 29]
+        // (ESPIPE) because the WASM file descriptors are already initialised.
+        const stdoutLines: string[] = [];
+        const stderrLines: string[] = [];
+        setPyodideCapture(
+          (text) => stdoutLines.push(text),
+          (text) => stderrLines.push(text),
+        );
 
         try {
-          await pyodide.runPythonAsync(sourceCode);
-          const stdout = await pyodide.runPythonAsync("sys.stdout.getvalue()");
-          const stderr = await pyodide.runPythonAsync("sys.stderr.getvalue()");
+          await window.pyodideLocal.runPythonAsync(sourceCode);
+          const stdout = stdoutLines.join('\n');
+          const stderr = stderrLines.join('\n');
           return { run: { output: stdout || stderr, code: stderr ? 1 : 0, stderr } };
         } catch (execErr: any) {
-          return { run: { output: String(execErr), code: 1, stderr: String(execErr) } };
+          const errMsg = String(execErr);
+          return { run: { output: errMsg, code: 1, stderr: errMsg } };
+        } finally {
+          clearPyodideCapture();
         }
       } catch (err: any) {
+        clearPyodideCapture();
         console.error('Pyodide Error:', err);
         return { run: { output: 'Failed to load Python environment: \n' + String(err), code: 1, stderr: 'Error' } };
       }

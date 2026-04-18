@@ -5,6 +5,10 @@ declare global {
     }
 }
 
+// Per-run output capture buffers (replaced before each execution)
+let _captureStdout: ((text: string) => void) | null = null;
+let _captureStderr: ((text: string) => void) | null = null;
+
 let pyodidePromise: Promise<any> | null = null;
 
 export const loadPyodideEnvironment = async (): Promise<any> => {
@@ -27,17 +31,38 @@ export const loadPyodideEnvironment = async (): Promise<any> => {
                         document.head.appendChild(script);
                     });
                 }
+
+                // Pass stdout/stderr INTO loadPyodide so Pyodide sets up WASM-level I/O
+                // correctly from the start. This avoids OSError [Errno 29] (ESPIPE) which
+                // occurs when the WASM file descriptors are initialised without callbacks
+                // and then Python tries to flush/seek them.
                 window.pyodideLocal = await window.loadPyodide({
                     indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.25.0/full/',
+                    stdout: (text: string) => {
+                        if (_captureStdout) _captureStdout(text);
+                        else console.log('[pyodide]', text);
+                    },
+                    stderr: (text: string) => {
+                        if (_captureStderr) _captureStderr(text);
+                        else console.error('[pyodide]', text);
+                    },
                 });
 
-                // Setup initial stdout/stderr redirection immediately so it's ready
+                // Replace builtins.input() with a browser-compatible version that uses
+                // window.prompt(). Without this, any lesson that calls input() crashes
+                // with OSError [Errno 29] because stdin is a broken WASM file descriptor.
                 await window.pyodideLocal.runPythonAsync(`
-import sys
-import io
-sys.stdout = io.StringIO()
-sys.stderr = io.StringIO()
-        `);
+import builtins
+import js
+
+def _browser_input(prompt=""):
+    result = js.prompt(str(prompt))
+    if result is None:
+        return ""
+    return str(result)
+
+builtins.input = _browser_input
+`);
             }
             return window.pyodideLocal;
         } catch (error) {
@@ -48,4 +73,19 @@ sys.stderr = io.StringIO()
     })();
 
     return pyodidePromise;
+};
+
+/** Call before running user code to redirect output into your own buffers. */
+export const setPyodideCapture = (
+    stdoutCb: (text: string) => void,
+    stderrCb: (text: string) => void,
+) => {
+    _captureStdout = stdoutCb;
+    _captureStderr = stderrCb;
+};
+
+/** Call after running user code to restore default (console) output. */
+export const clearPyodideCapture = () => {
+    _captureStdout = null;
+    _captureStderr = null;
 };
