@@ -25,7 +25,7 @@ import {
   LuUser,
   LuDownload,
 } from 'react-icons/lu';
-import { loadPyodideEnvironment } from '../../../../lib/pyodide';
+import { loadPyodideEnvironment, setPyodideCapture, clearPyodideCapture } from '../../../../lib/pyodide';
 import { supabase } from '../../../../lib/supabase';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -205,33 +205,29 @@ export default function ReviewAssignmentPage({
 
       if (isPython) {
         try {
-          // Initialize Pyodide
-          // Note: @ts-ignore may be needed if window.pyodideLocal is not typed, but we'll assume loadPyodideEnvironment handles it
-          const pyodide = await loadPyodideEnvironment();
+          await loadPyodideEnvironment();
 
-          // Redirect stdout/stderr specifically for this run
-          await pyodide.runPythonAsync(`
-import sys
-import io
-sys.stdout = io.StringIO()
-sys.stderr = io.StringIO()
-`);
+          const stdoutLines: string[] = [];
+          const stderrLines: string[] = [];
+          setPyodideCapture(
+            (text) => stdoutLines.push(text),
+            (text) => stderrLines.push(text),
+          );
 
           try {
-            await pyodide.runPythonAsync(currentCode);
-            const stdout = await pyodide.runPythonAsync('sys.stdout.getvalue()');
-            const stderr = await pyodide.runPythonAsync('sys.stderr.getvalue()');
-            
-            if (stdout) {
-              stdout.trimEnd().split('\n').forEach((l: string) => lines.push({ kind: 'stdout', text: l }));
-            }
+            await window.pyodideLocal.runPythonAsync(currentCode);
+            const stdout = stdoutLines.join('\n');
+            const stderr = stderrLines.join('\n');
+            if (stdout) stdout.trimEnd().split('\n').forEach((l) => lines.push({ kind: 'stdout', text: l }));
             if (stderr) {
-              stderr.trimEnd().split('\n').forEach((l: string) => lines.push({ kind: 'stderr', text: l }));
+              stderr.trimEnd().split('\n').forEach((l) => lines.push({ kind: 'stderr', text: l }));
               exitCode = 1;
             }
           } catch (execErr: any) {
             String(execErr).trimEnd().split('\n').forEach((l: string) => lines.push({ kind: 'stderr', text: l }));
             exitCode = 1;
+          } finally {
+            clearPyodideCapture();
           }
         } catch (err: any) {
           lines.push({ kind: 'error', text: 'Failed to load Python environment: \n' + String(err) });
