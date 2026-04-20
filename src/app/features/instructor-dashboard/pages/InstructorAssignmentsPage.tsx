@@ -34,7 +34,7 @@ interface RawExercise {
   status: string;
   created_at: string;
   submitted_at: string | null;
-  submission_content?: string | null;
+  submission_code?: string | null;
   submission_document_path?: string | null;
   submission_document_name?: string | null;
   submission_document_size?: number | null;
@@ -443,7 +443,7 @@ export default function InstructorAssignmentsPage() {
       submittedAt: ex.submitted_at
         ? new Date(ex.submitted_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
         : '',
-      submissionContent: ex.submission_content || '',
+      submissionContent: ex.submission_code || '',
       focusLossCount: ex.focus_loss_count ?? undefined,
       existingGrade: ex.grade ?? undefined,
       existingFeedback: ex.feedback ?? undefined,
